@@ -1,0 +1,8 @@
+{
+  "optional_package_absent": true,
+  "php_package_discovery": "passed",
+  "backend_core_workflow": "passed",
+  "frontend_production_build": "passed",
+  "core_version": "1.0.0",
+  "mirrored_path_packages": true
+}

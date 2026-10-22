@@ -1,0 +1,20 @@
+[
+  {
+    "installation": "alpha",
+    "fixture": "explicit first-build pre-update schema (not a historical release)",
+    "additive_migration": "2026_10_22_000200_add_lead_external_reference",
+    "data_retained": true,
+    "backup_restore_matches": true,
+    "private_file_restore_matches": true,
+    "fingerprint": "08193ad95b2dc387904cd0cc51808c286fffd60189a3be3d4b6ea26e0e1fa63d"
+  },
+  {
+    "installation": "beta",
+    "fixture": "explicit first-build pre-update schema (not a historical release)",
+    "additive_migration": "2026_10_22_000200_add_lead_external_reference",
+    "data_retained": true,
+    "backup_restore_matches": true,
+    "private_file_restore_matches": true,
+    "fingerprint": "cee7cb222d851ff4a1860f0952cd9aff932af3c8c739d668f12c2cb737c3c293"
+  }
+]

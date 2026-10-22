@@ -1,0 +1,12 @@
+{
+  "id": "alpha",
+  "name": "Alpha CRM",
+  "color": "#25635b",
+  "logo": "/brands/alpha.svg",
+  "favicon": "/brands/alpha.svg",
+  "locale": "en",
+  "timezone": "Asia/Nicosia",
+  "lead_label": "Leads",
+  "modules": [],
+  "custom_fields": {}
+}

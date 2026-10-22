@@ -1,0 +1,30 @@
+{
+  "id": "beta",
+  "name": "Beta CRM",
+  "color": "#624b9f",
+  "logo": "/brands/beta.svg",
+  "favicon": "/brands/beta.svg",
+  "locale": "en",
+  "timezone": "Asia/Nicosia",
+  "lead_label": "Enquiries",
+  "modules": [
+    "service-details"
+  ],
+  "custom_fields": {
+    "service_type": {
+      "type": "select",
+      "label": "Service type",
+      "options": [
+        "Consultation",
+        "Maintenance",
+        "Installation"
+      ]
+    }
+  },
+  "statuses": {
+    "new": "Received",
+    "contacted": "In discussion",
+    "qualified": "Assessed",
+    "proposal": "Estimate sent"
+  }
+}

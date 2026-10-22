@@ -1,0 +1,6 @@
+{
+    "workers": 2,
+    "duplicate_jobs": 20,
+    "delivered_reminders": 1,
+    "passed": true
+}

@@ -1,0 +1,14 @@
+.git
+.env*
+!.env.example
+vendor
+node_modules
+storage/**
+!storage/**/.gitignore
+playwright-report
+test-results
+public/build
+
+bootstrap/cache/*.php
+
+.local-fixtures.json

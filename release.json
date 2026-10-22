@@ -1,0 +1,9 @@
+{
+  "host": "1.0.0",
+  "core": "1.0.0",
+  "core_contract": 1,
+  "approved_extensions": {
+    "awove/example-service-details": "1.0.0"
+  },
+  "starter_revision": "d282e817c6c2fa1bd475f7c42ea785ccfc67d0ab"
+}
