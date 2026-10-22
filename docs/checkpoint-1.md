@@ -1,6 +1,6 @@
 # Checkpoint 1 — independent Base CRM
 
-Verified locally on 22 October 2026. Application root: `base-crm/`. Branch: `codex/base-crm-foundation`. This describes the initial local verification, before GitHub publication was requested. Publication uses a separate branch based on GitHub `main`; see `source-of-truth.md`. No remote deployment, production migration, real mail or live customer connection was made. Existing unrelated changes and CRM applications were preserved.
+Verified locally on 22 October 2026. The initial local application directory was `base-crm/` on branch `codex/base-crm-foundation`. This describes historical verification before the standalone repository was established. The current application root is the root of `Noam881/basecrm`; see `source-of-truth.md`. No remote deployment, production migration, real mail or live customer connection was made. Existing unrelated changes and CRM applications were preserved.
 
 ## Working behavior
 

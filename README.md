@@ -1,12 +1,12 @@
 # Awove Base CRM
 
-An independent, newly created CRM foundation. Nothing is imported from, connected to, or migrated from any existing CRM. This application lives in `base-crm/` only because the current Git workspace contains other projects; this directory is its standalone application root.
+An independent, newly created CRM foundation. Nothing is imported from, connected to, or migrated from any existing CRM. This repository root is the standalone application root.
 
 Checkpoint 1: shared host + versioned core + deployment-installed extensions + independent installation configuration. This is a local development checkpoint, not a production-readiness certification.
 
 ## Canonical source
 
-[Noam881/awove.cloud on GitHub](https://github.com/Noam881/awove.cloud) is the source of truth for this application. CRM source lives in `base-crm/`, independently of the repository-root website. See [source and release policy](docs/source-of-truth.md). Secrets and live installation data stay outside Git.
+[Noam881/basecrm on GitHub](https://github.com/Noam881/basecrm) is the source of truth for this application. All CRM source and CI live in this standalone repository. See [source and release policy](docs/source-of-truth.md). Secrets and live installation data stay outside Git.
 
 ## Open the local examples
 
