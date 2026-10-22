@@ -3,9 +3,11 @@
 namespace Awove\ServiceDetails;
 
 use Awove\Core\Contracts\LeadPanel;
+use Awove\Core\Contracts\LeadTableContributor;
 use Awove\Core\Contracts\Module;
+use Awove\Core\Tables\Column;
 
-class ServiceDetailsModule implements Module
+class ServiceDetailsModule implements LeadTableContributor, Module
 {
     public function id(): string
     {
@@ -40,5 +42,14 @@ class ServiceDetailsModule implements Module
     public function panels(): array
     {
         return [new LeadPanel('service-details', 'Service details', 'ServiceDetails/Panel', '/modules/service-details/leads/{lead}', 'service-details.view')];
+    }
+
+    public function leadTableColumns($user): array
+    {
+        if (! $user->can('service-details.view')) {
+            return [];
+        }
+
+        return array_map(fn ($field) => new Column('module:service-details:'.$field, $field === 'service_reference' ? 'Service reference' : 'Requested service', "(SELECT $field FROM service_details_leads WHERE lead_id=crm_leads.id)", 'text', 'Service details', width: 240), ['service_reference', 'requested_service']);
     }
 }

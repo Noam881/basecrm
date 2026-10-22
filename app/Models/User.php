@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
+ * @property array|null $display_preferences
+ * @property bool $active
  * @property int $id
  * @property string $name
  * @property string $email

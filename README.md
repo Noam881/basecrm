@@ -41,6 +41,8 @@ php artisan --env=beta crm:install
 npm run build
 php scripts/seed-local.php
 php scripts/seed-local.php beta
+php scripts/seed-table-e2e.php alpha
+php scripts/seed-table-e2e.php beta
 ```
 
 `configure-local.py` refuses to overwrite existing installation keys. `provision-local.py` provisions the fresh local example databases only. Do not repeat provisioning against an initialized volume. The database is bound to loopback; Alpha, Beta and tests use separate, non-superuser database roles.
@@ -82,6 +84,10 @@ docker-compose --profile full up -d
 
 Run migrations and `crm:install` through deployment commands before opening a fresh installation. Worker/scheduler containers share their installation's private volume. This development image uses PHP's built-in server; deploy behind a tested production PHP web runtime before a real pilot. No infrastructure has been provisioned. [Production environment example](docs/production.env.example) keeps debug, Mailpit and fixtures out of production.
 
+## Material tables
+
+Leads, contacts, companies and follow-ups share an advanced neutral Material table with selectable/reorderable/resizable/pinnable columns, typed server-side filters, multi-sort, full-result search, per-user layouts and named views. Configured custom fields and authorized module fields are available in the column chooser. See [table controls and query contracts](docs/advanced-tables.md).
+
 ## Verification
 
 All backend integration tests use the isolated `base_test` PostgreSQL database. A test boot guard rejects any other database. Never point these tests at a customer database.
@@ -99,7 +105,7 @@ python3 scripts/rehearse-upgrade.py
 docker-compose --profile full config --quiet
 ```
 
-`--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need both web servers and synthetic local fixtures. Chromium must be available (`npx playwright install chromium` if needed). They invoke the real reminder command and queue worker. Screenshots are in `docs/screenshots/`. Core-only checks build a temporary copy with the optional module physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
+`--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need both web servers, synthetic local fixtures and the dedicated table fixture accounts created by `seed-table-e2e.php` for Alpha and Beta. Chromium must be available (`npx playwright install chromium` if needed). They invoke the real reminder command and queue worker. Screenshots are in `docs/screenshots/`. Core-only checks build a temporary copy with the optional module physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
 
 See [architecture](docs/architecture.md), [extension contract](docs/extensions.md), [installation/update/recovery runbook](docs/installations-and-upgrades.md), and [checkpoint evidence and limitations](docs/checkpoint-1.md).
 

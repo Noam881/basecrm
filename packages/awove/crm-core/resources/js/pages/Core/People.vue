@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { Head, router, useForm } from "@inertiajs/vue3";
+import { Head, Link, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
 import type { Person, Page } from "../../types";
-import Pagination from "../../components/Pagination.vue";
+import DataTable from "../../components/table/DataTable.vue";
+import type { TablePayload } from "../../components/table/types";
 const props = defineProps<{
+    table: TablePayload;
+    companyOptions: Person[];
     contacts: Page<Person>;
     companies: Page<Person>;
     q: string;
 }>();
-const search = ref(props.q ?? "");
 const type = ref("contacts");
 const form = useForm({
     name: "",
@@ -55,7 +57,7 @@ const form = useForm({
                 ><select v-model="form.company_id">
                     <option :value="null">Individual</option>
                     <option
-                        v-for="c in companies.data"
+                        v-for="c in companyOptions"
                         :key="c.id"
                         :value="c.id"
                     >
@@ -73,35 +75,14 @@ const form = useForm({
             </div>
         </form>
     </section>
-    <form
-        class="crm-search"
-        @submit.prevent="router.get('/people', { q: search })"
-    >
-        <label
-            ><span class="crm-field-label">Find a customer</span
-            ><input
-                v-model="search"
-                placeholder="Name, email or phone" /></label
-        ><button class="crm-secondary">Search</button>
-    </form>
-    <div class="crm-dashboard-grid">
-        <section
-            v-for="group in [
-                { title: 'Contacts', page: contacts },
-                { title: 'Companies', page: companies },
-            ]"
-            :key="group.title"
-            class="crm-card"
-        >
-            <h2>{{ group.title }}</h2>
-            <p v-if="!group.page.data.length" class="crm-empty">
-                No records in this view.
-            </p>
-            <article v-for="p in group.page.data" :key="p.id" class="crm-note">
-                <strong>{{ p.name }}</strong>
-                <p>{{ p.email ?? "No email" }} · {{ p.phone ?? "No phone" }}</p>
-            </article>
-            <Pagination :page="group.page" />
-        </section>
+    <div class="crm-tabs md-quick-views">
+        <Link href="/people?table=contacts">Contacts</Link
+        ><Link href="/people?table=companies">Companies</Link>
     </div>
+    <DataTable
+        :payload="table"
+        endpoint="/people"
+        :title="table.id === 'contacts' ? 'Contacts' : 'Companies'"
+        :base-query="{ table: table.id }"
+    />
 </template>

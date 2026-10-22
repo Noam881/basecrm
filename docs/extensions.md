@@ -33,3 +33,7 @@ Endpoints return 404 while disabled, even if a user has its permissions. Enabled
 5. Run compatibility validation, migrations and missing-default initialization in staging; promote the pinned image after verification. Installation secrets/settings/storage remain outside the release. No core or host file needs a Gamma conditional.
 
 `python3 scripts/core-only-build.py` demonstrates a separate successful build with the optional package and its source directory removed entirely. `packages/awove/example-service-details/tests` proves enabled/disabled/re-enabled, parent-policy denial, module-permission denial, event gating and incompatible/missing metadata behavior.
+
+## Additive lead-table fields
+
+Modules may additionally implement `Awove\Core\Contracts\LeadTableContributor` and return trusted `Tables\Column` definitions after checking module permissions. The core calls contributors only while enabled. See [table contracts](advanced-tables.md) for sorting/filtering behavior and permission handling.

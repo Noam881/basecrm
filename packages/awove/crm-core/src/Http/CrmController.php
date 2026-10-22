@@ -14,6 +14,8 @@ use Awove\Core\Modules;
 use Awove\Core\Services\Leads;
 use Awove\Core\Services\Tasks;
 use Awove\Core\Services\Users;
+use Awove\Core\Tables\Preferences;
+use Awove\Core\Tables\Query;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -41,12 +43,9 @@ class CrmController
 
     public function index(Request $r)
     {
-        $r->validate(['sort' => ['nullable', Rule::in(['title', 'created_at', 'priority', 'updated_at'])], 'direction' => ['nullable', Rule::in(['asc', 'desc'])], 'q' => 'nullable|string|max:100', 'owner' => 'nullable|integer', 'status' => 'nullable|string|max:50', 'source' => 'nullable|string|max:100', 'priority' => ['nullable', Rule::in(['low', 'normal', 'high'])], 'view' => ['nullable', Rule::in(['missing', 'unassigned', 'archived'])]]);
-        $q = Access::leads($r->user())->with('status', 'owner:id,name', 'contact:id,name')->withMin(['tasks as next_action_at' => fn ($q) => $q->where('status', 'open')], 'due_at');
+        $r->validate(['owner' => 'nullable|integer', 'status' => 'nullable|string|max:50', 'source' => 'nullable|string|max:100', 'priority' => ['nullable', Rule::in(['low', 'normal', 'high'])], 'view' => ['nullable', Rule::in(['missing', 'unassigned', 'archived'])]]);
+        $q = Access::leads($r->user())->with('status', 'owner:id,name', 'contact:id,name', 'company:id,name');
         $r->view === 'archived' ? $q->whereNotNull('archived_at') : $q->whereNull('archived_at');
-        if ($r->filled('q')) {
-            $q->where('title', 'ilike', '%'.$r->q.'%');
-        }
         foreach (['owner' => 'owner_id', 'status' => 'status_id', 'source' => 'source', 'priority' => 'priority'] as $input => $column) {
             if ($r->filled($input)) {
                 $q->where($column, $r->input($input));
@@ -60,7 +59,9 @@ class CrmController
             $q->whereNull('owner_id');
         }
 
-        return Inertia::render('Core/Leads', [...$this->options($r->user()), 'leads' => $q->orderBy($r->sort ?? 'created_at', $r->direction ?? 'desc')->orderBy('id')->paginate(20)->withQueryString(), 'filters' => $r->only('q', 'owner', 'status', 'source', 'priority', 'sort', 'direction', 'view'), 'preferences' => $r->user()->display_preferences ?? []]);
+        $table = app(Query::class)->run($q, 'leads', $r);
+
+        return Inertia::render('Core/Leads', [...$this->options($r->user()), 'table' => $table, 'leads' => $table['page'], 'filters' => $r->only('owner', 'status', 'source', 'priority', 'view'), 'preferences' => $r->user()->display_preferences ?? []]);
     }
 
     private function leadData(Request $r, bool $update = false): array
@@ -167,15 +168,21 @@ class CrmController
             $q->whereBetween('due_at', [$day->copy()->startOfDay()->utc(), $day->copy()->endOfDay()->utc()]);
         }
 
-        return Inertia::render('Core/Tasks', ['tasks' => $q->orderBy('due_at')->paginate(30)->withQueryString(), 'view' => $r->view]);
+        $table = app(Query::class)->run($q, 'tasks', $r);
+
+        return Inertia::render('Core/Tasks', ['table' => $table, 'tasks' => $table['page'], 'view' => $r->view]);
     }
 
     public function people(Request $r)
     {
-        $r->validate(['q' => 'nullable|string|max:100']);
-        $filter = fn ($q) => $q->when($r->filled('q'), fn ($q) => $q->where('search_key', 'like', '%'.self::normalize($r->q).'%'))->orderBy('name')->paginate(20)->withQueryString();
+        $selected = $r->input('table', 'contacts');
+        validator(['table' => $selected], ['table' => ['required', Rule::in(['contacts', 'companies'])]])->validate();
+        $engine = app(Query::class);
+        $table = $engine->run(Access::identities($r->user(), $selected === 'contacts' ? Contact::class : Company::class), $selected, $r);
+        $contacts = $selected === 'contacts' ? $table['page'] : Access::identities($r->user(), Contact::class)->paginate(20);
+        $companies = $selected === 'companies' ? $table['page'] : Access::identities($r->user(), Company::class)->paginate(20);
 
-        return Inertia::render('Core/People', ['contacts' => $filter(Access::identities($r->user(), Contact::class)), 'companies' => $filter(Access::identities($r->user(), Company::class)), 'q' => $r->q]);
+        return Inertia::render('Core/People', ['table' => $table, 'contacts' => $contacts, 'companies' => $companies, 'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name'])]);
     }
 
     private static function normalize(string $value): string
@@ -210,7 +217,7 @@ class CrmController
             $data['email'] = mb_strtolower($data['email']);
         }$model::forceCreate([...$data, 'created_by' => $r->user()->id, 'search_key' => self::normalize(implode(' ', array_filter($data)))]);
 
-        return back();
+        return redirect('/people?table='.$type);
     }
 
     private function reminderQuery($u)
@@ -233,10 +240,9 @@ class CrmController
 
     public function preferences(Request $r)
     {
-        $data = $r->validate(['columns' => 'required|array|max:7', 'columns.*' => ['required', 'distinct', Rule::in(['title', 'contact', 'status', 'owner', 'priority', 'source', 'next_action_at'])], 'timezone' => 'sometimes|timezone']);
-        $r->user()->forceFill(['display_preferences' => array_replace($r->user()->display_preferences ?? [], $data)])->save();
+        app(Preferences::class)->save($r);
 
-        return back();
+        return $r->expectsJson() ? response()->json(['saved' => true]) : back();
     }
 
     public function settings(Request $r)
