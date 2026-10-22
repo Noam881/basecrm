@@ -713,6 +713,34 @@ onBeforeUnmount(() => {
                             <template v-else
                                 ><div class="md-header-content">
                                     <button
+                                        class="md-header-sort"
+                                        :aria-label="`Sort by ${catalog.get(column.id)?.label}`"
+                                        @click="
+                                            sorted(column.id, $event.shiftKey)
+                                        "
+                                    >
+                                        <span class="md-header-label">{{
+                                            catalog.get(column.id)?.label
+                                        }}</span
+                                        ><span
+                                            v-if="sortNumber(column.id)"
+                                            class="material-symbols-outlined"
+                                            aria-hidden="true"
+                                            >{{
+                                                state.sorts.find(
+                                                    (s) => s.id === column.id,
+                                                )?.direction === "asc"
+                                                    ? "arrow_upward"
+                                                    : "arrow_downward"
+                                            }}</span
+                                        ><sup
+                                            v-if="
+                                                sortNumber(column.id) &&
+                                                state.sorts.length > 1
+                                            "
+                                            >{{ sortNumber(column.id) }}</sup
+                                        ></button
+                                    ><button
                                         class="md-drag-handle"
                                         draggable="true"
                                         :aria-label="`Move ${catalog.get(column.id)?.label} column; Alt and arrow keys to reorder`"
@@ -734,32 +762,6 @@ onBeforeUnmount(() => {
                                             class="material-symbols-outlined"
                                             aria-hidden="true"
                                             >drag_indicator</span
-                                        ></button
-                                    ><button
-                                        class="md-header-sort"
-                                        :aria-label="`Sort by ${catalog.get(column.id)?.label}`"
-                                        @click="
-                                            sorted(column.id, $event.shiftKey)
-                                        "
-                                    >
-                                        {{ catalog.get(column.id)?.label
-                                        }}<span
-                                            v-if="sortNumber(column.id)"
-                                            class="material-symbols-outlined"
-                                            aria-hidden="true"
-                                            >{{
-                                                state.sorts.find(
-                                                    (s) => s.id === column.id,
-                                                )?.direction === "asc"
-                                                    ? "arrow_upward"
-                                                    : "arrow_downward"
-                                            }}</span
-                                        ><sup
-                                            v-if="
-                                                sortNumber(column.id) &&
-                                                state.sorts.length > 1
-                                            "
-                                            >{{ sortNumber(column.id) }}</sup
                                         ></button
                                     ><button
                                         class="md-header-menu"

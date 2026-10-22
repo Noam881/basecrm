@@ -264,10 +264,10 @@
     align-items: center;
     width: 100%;
     height: 56px;
-    gap: 0;
+    gap: 4px;
 }
 .md-header-sort {
-    padding: 8px 0;
+    padding: 8px;
     min-width: 0;
     justify-content: flex-start;
     flex: 1;
@@ -278,6 +278,11 @@
     height: 40px;
     border-radius: 4px;
     font-size: 12px;
+}
+.md-header-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .md-header-sort .material-symbols-outlined {
     font-size: 16px;
@@ -436,9 +441,9 @@
     font-size: 12px;
 }
 .md-table-footer select {
-    width: 64px;
+    width: 88px;
     min-height: 40px !important;
-    padding: 8px !important;
+    padding: 8px 48px 8px 12px !important;
     font-size: 12px !important;
     border: 0 !important;
 }
@@ -550,7 +555,7 @@
     height: 48px;
     min-width: 0;
     font: inherit;
-    background: transparent;
+    background-color: transparent;
     border: 1px solid var(--md-sys-color-outline);
     border-radius: 4px;
     padding: 12px;
@@ -896,4 +901,9 @@
     .md-table-progress {
         animation: none;
     }
+}
+
+.crm .md-table-saved select,
+.md-table-dialog select:not([multiple]):not([size]) {
+    padding-inline-end: 48px;
 }
