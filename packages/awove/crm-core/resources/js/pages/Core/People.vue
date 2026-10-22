@@ -36,15 +36,23 @@ const form = useForm({
             "
         >
             <label
-                >Record type<select v-model="type">
+                ><span class="crm-field-label">Record type</span
+                ><select v-model="type">
                     <option value="contacts">Contact</option>
                     <option value="companies">Company</option>
                 </select></label
-            ><label>Name<input v-model="form.name" required /></label
-            ><label>Email<input v-model="form.email" type="email" /></label
-            ><label>Phone<input v-model="form.phone" type="tel" /></label
+            ><label
+                ><span class="crm-field-label">Name</span
+                ><input v-model="form.name" required /></label
+            ><label
+                ><span class="crm-field-label">Email</span
+                ><input v-model="form.email" type="email" /></label
+            ><label
+                ><span class="crm-field-label">Phone</span
+                ><input v-model="form.phone" type="tel" /></label
             ><label v-if="type === 'contacts'"
-                >Company<select v-model="form.company_id">
+                ><span class="crm-field-label">Company</span
+                ><select v-model="form.company_id">
                     <option :value="null">Individual</option>
                     <option
                         v-for="c in companies.data"
@@ -70,7 +78,8 @@ const form = useForm({
         @submit.prevent="router.get('/people', { q: search })"
     >
         <label
-            >Find a customer<input
+            ><span class="crm-field-label">Find a customer</span
+            ><input
                 v-model="search"
                 placeholder="Name, email or phone" /></label
         ><button class="crm-secondary">Search</button>

@@ -85,26 +85,27 @@ const form = useForm({
         </p>
         <form class="crm-form-grid" @submit.prevent="form.post('/leads')">
             <label
-                >Title<input
-                    v-model="form.title"
-                    required
-                    maxlength="160" /></label
+                ><span class="crm-field-label">Title</span
+                ><input v-model="form.title" required maxlength="160" /></label
             ><label
-                >Contact<select v-model="form.contact_id">
+                ><span class="crm-field-label">Contact</span
+                ><select v-model="form.contact_id">
                     <option :value="null">No contact</option>
                     <option v-for="p in contacts" :key="p.id" :value="p.id">
                         {{ p.name }}
                     </option>
                 </select></label
             ><label
-                >Company<select v-model="form.company_id">
+                ><span class="crm-field-label">Company</span
+                ><select v-model="form.company_id">
                     <option :value="null">No company</option>
                     <option v-for="p in companies" :key="p.id" :value="p.id">
                         {{ p.name }}
                     </option>
                 </select></label
             ><label
-                >Owner<select v-model="form.owner_id">
+                ><span class="crm-field-label">Owner</span
+                ><select v-model="form.owner_id">
                     <option
                         v-if="capabilities.includes('leads.assign')"
                         :value="null"
@@ -116,21 +117,25 @@ const form = useForm({
                     </option>
                 </select></label
             ><label
-                >Status<select v-model="form.status_id">
+                ><span class="crm-field-label">Status</span
+                ><select v-model="form.status_id">
                     <option v-for="s in statuses" :key="s.id" :value="s.id">
                         {{ s.name }}
                     </option>
                 </select></label
-            ><label>Source<input v-model="form.source" required /></label
             ><label
-                >Priority<select v-model="form.priority">
+                ><span class="crm-field-label">Source</span
+                ><input v-model="form.source" required /></label
+            ><label
+                ><span class="crm-field-label">Priority</span
+                ><select v-model="form.priority">
                     <option>low</option>
                     <option>normal</option>
                     <option>high</option>
                 </select></label
             ><label v-for="(field, key) in fields" :key="key"
-                >{{ field.label
-                }}<select
+                ><span class="crm-field-label">{{ field.label }}</span
+                ><select
                     v-if="field.type === 'select'"
                     v-model="form.custom_fields[key]"
                 >
@@ -155,43 +160,50 @@ const form = useForm({
     <section class="crm-card">
         <form class="crm-filters" @submit.prevent="apply">
             <label
-                >Search<input
+                ><span class="crm-field-label">Search</span
+                ><input
                     v-model="filters.q"
                     placeholder="Search lead titles" /></label
             ><label
-                >Status<select v-model="filters.status" @change="apply">
+                ><span class="crm-field-label">Status</span
+                ><select v-model="filters.status" @change="apply">
                     <option value="">All stages</option>
                     <option v-for="s in statuses" :key="s.id" :value="s.id">
                         {{ s.name }}
                     </option>
                 </select></label
             ><label
-                >Owner<select v-model="filters.owner" @change="apply">
+                ><span class="crm-field-label">Owner</span
+                ><select v-model="filters.owner" @change="apply">
                     <option value="">All available</option>
                     <option v-for="o in owners" :key="o.id" :value="o.id">
                         {{ o.name }}
                     </option>
                 </select></label
             ><label
-                >Priority<select v-model="filters.priority" @change="apply">
+                ><span class="crm-field-label">Priority</span
+                ><select v-model="filters.priority" @change="apply">
                     <option value="">All priorities</option>
                     <option>low</option>
                     <option>normal</option>
                     <option>high</option>
                 </select></label
             ><label
-                >Source<input
+                ><span class="crm-field-label">Source</span
+                ><input
                     v-model="filters.source"
                     placeholder="Any source" /></label
             ><label
-                >Sort<select v-model="filters.sort" @change="apply">
+                ><span class="crm-field-label">Sort</span
+                ><select v-model="filters.sort" @change="apply">
                     <option value="">Newest</option>
                     <option value="title">Title</option>
                     <option value="updated_at">Last updated</option>
                     <option value="priority">Priority</option>
                 </select></label
             ><label
-                >Direction<select v-model="filters.direction" @change="apply">
+                ><span class="crm-field-label">Direction</span
+                ><select v-model="filters.direction" @change="apply">
                     <option value="desc">Descending</option>
                     <option value="asc">Ascending</option>
                 </select></label

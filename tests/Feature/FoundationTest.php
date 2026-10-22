@@ -187,6 +187,9 @@ it('validates typed fields and rejects executable or deployment-controlled setti
     $admin = administrator();
     $this->actingAs($admin)->patch('/business-settings', ['modules' => ['service-details']])->assertSessionHasErrors();
     $this->patch('/business-settings', ['color' => '<script>'])->assertSessionHasErrors();
+    $this->patch('/business-settings', ['color' => '#25635b'])->assertSessionHasErrors('color');
+    $this->patch('/business-settings', ['color' => '#333333'])->assertRedirect();
+    expect(Installation::settings()['color'])->toBe('#333333');
 });
 it('retains customer configuration during repeated default installation', function () {
     Status::find('new')->update(['name' => 'Customer label', 'position' => 17]);

@@ -44,14 +44,23 @@ const targets = ref<Record<number, number | null>>({});
                         .patch('/business-settings')
                 "
             >
-                <label>Application name<input v-model="form.name" /></label
+                <label
+                    ><span class="crm-field-label">Application name</span
+                    ><input v-model="form.name" /></label
                 ><label
-                    >Brand color<input
-                        v-model="form.color"
-                        type="color" /></label
-                ><label>Timezone<input v-model="form.timezone" /></label
+                    ><span class="crm-field-label">Primary neutral tone</span
+                    ><select v-model="form.color">
+                        <option value="#202020">Charcoal</option>
+                        <option value="#333333">Graphite</option>
+                        <option value="#484848">Dark grey</option>
+                        <option value="#5e5e5e">Slate</option>
+                    </select></label
                 ><label
-                    >Lead terminology<input v-model="form.lead_label"
+                    ><span class="crm-field-label">Timezone</span
+                    ><input v-model="form.timezone" /></label
+                ><label
+                    ><span class="crm-field-label">Lead terminology</span
+                    ><input v-model="form.lead_label"
                 /></label>
                 <div class="crm-form-action">
                     <button class="crm-button">Save settings</button>
@@ -80,9 +89,12 @@ const targets = ref<Record<number, number | null>>({});
                     })
                 "
             >
-                <label>{{ s.id }}<input v-model="s.name" required /></label
+                <label
+                    ><span class="crm-field-label">{{ s.id }}</span
+                    ><input v-model="s.name" required /></label
                 ><label
-                    >Order<input
+                    ><span class="crm-field-label">Order</span
+                    ><input
                         v-model="s.position"
                         type="number"
                         min="0"
@@ -99,14 +111,15 @@ const targets = ref<Record<number, number | null>>({});
                     user.post('/users', { onSuccess: () => user.reset() })
                 "
             >
-                <label>Name<input v-model="user.name" required /></label
+                <label
+                    ><span class="crm-field-label">Name</span
+                    ><input v-model="user.name" required /></label
                 ><label
-                    >Email<input
-                        v-model="user.email"
-                        type="email"
-                        required /></label
+                    ><span class="crm-field-label">Email</span
+                    ><input v-model="user.email" type="email" required /></label
                 ><label
-                    >Preset<select v-model="user.role">
+                    ><span class="crm-field-label">Preset</span
+                    ><select v-model="user.role">
                         <option>Employee</option>
                         <option>Administrator</option>
                     </select></label
@@ -123,7 +136,8 @@ const targets = ref<Record<number, number | null>>({});
                 <p>{{ u.email }} · {{ u.active ? "Active" : "Inactive" }}</p>
                 <div class="crm-inline">
                     <label v-if="u.active"
-                        >Reassign leads to<select v-model="targets[u.id]">
+                        ><span class="crm-field-label">Reassign leads to</span
+                        ><select v-model="targets[u.id]">
                             <option :value="null">Unassigned queue</option>
                             <option
                                 v-for="o in users.filter(

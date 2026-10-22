@@ -21,7 +21,7 @@ const userName = computed(
 const errors = computed(() => Object.values(page.props.errors ?? {}));
 </script>
 <template>
-    <div class="crm" :style="{ '--brand': brand.color }">
+    <div class="crm" :style="{ '--md-sys-color-primary': brand.color }">
         <aside class="crm-sidebar">
             <Link href="/dashboard" class="crm-brand"
                 ><img :src="brand.logo" alt="" width="36" height="36" /><span>{{
@@ -33,22 +33,32 @@ const errors = computed(() => Object.values(page.props.errors ?? {}));
                 <Link
                     href="/dashboard"
                     :class="{ selected: page.url.startsWith('/dashboard') }"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >space_dashboard</span
                     >Overview</Link
                 ><Link
                     href="/leads"
                     :class="{ selected: page.url.startsWith('/leads') }"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >view_list</span
                     >{{ brand.lead_label }}</Link
                 ><Link
                     href="/people"
                     :class="{ selected: page.url.startsWith('/people') }"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >contacts</span
                     >Contacts & companies</Link
                 ><Link
                     href="/tasks"
                     :class="{ selected: page.url.startsWith('/tasks') }"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >task_alt</span
                     >Follow-ups</Link
                 ><Link
                     href="/reminders"
                     :class="{ selected: page.url.startsWith('/reminders') }"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >notifications</span
                     >Reminders</Link
                 ><Link
                     v-for="item in navigation"
@@ -61,9 +71,18 @@ const errors = computed(() => Object.values(page.props.errors ?? {}));
                 <Link
                     v-if="capabilities.includes('settings.manage')"
                     href="/business-settings"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >settings</span
                     >Business settings</Link
-                ><Link href="/settings/security">Account security</Link
-                ><Link href="/logout" method="post" as="button">Sign out</Link>
+                ><Link href="/settings/security"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >security</span
+                    >Account security</Link
+                ><Link href="/logout" method="post" as="button"
+                    ><span class="material-symbols-outlined" aria-hidden="true"
+                        >logout</span
+                    >Sign out</Link
+                >
             </div>
         </aside>
         <main class="crm-main">

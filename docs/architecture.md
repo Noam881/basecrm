@@ -18,7 +18,7 @@ Domains are represented by explicit models/services rather than separate package
 4. User display preferences (currently columns/order and optional timezone).
 5. Deployment locks always win: core locks plus additional manifest `locks`.
 
-Modules, custom-field definitions and asset paths are locked by default. Secrets stay in private environment/deployment storage. Brand color must be a six-digit hex value; assets must be local public paths; locale ships as English; timezones must be IANA identifiers. Custom fields are limited to text, number, date, select and boolean and validated server-side; no secret fields or executable settings. Pipeline state, identity and ownership stay relational. Stable status IDs and active/won/lost semantics survive display changes. Status deletion is intentionally not offered.
+Modules, custom-field definitions and asset paths are locked by default. Secrets stay in private environment/deployment storage. Brand color must be an achromatic six-digit hex value (equal RGB channels); assets must be local public paths; locale ships as English; timezones must be IANA identifiers. Custom fields are limited to text, number, date, select and boolean and validated server-side; no secret fields or executable settings. Pipeline state, identity and ownership stay relational. Stable status IDs and active/won/lost semantics survive display changes. Status deletion is intentionally not offered.
 
 ## Authorization and historical integrity
 

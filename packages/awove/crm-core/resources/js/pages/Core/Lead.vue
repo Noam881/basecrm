@@ -118,15 +118,14 @@ function changeTask(t: Task) {
                 <h2>Lead details</h2>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <label
-                        >Title<input
+                        ><span class="crm-field-label">Title</span
+                        ><input
                             v-model="form.title"
                             :disabled="!editable"
                             required /></label
                     ><label
-                        >Status<select
-                            v-model="form.status_id"
-                            :disabled="!editable"
-                        >
+                        ><span class="crm-field-label">Status</span
+                        ><select v-model="form.status_id" :disabled="!editable">
                             <option
                                 v-for="s in statuses"
                                 :key="s.id"
@@ -136,7 +135,8 @@ function changeTask(t: Task) {
                             </option>
                         </select></label
                     ><label
-                        >Owner<select
+                        ><span class="crm-field-label">Owner</span
+                        ><select
                             v-model="form.owner_id"
                             :disabled="
                                 !editable ||
@@ -153,21 +153,20 @@ function changeTask(t: Task) {
                             </option>
                         </select></label
                     ><label
-                        >Source<input
+                        ><span class="crm-field-label">Source</span
+                        ><input
                             v-model="form.source"
                             :disabled="!editable" /></label
                     ><label
-                        >Priority<select
-                            v-model="form.priority"
-                            :disabled="!editable"
-                        >
+                        ><span class="crm-field-label">Priority</span
+                        ><select v-model="form.priority" :disabled="!editable">
                             <option>low</option>
                             <option>normal</option>
                             <option>high</option>
                         </select></label
                     ><label v-for="(field, key) in fields" :key="key"
-                        >{{ field.label
-                        }}<select
+                        ><span class="crm-field-label">{{ field.label }}</span
+                        ><select
                             v-if="field.type === 'select'"
                             v-model="form.custom_fields[key]"
                             :disabled="!editable"
@@ -204,7 +203,8 @@ function changeTask(t: Task) {
                     "
                 >
                     <label
-                        >Add a note<textarea
+                        ><span class="crm-field-label">Add a note</span
+                        ><textarea
                             v-model="note.body"
                             required
                             rows="3"
@@ -296,12 +296,14 @@ function changeTask(t: Task) {
                         @submit.prevent="changeTask(t)"
                     >
                         <label
-                            >New deadline<input
+                            ><span class="crm-field-label">New deadline</span
+                            ><input
                                 v-model="rescheduleDue"
                                 type="datetime-local"
                                 required /></label
                         ><label
-                            >New reminder<input
+                            ><span class="crm-field-label">New reminder</span
+                            ><input
                                 v-model="rescheduleReminder"
                                 type="datetime-local"
                                 required /></label
@@ -317,11 +319,11 @@ function changeTask(t: Task) {
                 >
                     <h3>Schedule a follow-up</h3>
                     <label
-                        >Follow-up title<input
-                            v-model="task.title"
-                            required /></label
+                        ><span class="crm-field-label">Follow-up title</span
+                        ><input v-model="task.title" required /></label
                     ><label
-                        >Assignee<select v-model="task.assignee_id">
+                        ><span class="crm-field-label">Assignee</span
+                        ><select v-model="task.assignee_id">
                             <option
                                 v-for="o in owners"
                                 :key="o.id"
@@ -331,12 +333,14 @@ function changeTask(t: Task) {
                             </option>
                         </select></label
                     ><label
-                        >Due date & time<input
+                        ><span class="crm-field-label">Due date & time</span
+                        ><input
                             v-model="localDue"
                             type="datetime-local"
                             required /></label
                     ><label
-                        >Reminder time<input
+                        ><span class="crm-field-label">Reminder time</span
+                        ><input
                             v-model="localReminder"
                             type="datetime-local"
                             required /></label
@@ -344,7 +348,8 @@ function changeTask(t: Task) {
                         >Times entered in your device timezone; displayed in
                         {{ zone }}.</small
                     ><label
-                        >Priority<select v-model="task.priority">
+                        ><span class="crm-field-label">Priority</span
+                        ><select v-model="task.priority">
                             <option>low</option>
                             <option>normal</option>
                             <option>high</option>

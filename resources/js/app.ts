@@ -1,3 +1,9 @@
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
+import "@fontsource/material-symbols-outlined";
+import "@material/web/ripple/ripple.js";
+import { materialStateLayers } from "./lib/material";
 import { createInertiaApp } from "@inertiajs/vue3";
 import { createApp, h, type DefineComponent } from "vue";
 import Shell from "../../vendor/awove/crm-core/resources/js/Shell.vue";
@@ -32,8 +38,9 @@ void createInertiaApp({
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)
+            .use(materialStateLayers)
             .directive("focus", { mounted: (el: HTMLElement) => el.focus() })
             .mount(el);
     },
-    progress: { color: "#25635b" },
+    progress: { color: "#202020" },
 });

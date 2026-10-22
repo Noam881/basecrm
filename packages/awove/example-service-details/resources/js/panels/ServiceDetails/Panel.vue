@@ -60,14 +60,13 @@ async function save() {
     <p v-if="loading">Loading service details…</p>
     <form v-else class="crm-stack" @submit.prevent="save">
         <label
-            >Service reference<input
+            ><span class="crm-field-label">Service reference</span
+            ><input
                 v-model="data.service_reference"
                 :disabled="!canEdit" /></label
         ><label
-            >Requested service<textarea
-                v-model="data.requested_service"
-                :disabled="!canEdit"
-            />
+            ><span class="crm-field-label">Requested service</span
+            ><textarea v-model="data.requested_service" :disabled="!canEdit" />
         </label>
         <p v-if="error" role="alert">{{ error }}</p>
         <p v-if="saved" role="status">Service details saved.</p>

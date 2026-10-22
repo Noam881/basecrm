@@ -5,7 +5,7 @@ const brand = page.props.brand as { name: string; color: string; logo: string };
 defineProps<{ title?: string; description?: string }>();
 </script>
 <template>
-    <div class="crm-auth" :style="{ '--brand': brand.color }">
+    <div class="crm-auth" :style="{ '--md-sys-color-primary': brand.color }">
         <div class="crm-auth-story">
             <img :src="brand.logo" alt="" width="52" height="52" /><span>{{
                 brand.name

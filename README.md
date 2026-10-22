@@ -10,8 +10,8 @@ Checkpoint 1: shared host + versioned core + deployment-installed extensions + i
 
 ## Open the local examples
 
-- Alpha: http://127.0.0.1:8091 — base CRM, green brand, no enabled demonstration module.
-- Beta: http://127.0.0.1:8092 — purple brand, Enquiries terminology, different pipeline labels, custom field, optional service-details panel.
+- Alpha: http://127.0.0.1:8091 — base CRM, charcoal brand, no enabled demonstration module.
+- Beta: http://127.0.0.1:8092 — grey brand, Enquiries terminology, different pipeline labels, custom field, optional service-details panel.
 - Development mail: http://127.0.0.1:8028 — Mailpit only; no real messages are sent.
 
 Run `php scripts/seed-local.php` and `php scripts/seed-local.php beta` for fictional review records. Private, randomly generated review credentials are saved in `.local-fixtures.json` (ignored, mode 0600). These are employee accounts, not an administrative bypass. Do not use synthetic fixtures in production.
