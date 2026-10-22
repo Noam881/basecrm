@@ -22,11 +22,7 @@ const targets = ref<Record<number, number | null>>({});
 <template>
     <Head title="Business settings" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">MAKE IT YOURS</p>
-            <h1>Business settings</h1>
-            <p>Configure this installation without changing the shared core.</p>
-        </div>
+        <h1>Business settings</h1>
     </div>
     <div class="crm-stack">
         <section class="crm-card">

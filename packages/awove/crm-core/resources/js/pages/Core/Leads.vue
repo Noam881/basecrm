@@ -32,11 +32,7 @@ const form = useForm({
 <template>
     <Head :title="brand.lead_label" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">BUILD LASTING RELATIONSHIPS</p>
-            <h1>{{ brand.lead_label }}</h1>
-            <p>Every conversation has a next step.</p>
-        </div>
+        <h1>{{ brand.lead_label }}</h1>
         <button
             v-if="capabilities.includes('leads.create')"
             class="crm-button"

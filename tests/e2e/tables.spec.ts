@@ -1,13 +1,21 @@
 import {test,expect,type Page}from '@playwright/test';
 import{readFileSync}from 'node:fs';
 const credentials=JSON.parse(readFileSync('.local-fixtures.json','utf8'));
+async function openNavigation(page:Page){
+ const open=page.getByRole('button',{name:'Open navigation',exact:true});
+ if(await open.isVisible())await open.click();
+}
+async function navigate(page:Page,name:string){
+ await openNavigation(page);
+ await page.getByRole('navigation',{name:'Main navigation',exact:true}).getByRole('link',{name,exact:true}).click();
+}
 async function login(page:Page,installation:'alpha'|'beta'){
  await page.goto(`http://127.0.0.1:${installation==='alpha'?8091:8092}/login`);
  const credential=credentials[`tables_${installation}_${test.info().project.name}`];
  await page.getByLabel('Email address').fill(credential.email);
  await page.getByLabel('Password',{exact:true}).fill(credential.password);
  await page.getByRole('button',{name:'Log in',exact:true}).click();await expect(page).toHaveURL(/dashboard/);
- await page.getByRole('link',{name:installation==='alpha'?'Leads':'Enquiries',exact:true}).click();
+ await navigate(page,installation==='alpha'?'Leads':'Enquiries');
 }
 test('table columns reorder, resize, pin, persist and save views',async({page},info)=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await login(page,'alpha');
@@ -36,6 +44,6 @@ test('table search, multi-sort, advanced filters and module fields',async({page}
  await records.getByRole('checkbox',{name:'Select all rows on this page'}).check();await expect(page.getByText('3 selected on this page',{exact:true})).toBeVisible();await page.context().grantPermissions(['clipboard-read','clipboard-write']);await page.getByRole('button',{name:'Copy rows',exact:true}).click();await expect(page.getByText('Copied 3 rows',{exact:true})).toBeVisible();expect(await page.evaluate(()=>navigator.clipboard.readText())).toContain('Website refresh');await page.getByRole('button',{name:'Clear selection',exact:true}).click();
  await page.getByRole('button',{name:'Sort',exact:true}).or(page.getByRole('button',{name:/^sort\s+\d+$/i})).first().click();dialog=page.getByRole('dialog');await dialog.getByLabel('Sort 1 field').selectOption('priority');await dialog.getByLabel('Sort 1 direction').selectOption('desc');await dialog.getByRole('button',{name:'Add sort',exact:true}).click();await dialog.getByLabel('Sort 2 field').selectOption('title');await dialog.getByLabel('Sort 2 direction').selectOption('asc');await dialog.getByRole('button',{name:'Apply sorting',exact:true}).click();await expect(page.locator('.md-table-sort-summary')).toContainText('Priority ↓');
  await page.getByRole('button',{name:'Clear filters',exact:true}).click();await page.getByRole('button',{name:'Columns',exact:false}).click();dialog=page.getByRole('dialog');await dialog.getByLabel('Find a column').fill('password');await expect(dialog.getByText('No fields match your search.')).toBeVisible();await dialog.getByRole('button',{name:'Close columns'}).click();
- await page.getByRole('link',{name:'Sign out',exact:true}).or(page.getByRole('button',{name:'Sign out',exact:true})).click();
+ await openNavigation(page);const sidebar=page.locator('.crm-sidebar');await sidebar.getByRole('link',{name:'Sign out',exact:true}).or(sidebar.getByRole('button',{name:'Sign out',exact:true})).click();
  await login(page,'beta');await page.getByRole('button',{name:'Columns',exact:false}).click();dialog=page.getByRole('dialog');await dialog.getByRole('button',{name:'Reset layout'}).click();await dialog.getByLabel('Find a column').fill('service');await dialog.getByRole('checkbox',{name:'Show Service reference column'}).check();await dialog.getByRole('checkbox',{name:'Show Service type column'}).check();await expect(dialog.getByRole('status')).toHaveText('Layout saved');await page.screenshot({path:`docs/screenshots/${info.project.name}-table-field-chooser.png`,fullPage:false});await dialog.getByRole('button',{name:'Done'}).click();await page.getByRole('textbox',{name:'Search enquiries'}).fill('DEMO-REF');await expect(page.getByRole('table',{name:'Enquiries records'}).getByText('DEMO-REF',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
 });

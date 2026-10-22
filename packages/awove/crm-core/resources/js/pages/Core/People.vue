@@ -23,11 +23,7 @@ const form = useForm({
 <template>
     <Head title="Contacts & companies" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">PEOPLE BEFORE PIPELINES</p>
-            <h1>Contacts & companies</h1>
-            <p>One identity. A history of possibilities.</p>
-        </div>
+        <h1>Contacts & companies</h1>
     </div>
     <section class="crm-card">
         <h2>Add a customer</h2>

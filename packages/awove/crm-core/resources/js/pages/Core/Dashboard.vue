@@ -18,35 +18,28 @@ const zone = (usePage().props.brand as { timezone: string }).timezone;
 <template>
     <Head title="Overview" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">A CLEAR VIEW OF YOUR DAY</p>
-            <h1>Keep things moving.</h1>
-            <p>Your pipeline and follow-ups, all in one place.</p>
-        </div>
+        <h1>Overview</h1>
         <Link class="crm-button" href="/leads"
             >View leads <span aria-hidden="true">↗</span></Link
         >
     </div>
     <div class="crm-metrics">
         <Link href="/leads" class="crm-card"
-            ><span>Active leads</span><strong>{{ metrics.active }}</strong
-            ><small>Across your open pipeline</small></Link
+            ><span>Active leads</span
+            ><strong>{{ metrics.active }}</strong></Link
         ><Link href="/tasks?view=today" class="crm-card"
-            ><span>Due today</span><strong>{{ metrics.due }}</strong
-            ><small>Follow-ups to keep on track</small></Link
+            ><span>Due today</span><strong>{{ metrics.due }}</strong></Link
         ><Link href="/tasks?view=overdue" class="crm-card"
-            ><span>Overdue</span><strong>{{ metrics.overdue }}</strong
-            ><small>Ready for your attention</small></Link
+            ><span>Overdue</span><strong>{{ metrics.overdue }}</strong></Link
         ><Link href="/leads?view=missing" class="crm-card"
             ><span>Without a next action</span
-            ><strong>{{ metrics.missing }}</strong
-            ><small>Schedule the next step</small></Link
+            ><strong>{{ metrics.missing }}</strong></Link
         >
     </div>
     <div class="crm-dashboard-grid">
         <section class="crm-card">
             <div class="crm-section-title">
-                <h2>Your pipeline</h2>
+                <h2>Pipeline</h2>
                 <Link href="/leads">Explore →</Link>
             </div>
             <Link
@@ -68,12 +61,12 @@ const zone = (usePage().props.brand as { timezone: string }).timezone;
         </section>
         <section class="crm-card">
             <div class="crm-section-title">
-                <h2>Next on your list</h2>
+                <h2>Upcoming follow-ups</h2>
                 <Link href="/tasks">All follow-ups →</Link>
             </div>
             <div v-if="!tasks.length" class="crm-empty">
                 <span class="crm-empty-icon">✓</span>
-                <h3>A little room to breathe.</h3>
+                <h3>No open follow-ups</h3>
                 <p>Create a follow-up from a lead to plan your next step.</p>
                 <Link href="/leads">Open your leads →</Link>
             </div>
@@ -86,7 +79,6 @@ const zone = (usePage().props.brand as { timezone: string }).timezone;
                 <div>
                     <strong>{{ task.title }}</strong>
                     <p>{{ task.lead?.title }}</p>
-                    <small>{{ date(task.due_at, zone) }}</small>
                 </div>
                 <span class="crm-badge">{{ task.priority }}</span></Link
             >

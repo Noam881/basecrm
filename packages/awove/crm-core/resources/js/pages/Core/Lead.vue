@@ -95,15 +95,7 @@ function changeTask(t: Task) {
         >← Back to leads</Link
     >
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">LEAD #{{ lead.id }}</p>
-            <h1>{{ lead.title }}</h1>
-            <p>
-                {{ lead.contact?.name ?? lead.company?.name }} ·
-                {{ lead.status.name }}
-                <span v-if="lead.archived_at">· Archived</span>
-            </p>
-        </div>
+        <h1>{{ lead.title }}</h1>
         <button
             v-if="editable && capabilities.includes('records.archive')"
             class="crm-secondary"
@@ -116,6 +108,12 @@ function changeTask(t: Task) {
         <div class="crm-stack">
             <section class="crm-card">
                 <h2>Lead details</h2>
+                <p class="crm-muted">
+                    Lead #{{ lead.id }} ·
+                    {{ lead.contact?.name ?? lead.company?.name }} ·
+                    {{ lead.status.name }}
+                    <span v-if="lead.archived_at">· Archived</span>
+                </p>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <label
                         ><span class="crm-field-label">Title</span
@@ -272,7 +270,7 @@ function changeTask(t: Task) {
             <section class="crm-card">
                 <h2>Follow-ups</h2>
                 <p v-if="!lead.tasks?.length" class="crm-muted">
-                    Plan the next conversation.
+                    No follow-ups scheduled.
                 </p>
                 <article v-for="t in lead.tasks" :key="t.id" class="crm-note">
                     <strong>{{ t.title }}</strong>

@@ -7,11 +7,7 @@ defineProps<{ table: TablePayload; view: string }>();
 <template>
     <Head title="Follow-ups" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">MAKE THE NEXT MOVE</p>
-            <h1>Follow-ups</h1>
-            <p>Organize every deadline, owner and next step.</p>
-        </div>
+        <h1>Follow-ups</h1>
     </div>
     <div class="crm-tabs md-quick-views">
         <Link href="/tasks">Open</Link

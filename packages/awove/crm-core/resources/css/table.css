@@ -113,6 +113,11 @@
     font: inherit;
     cursor: pointer;
     flex-shrink: 0;
+    transition:
+        background-color var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard),
+        color var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard);
 }
 .md-icon-button {
     width: 40px;

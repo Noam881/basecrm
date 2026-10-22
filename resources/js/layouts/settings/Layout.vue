@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from "@inertiajs/vue3";
-import Heading from "@/components/Heading.vue";
+import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUrl } from "@/composables/useCurrentUrl";
@@ -21,14 +21,16 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
+const title = computed(() =>
+    isCurrentOrParentUrl(editSecurity()) ? "Account security" : "Profile",
+);
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
-        />
+    <div>
+        <div class="crm-heading">
+            <h1>{{ title }}</h1>
+        </div>
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">

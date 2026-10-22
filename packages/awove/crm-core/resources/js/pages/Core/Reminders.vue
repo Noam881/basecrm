@@ -9,17 +9,13 @@ defineProps<{
 <template>
     <Head title="Reminders" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">A TIMELY NUDGE</p>
-            <h1>Reminders</h1>
-            <p>Reading a reminder keeps its follow-up open.</p>
-        </div>
+        <h1>Reminders</h1>
     </div>
     <section class="crm-card">
         <div v-if="!reminders.data.length" class="crm-empty">
             <span class="crm-empty-icon">✓</span>
-            <h3>You're up to date.</h3>
-            <p>Due reminders appear here after the scheduler and queue run.</p>
+            <h3>No due reminders</h3>
+            <p>Reminders for your scheduled follow-ups appear here.</p>
         </div>
         <article v-for="n in reminders.data" :key="n.id" class="crm-task-row">
             <div>

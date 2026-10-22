@@ -29,12 +29,10 @@ const user = computed(() => page.props.auth.user);
 <template>
     <Head title="Profile settings" />
 
-    <h1 class="sr-only">Profile settings</h1>
-
     <div class="flex flex-col space-y-6">
         <Heading
             variant="small"
-            title="Profile"
+            title="Personal details"
             description="Update your name and email address"
         />
 

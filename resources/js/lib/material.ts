@@ -1,6 +1,6 @@
 import type { App } from "vue";
 const selector =
-    "button, .crm-button, .crm-secondary, .crm-sidebar nav a, .crm-sidebar-bottom a";
+    "button, .crm-button, .crm-secondary, .crm-sidebar nav a, .crm-sidebar-bottom a, .crm-tabs a, .crm-stage-row, .crm-back, .crm-pagination a";
 function attachStateLayers(root: unknown) {
     if (!(root instanceof HTMLElement)) return;
     for (const control of [
