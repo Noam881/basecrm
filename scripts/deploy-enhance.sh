@@ -128,6 +128,8 @@ COMPOSER_MIRROR_PATH_REPOS=1 composer install --no-dev --prefer-dist --no-intera
 npm ci --include=dev
 npm run build
 [[ -s public/build/manifest.json ]] || fail 'The frontend build did not produce public/build/manifest.json.'
+# Apache serves these generated assets under a separate user; private paths retain umask 027.
+chmod -R a+rX public/build
 
 # Check effective Laravel configuration too: server environment variables can override .env.
 php -r "$(cat <<'PHP'
