@@ -75,7 +75,7 @@
 /* Host utilities consume the same Material roles as core and installed modules. */
 :root,
 .dark {
-    --background: var(--md-sys-color-surface);
+    --background: var(--crm-canvas-color);
     --foreground: var(--md-sys-color-on-surface);
     --card: var(--md-sys-color-surface-container-low);
     --card-foreground: var(--md-sys-color-on-surface);

@@ -97,7 +97,7 @@ test("light baseline fields retain semantic labels while empty, focused and popu
     await expectRoles(page, lightRoles);
     await expect(page.locator(".crm-auth")).toHaveCSS(
         "background-color",
-        "rgb(254, 247, 255)",
+        "rgb(250, 250, 250)",
     );
     const login = page.getByRole("button", { name: "Log in", exact: true });
     await expect(login).toHaveCSS("background-color", "rgb(103, 80, 164)");

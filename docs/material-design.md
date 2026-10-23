@@ -1,6 +1,6 @@
 # Material Design 3
 
-The CRM uses the exact published **Default Light and Default Dark baseline** roles in [Material 3 baseline colour](https://m3.material.io/styles/color/static/baseline), verified on 23 October 2026. The purple primary is `#6750A4`, the light surface is `#FEF7FF`, and on-primary-container is `#4F378B`. Dark roles are equally explicit; no installation colour override, extra tint overlay or neutral-only palette replaces these values. Brand names and logos remain installation-specific.
+The CRM uses the exact published **Default Light and Default Dark baseline** roles in [Material 3 baseline colour](https://m3.material.io/styles/color/static/baseline), verified on 23 October 2026. The purple primary is `#6750A4`, the light surface is `#FEF7FF`, and on-primary-container is `#4F378B`. Dark roles are equally explicit; no installation colour override, extra tint overlay or neutral-only palette replaces these values. The application canvas uses the requested near-white neutral grey `#FAFAFA` through `--crm-canvas-color`; it is separate from the unchanged Material component roles. Dark mode keeps its existing surface. Brand names and logos remain installation-specific.
 
 ## Shared implementation
 

@@ -1,6 +1,8 @@
 /* Exact Default baseline roles from https://m3.material.io/styles/color/static/baseline (23 October 2026). */
 :root {
     color-scheme: light;
+    /* Product canvas preference; Material component roles remain the published baseline. */
+    --crm-canvas-color: #fafafa;
     --md-sys-color-primary: #6750a4;
     --md-sys-color-on-primary: #ffffff;
     --md-sys-color-primary-container: #eaddff;
@@ -54,6 +56,7 @@
 }
 .dark {
     color-scheme: dark;
+    --crm-canvas-color: var(--md-sys-color-surface);
     --md-sys-color-primary: #d0bcff;
     --md-sys-color-on-primary: #381e72;
     --md-sys-color-primary-container: #4f378b;

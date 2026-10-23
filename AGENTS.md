@@ -10,7 +10,7 @@ This is the independent Base CRM project. Its only canonical Git remote is `http
 
 ## Shared UI conventions
 
-- Use the exact Material 3 Default baseline roles in `tokens.css`, Standard motion springs/curves and shared elevation levels documented in `docs/material-design.md`. Do not restore neutral-only overrides or add local colour hex values. Outlined-field label transitions retain Web standard easing at 150ms.
+- Use the exact Material 3 Default baseline roles in `tokens.css`, Standard motion springs/curves and shared elevation levels documented in `docs/material-design.md`. Do not restore neutral-only overrides or add local colour hex values. Outlined-field label transitions retain Web standard easing at 150ms. Use `--crm-canvas-color` for the app/auth canvas and uncontained field notches: light mode is the requested near-white grey `#FAFAFA`, while dark mode keeps its baseline surface. Keep component colour roles and their explicit surface/notch overrides unchanged.
 
 - Define reusable button, field, card and form appearance only in `packages/awove/crm-core/resources/css/components.css`. Layout belongs in `core.css`; table-specific structure belongs in `table.css`. Do not copy control geometry into pages, modules or dialogs.
 - Reuse `crm-button` / `crm-secondary` or the host `Button` component, which delegates to those same global classes. Reuse `crm-input` / `crm-label` through the host Input/Label components, or the core's semantic native controls.

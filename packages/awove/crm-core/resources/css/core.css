@@ -7,7 +7,7 @@
     --muted: var(--md-sys-color-on-surface-variant);
     --border: var(--md-sys-color-outline-variant);
     color: var(--ink);
-    background: var(--md-sys-color-surface);
+    background: var(--crm-canvas-color);
     font-family: Roboto, Arial, sans-serif;
     font-size: 14px;
     font-weight: 400;

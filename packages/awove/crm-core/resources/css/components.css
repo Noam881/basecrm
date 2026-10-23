@@ -7,7 +7,7 @@
     --crm-control-height: 40px;
     --crm-field-height: 56px;
     --crm-field-padding: 16px;
-    --crm-field-surface: var(--md-sys-color-surface);
+    --crm-field-surface: var(--crm-canvas-color);
 }
 .crm-control,
 .crm-button,
