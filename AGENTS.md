@@ -14,4 +14,6 @@ This is the independent Base CRM project. Its only canonical Git remote is `http
 - Reuse `crm-button` / `crm-secondary` or the host `Button` component, which delegates to those same global classes. Reuse `crm-input` / `crm-label` through the host Input/Label components, or the core's semantic native controls.
 - Use `crm-form` for stacked forms, `crm-form-grid` for two-column forms, `crm-field` for label/control/help groups, `crm-form-action` for action rows, `crm-flow` for spaced content blocks, and `crm-card` for surfaces. A normal field-to-action gap is 24px; never fix touching controls with a one-off button margin.
 - Core and installed extensions must use the same primitives. Change global tokens/modifiers when needed; use page-specific CSS only for genuine page layout. Preserve compact table/menu layouts, OTP internals, keyboard access and reduced-motion behavior.
-- For new or changed forms, inspect desktop and mobile spacing and verify the actual save/reload flow. Demo identities use the guarded Hebrew fixture catalog with fictional email/phone data.
+- For new or changed forms, inspect desktop and mobile spacing and verify the actual save/reload flow. Demo identities use the guarded fixture catalog with Jewish/Hebrew names written in English and fictional email/phone data. Keep future synthetic names in English too.
+
+- Lead tables present contact/company names first. Enquiry titles are optional, hidden by default and available through the column chooser; preserve existing personal column choices.

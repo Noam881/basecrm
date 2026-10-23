@@ -48,9 +48,6 @@ const form = useForm({
         </p>
         <form class="crm-form-grid" @submit.prevent="form.post('/leads')">
             <label
-                ><span class="crm-field-label">Title</span
-                ><input v-model="form.title" required maxlength="160" /></label
-            ><label
                 ><span class="crm-field-label">Contact</span
                 ><select v-model="form.contact_id">
                     <option :value="null">No contact</option>
@@ -66,6 +63,9 @@ const form = useForm({
                         {{ p.name }}
                     </option>
                 </select></label
+            ><label
+                ><span class="crm-field-label">Enquiry title (optional)</span
+                ><input v-model="form.title" maxlength="160" /></label
             ><label
                 ><span class="crm-field-label">Owner</span
                 ><select v-model="form.owner_id">

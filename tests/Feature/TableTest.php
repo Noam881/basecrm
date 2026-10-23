@@ -147,3 +147,13 @@ it('sorts configured number fields numerically rather than as text', function ()
         unlink($file);
     }
 });
+
+it('starts leads with customer identities while keeping an optional enquiry title available', function () {
+    $user = tableEmployee();
+    tableLead($user, 'Website refresh');
+    $response = $this->actingAs($user)->get('/leads')->assertOk();
+    $columns = $response->inertiaProps('table.preferences.columns');
+    expect(array_slice($columns, 0, 2))->toBe(['contact', 'company'])
+        ->and($columns)->not->toContain('title')
+        ->and(array_column($response->inertiaProps('table.columns'), 'id'))->toContain('title');
+});

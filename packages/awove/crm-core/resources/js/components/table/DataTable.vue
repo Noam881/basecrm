@@ -217,6 +217,19 @@ function link(row: TableRow) {
           ? `/leads/${row.lead_id}`
           : "";
 }
+function isRecordColumn(row: TableRow, column: string) {
+    return (
+        ["title", "lead", "name"].includes(column) ||
+        (props.payload.id === "leads" &&
+            ["contact", "company"].includes(column) &&
+            Boolean(row.cells[column]))
+    );
+}
+function recordName(row: TableRow) {
+    return props.payload.id === "leads"
+        ? (row.cells.contact ?? row.cells.company ?? row.title ?? row.id)
+        : (row.title ?? row.name ?? row.id);
+}
 function cellStyle(column: Column<TableRow>): CSSProperties {
     return {
         width: `${column.getSize()}px`,
@@ -837,16 +850,14 @@ onBeforeUnmount(() => {
                             <input
                                 v-if="column.id === '__select'"
                                 type="checkbox"
-                                :aria-label="`Select ${row.original.title ?? row.original.name ?? row.id}`"
+                                :aria-label="`Select ${recordName(row.original)}`"
                                 :checked="row.getIsSelected()"
                                 @change="row.toggleSelected()"
                             /><template v-else
                                 ><Link
                                     v-if="
                                         link(row.original) &&
-                                        ['title', 'lead', 'name'].includes(
-                                            column.id,
-                                        )
+                                        isRecordColumn(row.original, column.id)
                                     "
                                     :href="link(row.original)"
                                     class="md-table-record"

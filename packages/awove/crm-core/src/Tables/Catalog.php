@@ -21,7 +21,7 @@ class Catalog
         if ($table === 'leads') {
             $t = 'crm_leads';
             $add('id', 'Lead ID', "$t.id", 'number');
-            $add('title', 'Lead title', "$t.title", width: 280);
+            $add('title', 'Enquiry title', "$t.title", width: 280);
             foreach (['contact' => 'crm_contacts', 'company' => 'crm_companies'] as $key => $related) {
                 foreach (['name', 'email', 'phone'] as $field) {
                     $add($field === 'name' ? $key : $key.'_'.$field, ucfirst($key).' '.ucfirst($field), "(SELECT $field FROM $related WHERE $related.id=$t.{$key}_id)", 'text', 'Customer', width: $field === 'email' ? 240 : 200);
@@ -98,7 +98,7 @@ class Catalog
     public function defaults(string $table): array
     {
         return match ($table) {
-            'leads' => ['title', 'contact', 'company', 'status', 'owner', 'priority', 'next_action_at'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
+            'leads' => ['contact', 'company', 'status', 'owner', 'contact_phone', 'contact_email', 'priority', 'next_action_at'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
         };
     }
 }

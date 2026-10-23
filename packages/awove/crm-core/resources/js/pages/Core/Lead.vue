@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage, router } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import {
     date,
     type Lead,
@@ -28,6 +28,12 @@ const props = defineProps<{
 const page = usePage();
 const zone = (page.props.brand as { timezone: string }).timezone;
 const capabilities = page.props.capabilities as string[];
+const customerName = computed(
+    () =>
+        props.lead.contact?.name ??
+        props.lead.company?.name ??
+        props.lead.title,
+);
 const form = useForm({
     title: props.lead.title,
     owner_id: props.lead.owner_id,
@@ -92,11 +98,11 @@ function changeTask(t: Task) {
 }
 </script>
 <template>
-    <Head :title="lead.title" /><Link href="/leads" class="crm-back"
+    <Head :title="customerName" /><Link href="/leads" class="crm-back"
         >← Back to leads</Link
     >
     <div class="crm-heading">
-        <h1>{{ lead.title }}</h1>
+        <h1>{{ customerName }}</h1>
         <button
             v-if="editable && capabilities.includes('records.archive')"
             class="crm-secondary"
@@ -117,11 +123,12 @@ function changeTask(t: Task) {
                 </p>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <label
-                        ><span class="crm-field-label">Title</span
+                        ><span class="crm-field-label"
+                            >Enquiry title (optional)</span
                         ><input
                             v-model="form.title"
                             :disabled="!editable"
-                            required /></label
+                            maxlength="160" /></label
                     ><label
                         ><span class="crm-field-label">Status</span
                         ><select v-model="form.status_id" :disabled="!editable">

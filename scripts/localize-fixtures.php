@@ -16,30 +16,17 @@ $app->loadEnvironmentFrom('.env.'.$installation);
 $app->make(Kernel::class)->bootstrap();
 FictionalCrmFixtures::assertLocalExample($installation);
 
-/** Keep protected original rows in memory only; no credentials or customer data output. */
-function fixtureSnapshot(array $mutableTaskIds = []): array
+/** Fingerprint every original field except explicit planned display-name corrections. */
+function fixtureSnapshot(array $plan): array
 {
-    $ignored = [
-        'users' => ['name'],
-        'crm_companies' => ['name', 'email', 'phone', 'search_key'],
-        'crm_contacts' => ['name', 'email', 'phone', 'search_key'],
-        'crm_leads' => ['contact_id'],
-        'crm_tasks' => [],
-        'crm_notes' => [],
-        'crm_activity' => [],
-        'crm_reminders' => [],
-        'service_details_leads' => [],
-    ];
     $snapshot = [];
-    foreach ($ignored as $table => $columns) {
+    foreach (['users', 'crm_companies', 'crm_contacts', 'crm_leads', 'crm_tasks', 'crm_notes', 'crm_activity', 'crm_reminders', 'service_details_leads'] as $table) {
         if (! Schema::hasTable($table)) {
             continue;
         }
+        $snapshot[$table] = [];
         foreach (DB::table($table)->orderBy('id')->get() as $row) {
-            $attributes = array_diff_key((array) $row, array_flip($columns));
-            if ($table === 'crm_tasks' && in_array($row->id, $mutableTaskIds, true)) {
-                unset($attributes['title']);
-            }
+            $attributes = array_diff_key((array) $row, $plan[$table][$row->id] ?? []);
             $snapshot[$table][$row->id] = hash('sha256', json_encode($attributes));
         }
     }
@@ -48,48 +35,78 @@ function fixtureSnapshot(array $mutableTaskIds = []): array
 }
 
 $result = DB::transaction(function () use ($installation) {
-    $demoUsers = User::whereIn('email', ['reviewer@'.$installation.'.example.test', 'table-desktop@'.$installation.'.example.test', 'table-mobile@'.$installation.'.example.test'])->pluck('id');
-    $oldTitles = array_map(fn ($entry) => 'Check in with '.$entry['old_company'], FictionalCrmFixtures::catalog());
-    $mutableTaskIds = DB::table('crm_tasks')->join('crm_leads', 'crm_leads.id', '=', 'crm_tasks.lead_id')->whereIn('crm_leads.created_by', $demoUsers)->whereColumn('crm_tasks.assignee_id', 'crm_leads.created_by')->whereIn('crm_tasks.title', $oldTitles)->pluck('crm_tasks.id')->all();
-    $before = fixtureSnapshot($mutableTaskIds);
-    $contactsBefore = DB::table('crm_leads')->whereNotNull('contact_id')->orderBy('id')->pluck('contact_id', 'id')->all();
-    $result = ['installation' => $installation, 'accounts' => 0, 'task_titles' => 0, 'catalog_records' => [], 'browser_records' => ['companies' => 0, 'contacts' => 0]];
     $names = [
         'reviewer@'.$installation.'.example.test' => FictionalCrmFixtures::reviewerName($installation),
         'table-desktop@'.$installation.'.example.test' => FictionalCrmFixtures::tableReviewerName('desktop'),
         'table-mobile@'.$installation.'.example.test' => FictionalCrmFixtures::tableReviewerName('mobile'),
-        'owner@'.$installation.'.example.test' => $installation === 'alpha' ? 'אברהם לוי' : 'שרה כהן',
+        'owner@'.$installation.'.example.test' => $installation === 'alpha' ? 'Avraham Levi' : 'Sarah Cohen',
     ];
-    foreach ($names as $email => $name) {
-        $user = User::where('email', $email)->first();
-        if (! $user) {
-            continue;
-        }
-        FictionalCrmFixtures::enrich($user, ['name' => $name]);
-        $result['accounts']++;
-        if (str_starts_with($email, 'owner@')) {
-            continue;
-        }
-        $result['task_titles'] += FictionalCrmFixtures::localizeTaskTitles($user);
-        $result['catalog_records'][] = FictionalCrmFixtures::sync($user, $installation, str_starts_with($email, 'table-'), false);
-        if (str_starts_with($email, 'reviewer@')) {
-            $result['browser_records'] = FictionalCrmFixtures::localizeBrowserRows($user);
+    $users = User::whereIn('email', array_keys($names))->get();
+    $ids = $users->pluck('id');
+    $plan = [];
+    foreach ($users as $user) {
+        if ($user->name !== $names[$user->email]) {
+            $plan['users'][$user->id] = ['name' => $names[$user->email]];
         }
     }
-    $after = fixtureSnapshot($mutableTaskIds);
-    foreach ($before as $table => $rows) {
-        foreach ($rows as $id => $fingerprint) {
-            if (($after[$table][$id] ?? null) !== $fingerprint) {
-                throw new RuntimeException('Protected original record changed: '.$table.' #'.$id);
+    foreach (['crm_companies' => 'companies', 'crm_contacts' => 'contacts'] as $table => $kind) {
+        foreach (DB::table($table)->whereIn('created_by', $ids)->get(['id', 'name']) as $row) {
+            $name = FictionalCrmFixtures::englishName($row->name, $kind);
+            if ($name !== null && $name !== $row->name) {
+                $plan[$table][$row->id] = ['name' => $name, 'search_key' => FictionalCrmFixtures::searchKey($name)];
+            } elseif (preg_match('/\p{Hebrew}/u', $row->name)) {
+                throw new RuntimeException('Unrecognized Hebrew demo name: '.$table.' #'.$row->id);
             }
         }
     }
-    $contactsAfter = DB::table('crm_leads')->whereIn('id', array_keys($contactsBefore))->orderBy('id')->pluck('contact_id', 'id')->all();
-    if ($contactsBefore !== $contactsAfter) {
-        throw new RuntimeException('An existing lead/contact relationship changed.');
+    foreach (DB::table('crm_leads')->whereIn('created_by', $ids)->get(['id', 'title']) as $lead) {
+        if (preg_match('/^פניית בדיקת עריכה ((?:desktop|mobile)-\d{13})$/u', $lead->title, $match)) {
+            $plan['crm_leads'][$lead->id] = ['title' => 'Contact edit enquiry '.$match[1]];
+        }
     }
-    $result['original_ids_relationships_authentication_notes_tasks_history_preserved'] = true;
+    $taskTitles = [];
+    foreach (FictionalCrmFixtures::catalog() as $entry) {
+        foreach (FictionalCrmFixtures::companyAliases($entry) as $alias) {
+            $taskTitles['Check in with '.$alias] = 'Check in with '.$entry['company'];
+        }
+    }
+    foreach (DB::table('crm_tasks')->join('crm_leads', 'crm_leads.id', '=', 'crm_tasks.lead_id')->whereIn('crm_leads.created_by', $ids)->whereColumn('crm_tasks.assignee_id', 'crm_leads.created_by')->get(['crm_tasks.id', 'crm_tasks.title']) as $task) {
+        if (isset($taskTitles[$task->title]) && $taskTitles[$task->title] !== $task->title) {
+            $plan['crm_tasks'][$task->id] = ['title' => $taskTitles[$task->title]];
+        }
+    }
 
-    return $result;
+    $before = fixtureSnapshot($plan);
+    foreach ($plan as $table => $rows) {
+        foreach ($rows as $id => $attributes) {
+            // Query-builder update changes only these columns, including no timestamp writes.
+            DB::table($table)->where('id', $id)->update($attributes);
+        }
+    }
+    if ($before !== fixtureSnapshot($plan)) {
+        throw new RuntimeException('A protected field, original record or relationship changed.');
+    }
+
+    $remaining = 0;
+    foreach (['users' => 'name', 'crm_companies' => 'name', 'crm_contacts' => 'name', 'crm_leads' => 'title'] as $table => $column) {
+        $query = DB::table($table);
+        $table === 'users' ? $query->whereIn('id', $ids) : $query->whereIn('created_by', $ids);
+        foreach ($query->pluck($column) as $value) {
+            $remaining += preg_match('/\p{Hebrew}/u', $value);
+        }
+    }
+    foreach (DB::table('crm_tasks')->join('crm_leads', 'crm_leads.id', '=', 'crm_tasks.lead_id')->whereIn('crm_leads.created_by', $ids)->pluck('crm_tasks.title') as $title) {
+        $remaining += preg_match('/\p{Hebrew}/u', $title);
+    }
+    if ($remaining !== 0) {
+        throw new RuntimeException('An unrecognized current demo display name/title still contains Hebrew script.');
+    }
+
+    return [
+        'installation' => $installation,
+        'renamed_rows' => array_map('count', $plan),
+        'remaining_hebrew_display_names_and_titles' => $remaining,
+        'original_ids_relationships_emails_phones_authentication_timestamps_notes_tasks_history_preserved' => true,
+    ];
 });
-echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)."\n";
+echo json_encode($result, JSON_PRETTY_PRINT)."\n";

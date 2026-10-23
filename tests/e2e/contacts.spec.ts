@@ -9,9 +9,8 @@ test("edits contact details from the customer table and lead customer card", asy
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     const suffix = `${info.project.name}-${Date.now()}`;
-    const companyName = `לוי פתרונות — ${suffix}`;
-    const contactName = `שירה לוי — ${suffix}`;
-    const leadTitle = `פניית בדיקת עריכה ${suffix}`;
+    const companyName = `Levi Solutions — ${suffix}`;
+    const contactName = `Shira Levi — ${suffix}`;
     const email = `contact-${suffix}@example.test`;
     const phone =
         info.project.name === "desktop" ? "+1 202-555-0170" : "+1 202-555-0180";
@@ -106,7 +105,6 @@ test("edits contact details from the customer table and lead customer card", asy
     await page
         .getByRole("button", { name: "+ Create lead", exact: true })
         .click();
-    await page.getByLabel("Title", { exact: true }).fill(leadTitle);
     await page
         .getByRole("combobox", { name: "Contact", exact: true })
         .selectOption({ label: contactName });
@@ -114,6 +112,9 @@ test("edits contact details from the customer table and lead customer card", asy
         .getByRole("button", { name: "Create lead", exact: true })
         .click();
     await expect(page).toHaveURL(/leads\/\d+$/);
+    await expect(
+        page.getByRole("heading", { name: contactName, exact: true }),
+    ).toBeVisible();
     const leadUrl = page.url();
     await page.getByRole("link", { name: "Edit contact", exact: true }).click();
     await expect(page.getByLabel("Phone", { exact: true })).toHaveValue(

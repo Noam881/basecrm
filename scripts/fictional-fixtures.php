@@ -28,20 +28,56 @@ final class FictionalCrmFixtures
     public static function catalog(): array
     {
         return [
-            ['key' => 'rimon', 'old_company' => 'Harbor Studio', 'company' => 'סטודיו רימון', 'contact' => 'נועה לוי', 'contact_slug' => 'noa.levi', 'title' => 'Website refresh', 'status' => 'qualified', 'priority' => 'high'],
-            ['key' => 'carmel', 'old_company' => 'Northline Supply', 'company' => 'אספקת כרמל', 'contact' => 'דניאל כהן', 'contact_slug' => 'daniel.cohen', 'title' => 'Service consultation', 'status' => 'contacted', 'priority' => 'normal'],
-            ['key' => 'shaked', 'old_company' => 'Juniper & Co', 'company' => 'שקד ושות׳', 'contact' => 'יעל מזרחי', 'contact_slug' => 'yael.mizrahi', 'title' => 'Annual maintenance', 'status' => 'new', 'priority' => 'low'],
+            ['key' => 'rimon', 'old_company' => 'Harbor Studio', 'company' => 'Rimon Studio', 'hebrew_company' => 'סטודיו רימון', 'contact' => 'Noa Levi', 'hebrew_contact' => 'נועה לוי', 'contact_slug' => 'noa.levi', 'title' => 'Website refresh', 'status' => 'qualified', 'priority' => 'high'],
+            ['key' => 'carmel', 'old_company' => 'Northline Supply', 'company' => 'Carmel Supply', 'hebrew_company' => 'אספקת כרמל', 'contact' => 'Daniel Cohen', 'hebrew_contact' => 'דניאל כהן', 'contact_slug' => 'daniel.cohen', 'title' => 'Service consultation', 'status' => 'contacted', 'priority' => 'normal'],
+            ['key' => 'shaked', 'old_company' => 'Juniper & Co', 'company' => 'Shaked & Co', 'hebrew_company' => 'שקד ושות׳', 'contact' => 'Yael Mizrahi', 'hebrew_contact' => 'יעל מזרחי', 'contact_slug' => 'yael.mizrahi', 'title' => 'Annual maintenance', 'status' => 'new', 'priority' => 'low'],
         ];
     }
 
     public static function reviewerName(string $installation): string
     {
-        return $installation === 'alpha' ? 'איתי לוי' : 'מיכל כהן';
+        return $installation === 'alpha' ? 'Itai Levi' : 'Michal Cohen';
     }
 
     public static function tableReviewerName(string $size): string
     {
-        return $size === 'desktop' ? 'איתן לוי — בדיקת טבלאות' : 'תמר כהן — בדיקת טבלאות';
+        return $size === 'desktop' ? 'Eitan Levi — table review' : 'Tamar Cohen — table review';
+    }
+
+    /** @return list<string> */
+    public static function companyAliases(array $entry): array
+    {
+        return [$entry['old_company'], $entry['hebrew_company'], $entry['company']];
+    }
+
+    /** @return list<string> */
+    public static function contactAliases(array $entry): array
+    {
+        return [$entry['old_company'].' contact', $entry['hebrew_contact'], $entry['contact']];
+    }
+
+    /** Recognize only the explicit catalog or timestamped browser demo identities. */
+    public static function englishName(string $name, string $kind): ?string
+    {
+        foreach (self::catalog() as $entry) {
+            if (in_array($name, $kind === 'companies' ? self::companyAliases($entry) : self::contactAliases($entry), true)) {
+                return $kind === 'companies' ? $entry['company'] : $entry['contact'];
+            }
+        }
+        $patterns = $kind === 'companies' ? [
+            '/^(?:Company |אורן פתרונות — |Oren Solutions — )((?:desktop|mobile)-\d{13})$/u' => 'Oren Solutions — ',
+            '/^(?:לוי פתרונות — |Levi Solutions — )((?:desktop|mobile)-\d{13})$/u' => 'Levi Solutions — ',
+        ] : [
+            '/^(?:Person |אורי בן דוד — |Uri Ben David — )((?:desktop|mobile)-\d{13})$/u' => 'Uri Ben David — ',
+            '/^(?:שירה לוי — |Shira Levi — )((?:desktop|mobile)-\d{13})$/u' => 'Shira Levi — ',
+        ];
+        foreach ($patterns as $pattern => $prefix) {
+            if (preg_match($pattern, $name, $match)) {
+                return $prefix.$match[1];
+            }
+        }
+
+        return null;
     }
 
     /** North American 555-0100–0199 is reserved for fictional use. */
@@ -84,17 +120,17 @@ final class FictionalCrmFixtures
         return DB::transaction(function () use ($user, $installation, $table, $createLeads) {
             $counts = ['companies' => 0, 'contacts' => 0, 'leads_created' => 0, 'contacts_linked' => 0];
             foreach (self::catalog() as $index => $entry) {
-                $company = Company::where('created_by', $user->id)->whereIn('name', [$entry['old_company'], $entry['company']])->orderBy('id')->first();
+                $company = Company::where('created_by', $user->id)->whereIn('name', self::companyAliases($entry))->orderBy('id')->first();
                 if (! $company && ! $createLeads) {
                     continue;
                 }
                 $company ??= new Company(['created_by' => $user->id]);
-                self::enrich($company, ['name' => $entry['company'], 'email' => 'hello@'.$entry['key'].'.'.$installation.'.example.test', 'phone' => self::phone(10 + $index), 'search_key' => self::searchKey($entry['company'])]);
+                self::enrich($company, ['name' => $entry['company'], 'email' => $company->email ?? 'hello@'.$entry['key'].'.'.$installation.'.example.test', 'phone' => $company->phone ?? self::phone(10 + $index), 'search_key' => self::searchKey($entry['company'])]);
                 $counts['companies']++;
 
-                $contact = Contact::where('created_by', $user->id)->where('company_id', $company->id)->whereIn('name', [$entry['old_company'].' contact', $entry['contact']])->orderBy('id')->first();
+                $contact = Contact::where('created_by', $user->id)->where('company_id', $company->id)->whereIn('name', self::contactAliases($entry))->orderBy('id')->first();
                 $contact ??= new Contact(['created_by' => $user->id, 'company_id' => $company->id]);
-                self::enrich($contact, ['name' => $entry['contact'], 'email' => $entry['contact_slug'].'@'.$installation.'.example.test', 'phone' => self::phone(20 + $index), 'search_key' => self::searchKey($entry['contact'])]);
+                self::enrich($contact, ['name' => $entry['contact'], 'email' => $contact->email ?? $entry['contact_slug'].'@'.$installation.'.example.test', 'phone' => $contact->phone ?? self::phone(20 + $index), 'search_key' => self::searchKey($entry['contact'])]);
                 $counts['contacts']++;
 
                 $lead = Lead::where('created_by', $user->id)->where('company_id', $company->id)->where('title', $entry['title'])->orderBy('id')->first();
@@ -129,7 +165,7 @@ final class FictionalCrmFixtures
         }
         $count = 0;
         foreach (self::catalog() as $entry) {
-            $tasks = Task::where('assignee_id', $user->id)->whereHas('lead', fn ($query) => $query->where('created_by', $user->id))->where('title', 'Check in with '.$entry['old_company'])->get();
+            $tasks = Task::where('assignee_id', $user->id)->whereHas('lead', fn ($query) => $query->where('created_by', $user->id))->whereIn('title', array_map(fn ($name) => 'Check in with '.$name, array_diff(self::companyAliases($entry), [$entry['company']])))->get();
             foreach ($tasks as $task) {
                 self::enrich($task, ['title' => 'Check in with '.$entry['company']]);
                 $count++;
@@ -139,30 +175,23 @@ final class FictionalCrmFixtures
         return $count;
     }
 
-    /** Update only browser fixtures identifiable by both reserved owner and exact name. */
+    /** Rename recognized demo entities without replacing edited contact details. */
     public static function localizeBrowserRows(User $user): array
     {
         $installation = config('core.installation');
         self::assertLocalExample($installation);
-        if ($user->email !== 'reviewer@'.$installation.'.example.test') {
-            throw new RuntimeException('Only the reserved fictional browser-review account is permitted.');
+        if (! in_array($user->email, ['reviewer@'.$installation.'.example.test', 'table-desktop@'.$installation.'.example.test', 'table-mobile@'.$installation.'.example.test'], true)) {
+            throw new RuntimeException('Only reserved fictional review accounts are permitted.');
         }
         $counts = ['companies' => 0, 'contacts' => 0];
-        foreach (Company::where('created_by', $user->id)->get() as $company) {
-            if (! preg_match('/^(?:Company |אורן פתרונות — )((?:desktop|mobile)-\d{13})$/u', $company->name, $match)) {
-                continue;
+        foreach (['companies' => Company::class, 'contacts' => Contact::class] as $kind => $model) {
+            foreach ($model::where('created_by', $user->id)->get() as $record) {
+                $name = self::englishName($record->name, $kind);
+                if ($name !== null && $name !== $record->name) {
+                    self::enrich($record, ['name' => $name, 'search_key' => self::searchKey($name)]);
+                    $counts[$kind]++;
+                }
             }
-            $name = 'אורן פתרונות — '.$match[1];
-            self::enrich($company, ['name' => $name, 'email' => 'office.'.$match[1].'@demo.example.test', 'phone' => self::phone(30 + $company->id), 'search_key' => self::searchKey($name)]);
-            $counts['companies']++;
-        }
-        foreach (Contact::where('created_by', $user->id)->get() as $contact) {
-            if (! preg_match('/^(?:Person |אורי בן דוד — )((?:desktop|mobile)-\d{13})$/u', $contact->name, $match)) {
-                continue;
-            }
-            $name = 'אורי בן דוד — '.$match[1];
-            self::enrich($contact, ['name' => $name, 'email' => 'uri.'.$match[1].'@demo.example.test', 'phone' => self::phone(60 + $contact->id), 'search_key' => self::searchKey($name)]);
-            $counts['contacts']++;
         }
 
         return $counts;

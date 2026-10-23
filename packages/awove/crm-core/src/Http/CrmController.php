@@ -66,7 +66,7 @@ class CrmController
 
     private function leadData(Request $r, bool $update = false): array
     {
-        $data = $r->validate(['title' => ($update ? 'sometimes' : 'required').'|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited']);
+        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited']);
         foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $key => $model) {
             if (! empty($data[$key])) {
                 abort_unless(Access::identities($r->user(), $model)->whereKey($data[$key])->exists(), 403);
