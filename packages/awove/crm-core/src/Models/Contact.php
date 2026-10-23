@@ -13,7 +13,13 @@ class Contact extends Model
 
     protected function casts(): array
     {
-        return [];
+        return ['preferred_contact_times' => 'array', 'preferred_contact_days' => 'array'];
+    }
+
+    /** @return HasMany<ContactNote, $this> */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(ContactNote::class, 'contact_id');
     }
 
     /** @return HasMany<Lead, $this> */

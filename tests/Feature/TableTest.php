@@ -157,3 +157,23 @@ it('starts leads with customer identities while keeping an optional enquiry titl
         ->and($columns)->not->toContain('title')
         ->and(array_column($response->inertiaProps('table.columns'), 'id'))->toContain('title');
 });
+
+it('exposes contact availability and secondary details as scoped searchable and filterable columns', function () {
+    $user = tableEmployee('Noa Cohen');
+    $contact = Contact::create(['name' => 'Shira Levi', 'created_by' => $user->id, 'search_key' => 'shiralevi', 'secondary_phone' => '+1 202-555-0171', 'secondary_phone_label' => 'office', 'preferred_contact_method' => 'whatsapp', 'preferred_contact_times' => ['mornings', 'evenings'], 'preferred_contact_days' => ['monday', 'saturday', 'sunday'], 'address' => '12 Olive Street', 'city' => 'Tel Aviv', 'country' => 'Israel', 'source' => 'referral']);
+    $contact->notes()->create(['body' => 'Call after the office opens.', 'author_id' => $user->id]);
+    $foreign = tableEmployee('Uri Ben David');
+    Contact::create(['name' => 'Private contact', 'created_by' => $foreign->id, 'search_key' => 'privatecontact', 'city' => 'Tel Aviv']);
+    $response = $this->actingAs($user)->get('/people?'.http_build_query(['table' => 'contacts', 'q' => 'Tel Aviv']))->assertOk();
+    expect($response->inertiaProps('table.page.total'))->toBe(1);
+    $cells = $response->inertiaProps('table.page.data.0.cells');
+    expect($cells)->toMatchArray(['secondary_phone' => '+1 202-555-0171', 'preferred_contact_times' => 'Mornings, Evenings', 'preferred_contact_days' => 'Monday, Saturday, Sunday', 'city' => 'Tel Aviv', 'country' => 'Israel', 'notes_count' => 1]);
+    expect(array_column($response->inertiaProps('table.columns'), 'id'))->toContain('secondary_phone', 'secondary_phone_label', 'preferred_contact_method', 'preferred_contact_times', 'preferred_contact_days', 'address', 'city', 'country', 'source', 'notes_count');
+    $response = $this->get('/people?'.http_build_query(['table' => 'contacts', 'filters' => [['id' => 'preferred_contact_method', 'op' => 'eq', 'value' => 'whatsapp'], ['id' => 'preferred_contact_days', 'op' => 'contains', 'value' => 'Monday']]]))->assertOk();
+    expect($response->inertiaProps('table.page.total'))->toBe(1);
+    $lead = app(Leads::class)->create($user, ['contact_id' => $contact->id, 'owner_id' => $user->id, 'status_id' => 'new']);
+    $response = $this->get(tableUrl(['filters' => [['id' => 'contact_secondary_phone', 'op' => 'ends', 'value' => '0171']]]))->assertOk();
+    expect($response->inertiaProps('table.page.data.0.id'))->toBe($lead->id)
+        ->and($response->inertiaProps('table.page.data.0.cells.contact_preferred_contact_times'))->toBe('Mornings, Evenings')
+        ->and($response->inertiaProps('table.page.data.0.cells.contact_notes_count'))->toBe(1);
+});

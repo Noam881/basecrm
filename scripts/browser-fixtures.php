@@ -91,6 +91,13 @@ final class BrowserFixtures
         $plan['crm_activity'] = DB::table('crm_activity')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();
         $plan['crm_tasks'] = $taskIds;
         $plan['crm_leads'] = $leadIds;
+        if (Schema::hasTable('crm_contact_notes')) {
+            $notes = DB::table('crm_contact_notes')->whereIn('contact_id', $identityIds['contacts']);
+            if ((clone $notes)->whereNotIn('author_id', $userIds)->exists()) {
+                throw new RuntimeException('A protected contact note references a browser fixture. No cleanup is permitted.');
+            }
+            $plan['crm_contact_notes'] = $notes->orderBy('id')->pluck('id')->all();
+        }
         $plan['crm_contacts'] = $identityIds['contacts'];
         $plan['crm_companies'] = $identityIds['companies'];
 

@@ -282,7 +282,12 @@ function changeTask(t: Task) {
                     :key="item.type"
                     class="crm-note"
                 >
-                    <strong>{{ item.person?.name }}</strong>
+                    <strong
+                        ><Link
+                            :href="`/people/${item.type}/${item.person?.id}`"
+                            >{{ item.person?.name }}</Link
+                        ></strong
+                    >
                     <p>{{ item.person?.email ?? "No email" }}</p>
                     <p>{{ item.person?.phone ?? "No phone" }}</p>
                     <div v-if="item.editable" class="crm-form-action">

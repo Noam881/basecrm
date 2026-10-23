@@ -280,6 +280,7 @@
 }
 .crm-section-title {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
     gap: 16px;
@@ -909,5 +910,44 @@
         scroll-behavior: auto !important;
         transition-duration: 0ms !important;
         animation-duration: 0ms !important;
+    }
+}
+
+.crm-contact-sections {
+    align-items: start;
+}
+
+.crm-contact-sections,
+.crm-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--crm-space-6);
+    min-width: 0;
+}
+.crm-form-span {
+    grid-column: 1 / -1;
+}
+.crm-choice-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--crm-space-2) var(--crm-space-4);
+}
+.crm-detail-item {
+    min-width: 0;
+}
+@media (max-width: 700px) {
+    .crm-contact-sections,
+    .crm-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.crm-contact-sections > .crm-card {
+    container-type: inline-size;
+}
+@container (max-width: 420px) {
+    .crm-form-grid,
+    .crm-detail-grid {
+        grid-template-columns: 1fr;
     }
 }

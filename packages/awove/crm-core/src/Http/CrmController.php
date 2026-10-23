@@ -3,6 +3,7 @@
 namespace Awove\Core\Http;
 
 use Awove\Core\Access;
+use Awove\Core\ContactDetails;
 use Awove\Core\Installation;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
@@ -182,7 +183,7 @@ class CrmController
         $contacts = $selected === 'contacts' ? $table['page'] : Access::identities($r->user(), Contact::class)->paginate(20);
         $companies = $selected === 'companies' ? $table['page'] : Access::identities($r->user(), Company::class)->paginate(20);
 
-        return Inertia::render('Core/People', ['table' => $table, 'contacts' => $contacts, 'companies' => $companies, 'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name'])]);
+        return Inertia::render('Core/People', ['table' => $table, 'contacts' => $contacts, 'companies' => $companies, 'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']), 'contactOptions' => ContactDetails::options()]);
     }
 
     public function identity(Request $r, string $type, Identities $service)
@@ -214,7 +215,29 @@ class CrmController
             $companies->push($current ?? new Company(['id' => $identity->getAttribute('company_id'), 'name' => 'Current company (restricted)']));
         }
 
-        return Inertia::render('Core/Person', ['identity' => $identity->only(['id', 'name', 'email', 'phone', 'company_id']), 'type' => $type, 'editable' => Gate::allows('update', $identity), 'companyOptions' => $companies, 'returnTo' => $this->identityReturnTo($r, $type), 'saveUrl' => '/people/'.$type.'/'.$id.($r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '')]);
+        $returnTo = $this->identityReturnTo($r, $type);
+        $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
+        $details = $identity->only(['id', ...($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone'])]);
+        if ($identity instanceof Contact) {
+            $details['company'] = $companies->firstWhere('id', $identity->getAttribute('company_id'))?->only(['id', 'name']);
+            $details['notes'] = $identity->notes()->with('author:id,name')->latest('created_at')->orderByDesc('id')->get()->map(fn ($note) => [
+                'id' => $note->id,
+                'body' => $note->body,
+                'created_at' => $note->created_at,
+                'author' => $note->author?->only(['id', 'name']),
+            ]);
+        }
+
+        return Inertia::render('Core/Person', [
+            'identity' => $details,
+            'type' => $type,
+            'editable' => Gate::allows('update', $identity),
+            'companyOptions' => $companies,
+            'contactOptions' => ContactDetails::options(),
+            'returnTo' => $returnTo,
+            'saveUrl' => '/people/'.$type.'/'.$id.$context,
+            'noteUrl' => $type === 'contacts' ? '/people/contacts/'.$id.'/notes'.$context : null,
+        ]);
     }
 
     public function updateIdentity(Request $r, string $type, int $id, Identities $service)
@@ -223,6 +246,15 @@ class CrmController
         $service->update($r->user(), $type, $id, $r->all());
 
         return redirect($returnTo);
+    }
+
+    public function contactNote(Request $r, int $id, Identities $service)
+    {
+        $this->identityReturnTo($r, 'contacts');
+        $service->note($r->user(), $id, $r->all());
+        $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
+
+        return redirect('/people/contacts/'.$id.$context);
     }
 
     private function reminderQuery($u)

@@ -4,7 +4,66 @@ export interface Person {
     email?: string | null;
     phone?: string | null;
     company_id?: number | null;
+    company?: Person | null;
+    secondary_phone?: string | null;
+    secondary_phone_label?: string | null;
+    preferred_contact_method?: string | null;
+    preferred_contact_times?: string[];
+    preferred_contact_days?: string[];
+    address?: string | null;
+    city?: string | null;
+    country?: string | null;
+    source?: string | null;
+    notes?: ContactNote[];
 }
+export interface ContactNote {
+    id: number;
+    body: string;
+    author: { id: number; name: string } | null;
+    created_at: string;
+}
+export interface ContactOption {
+    value: string;
+    label: string;
+}
+export interface ContactOptions {
+    methods: ContactOption[];
+    phone_labels: ContactOption[];
+    times: ContactOption[];
+    days: ContactOption[];
+    sources: ContactOption[];
+}
+export interface ContactFormData {
+    name: string;
+    email: string;
+    phone: string;
+    company_id: number | null;
+    secondary_phone: string;
+    secondary_phone_label: string;
+    preferred_contact_method: string;
+    preferred_contact_times: string[];
+    preferred_contact_days: string[];
+    address: string;
+    city: string;
+    country: string;
+    source: string;
+    notes?: string;
+}
+export const contactFormData = (person?: Person): ContactFormData => ({
+    name: person?.name ?? "",
+    email: person?.email ?? "",
+    phone: person?.phone ?? "",
+    company_id: person?.company_id ?? null,
+    secondary_phone: person?.secondary_phone ?? "",
+    secondary_phone_label: person?.secondary_phone_label ?? "",
+    preferred_contact_method: person?.preferred_contact_method ?? "",
+    preferred_contact_times: [...(person?.preferred_contact_times ?? [])],
+    preferred_contact_days: [...(person?.preferred_contact_days ?? [])],
+    address: person?.address ?? "",
+    city: person?.city ?? "",
+    country: person?.country ?? "",
+    source: person?.source ?? "",
+});
 export interface Stage {
     id: string;
     name: string;

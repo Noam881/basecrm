@@ -3,11 +3,14 @@
 namespace Awove\Core\Services;
 
 use Awove\Core\Access;
+use Awove\Core\ContactDetails;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
+use Awove\Core\Models\ContactNote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class Identities
@@ -29,8 +32,14 @@ class Identities
         return DB::transaction(function () use ($user, $type, $input) {
             $model = $this->model($type);
             $data = $this->data($user, $type, $input);
+            $notes = $data['notes'] ?? null;
+            unset($data['notes']);
+            $identity = $model::create([...$data, 'created_by' => $user->id]);
+            if ($identity instanceof Contact && filled($notes)) {
+                $identity->notes()->create(['body' => trim($notes), 'author_id' => $user->id]);
+            }
 
-            return $model::create([...$data, 'created_by' => $user->id]);
+            return $identity;
         });
     }
 
@@ -46,39 +55,108 @@ class Identities
         });
     }
 
+    public function note($user, int $id, array $input): ContactNote
+    {
+        return DB::transaction(function () use ($user, $id, $input) {
+            $contact = Contact::lockForUpdate()->findOrFail($id);
+            Gate::forUser($user)->authorize('update', $contact);
+            $data = validator($input, ['body' => 'required|string|max:10000'])->validate();
+            $body = trim($data['body']);
+            if ($body === '') {
+                throw ValidationException::withMessages(['body' => 'Enter a note.']);
+            }
+
+            return $contact->notes()->create(['body' => $body, 'author_id' => $user->id]);
+        });
+    }
+
     private function data($user, string $type, array $input, Contact|Company|null $identity = null): array
     {
-        $data = validator($input, ['name' => ($identity ? 'sometimes|required' : 'required').'|string|max:120', 'email' => 'nullable|email|max:160', 'phone' => 'nullable|string|max:40', 'company_id' => $type === 'contacts' ? 'nullable|integer|min:1' : 'prohibited', 'accept_duplicate' => 'sometimes|boolean'])->validate();
+        $rules = [
+            'name' => ($identity ? 'sometimes|required' : 'required').'|string|max:120',
+            'email' => 'nullable|email|max:160',
+            'phone' => 'nullable|string|max:40',
+            'company_id' => $type === 'contacts' ? 'nullable|integer|min:1' : 'prohibited',
+            'accept_duplicate' => 'sometimes|boolean',
+        ];
+        if ($type === 'contacts') {
+            $rules = [...$rules,
+                'secondary_phone' => 'nullable|string|max:40',
+                'secondary_phone_label' => ['nullable', Rule::in(array_keys(ContactDetails::PHONE_LABELS))],
+                'preferred_contact_method' => ['nullable', Rule::in(array_keys(ContactDetails::METHODS))],
+                'preferred_contact_times' => 'sometimes|array|max:4',
+                'preferred_contact_times.*' => ['required', 'distinct', Rule::in(array_keys(ContactDetails::TIMES))],
+                'preferred_contact_days' => 'sometimes|array|max:7',
+                'preferred_contact_days.*' => ['required', 'distinct', Rule::in(array_keys(ContactDetails::DAYS))],
+                'address' => 'nullable|string|max:500',
+                'city' => 'nullable|string|max:120',
+                'country' => 'nullable|string|max:120',
+                'source' => ['nullable', Rule::in(array_keys(ContactDetails::SOURCES))],
+                'notes' => $identity ? 'prohibited' : 'nullable|string|max:10000',
+            ];
+        }
+        if ($type === 'companies') {
+            foreach (array_diff(ContactDetails::ATTRIBUTES, ['name', 'email', 'phone', 'company_id']) as $field) {
+                $rules[$field] = 'prohibited';
+            }
+            $rules['notes'] = 'prohibited';
+        }
+        $data = validator($input, $rules)->validate();
+        if (in_array('anytime', $data['preferred_contact_times'] ?? [], true) && count($data['preferred_contact_times']) > 1) {
+            throw ValidationException::withMessages(['preferred_contact_times' => 'Choose Anytime or specific times of day.']);
+        }
         $acceptDuplicate = $data['accept_duplicate'] ?? false;
         unset($data['accept_duplicate']);
         if ($type === 'companies') {
-            unset($data['company_id']);
+            $data = array_intersect_key($data, array_flip(['name', 'email', 'phone']));
+        } elseif ($identity) {
+            unset($data['notes']);
         }
-        $data = [...($identity?->only($type === 'contacts' ? ['name', 'email', 'phone', 'company_id'] : ['name', 'email', 'phone']) ?? []), ...$data];
+        $data = [...($identity?->only($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone']) ?? []), ...$data];
         $data['name'] = trim($data['name']);
         if ($data['name'] === '') {
             throw ValidationException::withMessages(['name' => 'Enter a name.']);
         }
         $data['email'] = ! empty($data['email']) ? mb_strtolower(trim($data['email'])) : null;
-        $data['phone'] = ! empty($data['phone']) ? trim($data['phone']) : null;
+        foreach ($type === 'contacts' ? ['phone', 'secondary_phone', 'address', 'city', 'country', 'notes'] : ['phone'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $data[$field] = filled($data[$field]) ? trim($data[$field]) : null;
+            }
+        }
+        if ($type === 'contacts') {
+            if (empty($data['secondary_phone'])) {
+                $data['secondary_phone_label'] = null;
+            }
+            foreach (['preferred_contact_times', 'preferred_contact_days'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $data[$field] = array_values($data[$field] ?? []);
+                }
+            }
+        }
         if (! empty($data['company_id']) && (! $identity || $identity->getAttribute('company_id') != $data['company_id'])) {
             abort_unless(Access::identities($user, Company::class)->whereKey($data['company_id'])->exists(), 403);
         }
         $model = $this->model($type);
-        $duplicate = Access::identities($user, $model)->when($identity, fn ($q) => $q->whereKeyNot($identity->id))->where(function ($q) use ($data) {
+        $duplicate = Access::identities($user, $model)->when($identity, fn ($q) => $q->whereKeyNot($identity->id))->where(function ($q) use ($data, $type) {
             $q->whereRaw('lower(name)=?', [mb_strtolower($data['name'])]);
             if ($data['email']) {
                 $q->orWhereRaw('lower(email)=?', [$data['email']]);
             }
-            $phone = preg_replace('/[^0-9]/', '', $data['phone'] ?? '');
-            if ($phone !== '') {
-                $q->orWhereRaw("regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g') = ?", [$phone]);
+            foreach (array_filter([$data['phone'] ?? null, $type === 'contacts' ? ($data['secondary_phone'] ?? null) : null]) as $number) {
+                $phone = preg_replace('/[^0-9]/', '', $number);
+                if ($phone !== '') {
+                    $q->orWhereRaw("regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g') = ?", [$phone]);
+                    if ($type === 'contacts') {
+                        $q->orWhereRaw("regexp_replace(coalesce(secondary_phone,''), '[^0-9]', '', 'g') = ?", [$phone]);
+                    }
+                }
             }
         })->exists();
         if ($duplicate && ! $acceptDuplicate) {
             throw ValidationException::withMessages(['name' => 'Possible duplicate. Review existing records or confirm keeping a separate record.']);
         }
-        $data['search_key'] = Str::substr(mb_strtolower(preg_replace('/[^\p{L}\p{N}@.]+/u', '', implode(' ', array_filter($data)))), 0, 255);
+        $searchValues = array_filter($data, fn ($value, $key) => $key !== 'notes' && is_scalar($value), ARRAY_FILTER_USE_BOTH);
+        $data['search_key'] = Str::substr(mb_strtolower(preg_replace('/[^\p{L}\p{N}@.]+/u', '', implode(' ', $searchValues))), 0, 255);
 
         return $data;
     }

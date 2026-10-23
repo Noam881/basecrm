@@ -924,3 +924,31 @@
     outline: 3px solid var(--md-sys-color-secondary);
     outline-offset: 3px;
 }
+
+/* Reusable grouped choices and record summaries, shared by customer forms. */
+.crm-choice-group {
+    display: grid;
+    gap: var(--crm-space-3);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.crm-choice-group legend {
+    margin-block-end: var(--crm-space-3);
+    padding: 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface);
+}
+.crm-detail-item dt {
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--md-sys-color-on-surface-variant);
+}
+.crm-detail-item dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}

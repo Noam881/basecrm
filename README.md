@@ -94,7 +94,7 @@ Leads, contacts, companies and follow-ups share an advanced Material 3 table wit
 
 ## Customer details and shared controls
 
-Open a name in Contacts & companies, or use Edit contact / Edit company in a lead's Customer card, to update name, email, phone and the contact's company. Missing details can be added and existing details cleared. Saving from a lead returns to that lead. Editing follows the existing creator and identity-management permissions.
+Open a name in Contacts & companies, or use Edit contact / Edit company in a lead's Customer card, to update name, email, phone and the contact's company. Contacts include primary and labelled secondary phones, preferred contact method, multiple time windows and specific days, address/city/country, company and a prefilled source list. Initial notes are saved during creation; the contact profile shows the full summary and an immediate authored-notes composer and history. Missing details can be added and existing details cleared. Saving from a lead returns to that lead. Editing follows the existing creator and identity-management permissions.
 
 Buttons, fields, cards and form spacing share `packages/awove/crm-core/resources/css/components.css`, including host account screens and extensions. Stacked forms use a 24px field-to-action gap. Follow the shared UI conventions in `AGENTS.md` for future changes.
 
