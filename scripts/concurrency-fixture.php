@@ -16,7 +16,7 @@ if (! app()->isLocal() || config('database.connections.pgsql.database') !== 'bas
     throw new RuntimeException('Synthetic local Alpha only.');
 }
 if (($argv[1] ?? '') === 'setup') {
-    $u = User::where('email', 'reviewer@alpha.example.test')->firstOrFail();
+    $u = User::where('email', 'table-desktop@alpha.example.test')->firstOrFail();
     $company = Company::where('created_by', $u->id)->firstOrFail();
     $lead = app(Leads::class)->create($u, ['title' => 'Synthetic overlapping-worker probe', 'company_id' => $company->id, 'owner_id' => $u->id, 'status_id' => 'new']);
     $task = $lead->tasks()->create(['title' => 'Synthetic deduplication check', 'assignee_id' => $u->id, 'due_at' => now()->addHour(), 'remind_at' => now()->subMinute(), 'priority' => 'normal']);

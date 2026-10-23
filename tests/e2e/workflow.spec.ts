@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 const fixture = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
@@ -13,8 +14,32 @@ async function navigate(page: Page, name: string) {
         .getByRole("link", { name, exact: true })
         .click();
 }
+async function createdCustomerId(
+    page: Page,
+    type: "contacts" | "companies",
+    name: string,
+    email: string,
+) {
+    const title = type === "contacts" ? "Contacts" : "Companies";
+    await page
+        .getByRole("textbox", { name: `Search ${type}`, exact: true })
+        .fill(email);
+    const records = page.getByRole("table", {
+        name: `${title} records`,
+        exact: true,
+    });
+    const row = records.locator("tbody tr");
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText(email);
+    const href = await row
+        .getByRole("link", { name, exact: true })
+        .getAttribute("href");
+    expect(href).toMatch(new RegExp(`^/people/${type}/\\d+$`));
+    return href!.split("/").at(-1)!;
+}
 test("persisted workflow, reminders, dashboard and responsive layout", async ({
     page,
+    runId,
 }, info) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -22,21 +47,23 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
     await expect(
         page.locator(".crm-auth-form").getByText("Alpha CRM", { exact: true }),
     ).toBeVisible();
-    await page.getByLabel("Email address").fill(fixture.alpha.email);
+    const credential = fixture[`tables_alpha_${info.project.name}`];
+    await page.getByLabel("Email address").fill(credential.email);
     await page
         .getByLabel("Password", { exact: true })
-        .fill(fixture.alpha.password);
+        .fill(credential.password);
     await page.getByRole("button", { name: "Log in", exact: true }).click();
     await expect(page).toHaveURL(/dashboard/);
-    const suffix = `${info.project.name}-${Date.now()}`;
+    const companyName = "Oren Solutions";
+    const contactName = "Uri Ben David";
+    const companyEmail = `office.${runId}@demo.example.test`;
+    const contactEmail = `uri.${runId}@demo.example.test`;
+    const enquiryTitle = "Service enquiry";
+    const followUpTitle = "Call Uri Ben David";
     await navigate(page, "Contacts & companies");
     await page.getByLabel("Record type").selectOption("companies");
-    await page
-        .getByLabel("Name", { exact: true })
-        .fill(`Oren Solutions — ${suffix}`);
-    await page
-        .getByLabel("Email", { exact: true })
-        .fill(`office.${suffix}@demo.example.test`);
+    await page.getByLabel("Name", { exact: true }).fill(companyName);
+    await page.getByLabel("Email", { exact: true }).fill(companyEmail);
     await page.getByLabel("Phone", { exact: true }).fill("+1 202-555-0188");
     await page
         .getByRole("checkbox", {
@@ -44,16 +71,15 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
         })
         .check();
     await page.getByRole("button", { name: "Create customer" }).click();
-    await expect(
-        page.getByText(`Oren Solutions — ${suffix}`, { exact: true }),
-    ).toBeVisible();
+    const companyId = await createdCustomerId(
+        page,
+        "companies",
+        companyName,
+        companyEmail,
+    );
     await page.getByLabel("Record type").selectOption("contacts");
-    await page
-        .getByLabel("Name", { exact: true })
-        .fill(`Uri Ben David — ${suffix}`);
-    await page
-        .getByLabel("Email", { exact: true })
-        .fill(`uri.${suffix}@demo.example.test`);
+    await page.getByLabel("Name", { exact: true }).fill(contactName);
+    await page.getByLabel("Email", { exact: true }).fill(contactEmail);
     await page.getByLabel("Phone", { exact: true }).fill("+1 202-555-0189");
     await page
         .getByRole("checkbox", {
@@ -62,36 +88,41 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
         .check();
     await page
         .getByRole("combobox", { name: "Company", exact: true })
-        .selectOption({ label: `Oren Solutions — ${suffix}` });
+        .selectOption(companyId);
     await page.getByRole("button", { name: "Create customer" }).click();
-    await expect(
-        page.getByText(`Uri Ben David — ${suffix}`, { exact: true }),
-    ).toBeVisible();
+    const contactId = await createdCustomerId(
+        page,
+        "contacts",
+        contactName,
+        contactEmail,
+    );
     await navigate(page, "Leads");
     await page
         .getByRole("button", { name: "+ Create lead", exact: true })
         .click();
     await page
         .getByLabel("Enquiry title (optional)", { exact: true })
-        .fill(`Enquiry ${suffix}`);
+        .fill(enquiryTitle);
     await page
         .getByRole("combobox", { name: "Contact", exact: true })
-        .selectOption({ label: `Uri Ben David — ${suffix}` });
+        .selectOption(contactId);
     await page
         .getByRole("combobox", { name: "Company", exact: true })
-        .selectOption({ label: `Oren Solutions — ${suffix}` });
+        .selectOption(companyId);
     await page
         .getByRole("button", { name: "Create lead", exact: true })
         .click();
     await expect(
         page.getByRole("heading", {
-            name: `Uri Ben David — ${suffix}`,
+            name: contactName,
             exact: true,
         }),
     ).toBeVisible();
+    await expect(page).toHaveURL(/leads\/\d+$/);
+    const leadPath = new URL(page.url()).pathname;
     await expect(
         page.getByLabel("Enquiry title (optional)", { exact: true }),
-    ).toHaveValue(`Enquiry ${suffix}`);
+    ).toHaveValue(enquiryTitle);
     await page
         .getByRole("combobox", { name: "Status", exact: true })
         .selectOption("contacted");
@@ -108,7 +139,7 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
             exact: true,
         }),
     ).toBeVisible();
-    await page.getByLabel("Follow-up title").fill(`Call ${suffix}`);
+    await page.getByLabel("Follow-up title").fill(followUpTitle);
     function local(d: Date) {
         return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
             .toISOString()
@@ -123,9 +154,7 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
     await page
         .getByRole("button", { name: "Schedule follow-up", exact: true })
         .click();
-    await expect(
-        page.getByText(`Call ${suffix}`, { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText(followUpTitle, { exact: true })).toBeVisible();
     execFileSync("php", ["artisan", "crm:remind"]);
     execFileSync("php", [
         "artisan",
@@ -139,12 +168,13 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
         fullPage: true,
     });
     await navigate(page, "Reminders");
+    const reminder = page.locator("article").filter({
+        has: page.locator(`a[href="${leadPath}"]`),
+    });
+    await expect(reminder).toHaveCount(1);
     await expect(
-        page.getByText(`Call ${suffix}`, { exact: true }),
+        reminder.getByText(followUpTitle, { exact: true }),
     ).toBeVisible();
-    const reminder = page
-        .locator("article")
-        .filter({ hasText: `Call ${suffix}` });
     await reminder.getByRole("button", { name: "Mark read" }).click();
     await expect(reminder.getByText("Read", { exact: true })).toBeVisible();
     await reminder.getByRole("link").click();
@@ -175,10 +205,11 @@ test("Beta branding and extension use the shared lead profile", async ({
     await expect(
         page.locator(".crm-auth-form").getByText("Beta CRM", { exact: true }),
     ).toBeVisible();
-    await page.getByLabel("Email address").fill(fixture.beta.email);
+    const credential = fixture[`tables_beta_${info.project.name}`];
+    await page.getByLabel("Email address").fill(credential.email);
     await page
         .getByLabel("Password", { exact: true })
-        .fill(fixture.beta.password);
+        .fill(credential.password);
     await page.getByRole("button", { name: "Log in", exact: true }).click();
     await expect(page).toHaveURL(/8092\/dashboard/);
     await navigate(page, "Enquiries");

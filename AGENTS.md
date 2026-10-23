@@ -17,3 +17,10 @@ This is the independent Base CRM project. Its only canonical Git remote is `http
 - For new or changed forms, inspect desktop and mobile spacing and verify the actual save/reload flow. Demo identities use the guarded fixture catalog with Jewish/Hebrew names written in English and fictional email/phone data. Keep future synthetic names in English too.
 
 - Lead tables present contact/company names first. Enquiry titles are optional, hidden by default and available through the column chooser; preserve existing personal column choices.
+
+## Browser fixture isolation
+
+- Workflow and contact-edit browser tests must use the dedicated table account for their Playwright project (desktop/mobile), never the human review account. Keep the three canonical review customers and leads intact.
+- Run strict fixture cleanup in both `beforeEach` and `afterEach`. Match only reserved test-account ownership and exact fictional test-email/run identifiers; preserve unrelated records and canonical fixtures.
+- Use natural Jewish/Hebrew names written in English. Never put a device name, timestamp or test run ID in a customer display name. Put run identifiers only in fictional `example.test` email addresses.
+- Keep recovery snapshots private and Git-ignored. Never commit local backups, fixture credentials or live customer data.

@@ -94,6 +94,12 @@ Open a name in Contacts & companies, or use Edit contact / Edit company in a lea
 
 Buttons, fields, cards and form spacing share `packages/awove/crm-core/resources/css/components.css`, including host account screens and extensions. Stacked forms use a 24px field-to-action gap. Follow the shared UI conventions in `AGENTS.md` for future changes.
 
+## Browser fixture cleanup
+
+Browser tests clean their dedicated project accounts before and after each workflow/contact test, including failed tests. A later run also clears leftovers from an interrupted process. Names stay natural; only fictional email addresses carry unique run markers. See the [clean review demo](docs/screenshots/clean-review-demo.png).
+
+`php scripts/clean-browser-fixtures.php alpha --legacy` previews recognized leftovers from older browser runs. Add `--apply` to remove only those synthetic rows and their dependent test records. The command checks the local database/role, refuses shared references, saves a private recovery copy before deleting, and verifies retained records are unchanged. Beta uses the same command with `beta`. Recovery copies are ignored under `storage/app/private/browser-fixture-recovery`; restore one with `php scripts/clean-browser-fixtures.php alpha --restore=/absolute/path/to/copy.json --apply`. Restore refuses to overwrite existing records.
+
 ## Verification
 
 All backend integration tests use the isolated `base_test` PostgreSQL database. A test boot guard rejects any other database. Never point these tests at a customer database.
@@ -113,6 +119,8 @@ docker-compose --profile full config --quiet
 
 `--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need both web servers, synthetic local fixtures and the dedicated table fixture accounts created by `seed-table-e2e.php` for Alpha and Beta. Chromium must be available (`npx playwright install chromium` if needed). They invoke the real reminder command and queue worker. Screenshots are in `docs/screenshots/`. Core-only checks build a temporary copy with the optional module physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
 
+Workflow and contact-edit browser tests use only the dedicated table account for their Playwright project (desktop/mobile), never the human review account. Strict `beforeEach` and `afterEach` cleanup must match reserved test ownership and exact fictional email/run identifiers while preserving canonical fixtures and unrelated records. Customer display names stay natural English spellings such as Noa Levi; device names, timestamps and run IDs belong only in fictional `example.test` email addresses. Keep local recovery snapshots private and Git-ignored; never publish backups or credentials.
+
 See [architecture](docs/architecture.md), [extension contract](docs/extensions.md), [installation/update/recovery runbook](docs/installations-and-upgrades.md), and [checkpoint evidence and limitations](docs/checkpoint-1.md).
 
 To check real overlapping reminder workers against synthetic local Alpha data:
@@ -121,4 +129,4 @@ To check real overlapping reminder workers against synthetic local Alpha data:
 python3 scripts/check-reminder-concurrency.py
 ```
 
-The command records a diagnostic result, completes and archives its fictional probe record, and never runs against another CRM database.
+The command uses the dedicated Alpha desktop table account created by `seed-table-e2e.php`, records a diagnostic result, and completes and archives its fictional probe record. It never writes to the human reviewer account or another CRM database.

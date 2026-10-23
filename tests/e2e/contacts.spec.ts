@@ -1,17 +1,17 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readFileSync } from "node:fs";
 
 const credentials = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
 
 test("edits contact details from the customer table and lead customer card", async ({
     page,
+    runId,
 }, info) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    const suffix = `${info.project.name}-${Date.now()}`;
-    const companyName = `Levi Solutions — ${suffix}`;
-    const contactName = `Shira Levi — ${suffix}`;
-    const email = `contact-${suffix}@example.test`;
+    const companyName = "Levi Solutions";
+    const contactName = "Shira Levi";
+    const email = `contact-${runId}@example.test`;
     const phone =
         info.project.name === "desktop" ? "+1 202-555-0170" : "+1 202-555-0180";
     const companyPhone =
@@ -30,6 +30,9 @@ test("edits contact details from the customer table and lead customer card", asy
     await page.getByLabel("Record type").selectOption("companies");
     await page.getByLabel("Name", { exact: true }).fill(companyName);
     await page
+        .getByLabel("Email", { exact: true })
+        .fill(`company-${runId}@example.test`);
+    await page
         .getByRole("button", { name: "Create customer", exact: true })
         .click();
     await expect(page).toHaveURL(/people\?table=companies/);
@@ -42,7 +45,7 @@ test("edits contact details from the customer table and lead customer card", asy
     ).toBeVisible();
     await page
         .getByLabel("Email", { exact: true })
-        .fill(`company-${suffix}@example.test`);
+        .fill(`company-${runId}@example.test`);
     await page.getByLabel("Phone", { exact: true }).fill(companyPhone);
     await page
         .getByRole("checkbox", { name: /Keep a separate record/ })
@@ -56,7 +59,7 @@ test("edits contact details from the customer table and lead customer card", asy
             .getByRole("table", { name: "Companies records", exact: true })
             .locator("tbody tr")
             .filter({ hasText: companyName }),
-    ).toContainText(`company-${suffix}@example.test`);
+    ).toContainText(`company-${runId}@example.test`);
     await page.getByLabel("Record type").selectOption("contacts");
     await page.getByLabel("Name", { exact: true }).fill(contactName);
     await page.getByLabel("Email", { exact: true }).fill(email);
