@@ -62,6 +62,8 @@ APP_ENV=beta php artisan schedule:work
 
 ## First administrator
 
+Users can sign in without a password through **Email me a sign-in link** on the login page. Links expire after ten minutes and are used once; administrator MFA still applies. See [email sign-in and security behavior](docs/authentication.md).
+
 ```sh
 php artisan crm:bootstrap-admin owner@alpha.example.test --name="Avraham Levi"
 php artisan --env=beta crm:bootstrap-admin owner@beta.example.test --name="Sarah Cohen"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureMagicLoginChallenge;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Awove\Core\Http\ActiveUser;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             ActiveUser::class,
+            EnsureMagicLoginChallenge::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

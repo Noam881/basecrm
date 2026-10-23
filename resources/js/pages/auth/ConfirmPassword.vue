@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head } from "@inertiajs/vue3";
+import { Form, Head, Link } from "@inertiajs/vue3";
 import InputError from "@/components/InputError.vue";
 import PasswordInput from "@/components/PasswordInput.vue";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ defineOptions({
     layout: {
         title: "Confirm password",
         description:
-            "This is a secure area of the application. Please confirm your password before continuing.",
+            "Confirm your password or request an email sign-in link to continue.",
     },
 });
 </script>
@@ -19,34 +19,40 @@ defineOptions({
 <template>
     <Head title="Confirm password" />
 
-    <Form
-        class="crm-form"
-        v-bind="store.form()"
-        reset-on-success
-        v-slot="{ errors, processing }"
-    >
-        <div class="crm-field">
-            <Label htmlFor="password">Password</Label>
-            <PasswordInput
-                id="password"
-                name="password"
-                required
-                autocomplete="current-password"
-                autofocus
-            />
+    <div class="crm-stack">
+        <Form
+            class="crm-form"
+            v-bind="store.form()"
+            reset-on-success
+            v-slot="{ errors, processing }"
+        >
+            <div class="crm-field">
+                <Label for="password">Password</Label>
+                <PasswordInput
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    autofocus
+                />
 
-            <InputError :message="errors.password" />
-        </div>
+                <InputError :message="errors.password" />
+            </div>
 
-        <div class="crm-form-action">
-            <Button
-                class="w-full"
-                :disabled="processing"
-                data-test="confirm-password-button"
-            >
-                <Spinner v-if="processing" />
-                Confirm password
-            </Button>
-        </div>
-    </Form>
+            <div class="crm-form-action">
+                <Button
+                    class="w-full"
+                    :disabled="processing"
+                    data-test="confirm-password-button"
+                >
+                    <Spinner v-if="processing" />
+                    Confirm password
+                </Button>
+            </div>
+        </Form>
+
+        <Button as-child variant="outline" class="w-full">
+            <Link href="/magic-login">Email me a sign-in link</Link>
+        </Button>
+    </div>
 </template>

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Responses\MagicTwoFactorLoginResponse;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -22,7 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(TwoFactorLoginResponse::class, MagicTwoFactorLoginResponse::class);
     }
 
     /**
@@ -31,6 +33,16 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Fortify::authenticateUsing(function (Request $request) {
+            if ($request->session()->has('auth.magic_pending')) {
+                $request->session()->forget([
+                    'login.id',
+                    'login.remember',
+                    'auth.magic_pending',
+                    'auth.password_confirmed_at',
+                    'auth.method',
+                ]);
+            }
+
             $user = User::where('email', strtolower($request->input('email', '')))->where('active', true)->first();
 
             return $user && Hash::check($request->input('password', ''), $user->password) ? $user : null;
@@ -82,6 +94,21 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
+        RateLimiter::for('magic-login-request', function (Request $request) {
+            $installation = (string) config('core.installation', 'alpha');
+            $email = $request->input('email');
+            $normalized = is_string($email) ? Str::lower(trim($email)) : '';
+
+            return [
+                Limit::perMinute(5)->by('magic-request:ip:'.$installation.':'.$request->ip()),
+                Limit::perMinutes(10, 3)->by('magic-request:email:'.$installation.':'.hash('sha256', $normalized)),
+            ];
+        });
+
+        RateLimiter::for('magic-login-consume', function (Request $request) {
+            return Limit::perMinute(20)->by('magic-consume:ip:'.config('core.installation', 'alpha').':'.$request->ip());
+        });
+
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
