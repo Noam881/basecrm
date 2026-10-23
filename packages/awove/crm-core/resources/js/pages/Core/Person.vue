@@ -63,7 +63,19 @@ function save() {
                   phone: data.phone,
                   accept_duplicate: data.accept_duplicate,
               },
-    ).patch(props.saveUrl);
+    ).patch(props.saveUrl, {
+        onSuccess: (savedPage) => {
+            const savedIdentity = savedPage.props.identity as
+                Person | undefined;
+            if (!savedIdentity) return;
+            form.defaults({
+                ...contactFormData(savedIdentity),
+                accept_duplicate: false,
+            });
+            form.reset();
+            editing.value = false;
+        },
+    });
 }
 function cancelEdit() {
     form.reset();

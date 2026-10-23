@@ -87,7 +87,7 @@ it('denies own-only users direct URLs, forged edits, notes, tasks and extension 
     $this->patch('/tasks/'.$task->id, ['version' => 1, 'status' => 'completed'])->assertForbidden();
     $this->post('/leads', ['title' => 'Forged relation', 'contact_id' => $lead->contact_id, 'status_id' => 'new'])->assertForbidden();
     $this->get('/dashboard')->assertInertia(fn (Assert $p) => $p->where('metrics.active', 0));
-    $this->get('/people')->assertInertia(fn (Assert $p) => $p->has('contacts.data', 0));
+    $this->get('/people')->assertInertia(fn (Assert $p) => $p->where('recordType', 'contacts')->missing('contacts')->missing('companies')->missing('table')->has('companyOptions', 0));
     $this->get('/leads')->assertInertia(fn (Assert $p) => $p->has('leads.data', 0));
 });
 it('keeps all-read and own-edit separate including shared identity lead relations', function () {

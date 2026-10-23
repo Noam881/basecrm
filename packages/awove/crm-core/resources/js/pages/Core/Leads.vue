@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
+import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
 import type { Lead, Page, Person, Stage, Field } from "../../types";
 import DataTable from "../../components/table/DataTable.vue";
@@ -33,29 +33,37 @@ const form = useForm({
     <Head :title="brand.lead_label" />
     <div class="crm-heading">
         <h1>{{ brand.lead_label }}</h1>
-        <button
+        <div
             v-if="capabilities.includes('leads.create')"
-            class="crm-button"
-            @click="showCreate = !showCreate"
+            class="crm-form-action"
         >
-            {{ showCreate ? "Close form" : "+ Create lead" }}
-        </button>
+            <Link href="/people" class="crm-secondary">Add new contact</Link>
+            <button class="crm-button" @click="showCreate = !showCreate">
+                {{ showCreate ? "Close form" : "+ Create lead" }}
+            </button>
+        </div>
     </div>
     <section v-if="showCreate" class="crm-card">
         <h2>New lead</h2>
         <p v-if="!contacts.length && !companies.length">
-            Start by <Link href="/people">creating a contact or company</Link>.
+            Start by <Link href="/people">adding a new contact</Link>.
         </p>
         <form class="crm-form-grid" @submit.prevent="form.post('/leads')">
+            <div class="crm-field">
+                <label
+                    ><span class="crm-field-label">Contact</span>
+                    <select v-model="form.contact_id">
+                        <option :value="null">No contact</option>
+                        <option v-for="p in contacts" :key="p.id" :value="p.id">
+                            {{ p.name }}
+                        </option>
+                    </select>
+                </label>
+                <Link href="/people" class="crm-field-supporting-action"
+                    >Create a contact</Link
+                >
+            </div>
             <label
-                ><span class="crm-field-label">Contact</span
-                ><select v-model="form.contact_id">
-                    <option :value="null">No contact</option>
-                    <option v-for="p in contacts" :key="p.id" :value="p.id">
-                        {{ p.name }}
-                    </option>
-                </select></label
-            ><label
                 ><span class="crm-field-label">Company</span
                 ><select v-model="form.company_id">
                     <option :value="null">No company</option>

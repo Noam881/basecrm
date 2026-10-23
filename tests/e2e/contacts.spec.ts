@@ -21,20 +21,43 @@ test("creates a complete contact profile, appends notes and edits details from i
     const nextNote =
         "Confirmed that WhatsApp is the easiest way to arrange a call.";
     await signIn(page, info.project.name);
-    await page.goto("/people");
+    await expect(
+        page.locator(".crm-sidebar").getByRole("link", {
+            name: "Contacts & companies",
+            exact: true,
+            includeHidden: true,
+        }),
+    ).toHaveCount(0);
+    await page.goto("/leads");
+    await page
+        .getByRole("link", { name: "Add new contact", exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/people$/);
+    await expect(
+        page.getByRole("heading", {
+            name: "Add new contact",
+            exact: true,
+            level: 1,
+        }),
+    ).toBeVisible();
+    await expect(page.locator("table")).toHaveCount(0);
     await page.getByLabel("Record type").selectOption("companies");
+    await expect(
+        page.getByRole("heading", {
+            name: "Add new company",
+            exact: true,
+            level: 1,
+        }),
+    ).toBeVisible();
     await page.getByLabel("Name", { exact: true }).fill(companyName);
     await page
         .getByLabel("Email", { exact: true })
         .fill(`company-${runId}@example.test`);
     await page
-        .getByRole("button", { name: "Create customer", exact: true })
+        .getByRole("button", { name: "Create company", exact: true })
         .click();
-    await expect(page).toHaveURL(/people\?table=companies/);
-    await page
-        .getByRole("table", { name: "Companies records", exact: true })
-        .getByRole("link", { name: companyName, exact: true })
-        .click();
+    await expect(page).toHaveURL(/\/people\/companies\/\d+$/);
+    const companyUrl = page.url();
     await expect(
         page.getByRole("heading", { name: "Company details", exact: true }),
     ).toBeVisible();
@@ -45,8 +68,21 @@ test("creates a complete contact profile, appends notes and edits details from i
     await page
         .getByRole("button", { name: "Save changes", exact: true })
         .click();
-    await expect(page).toHaveURL(/people\?table=companies/);
-    await page.getByLabel("Record type").selectOption("contacts");
+    await expect(page).toHaveURL(companyUrl);
+    await expect(
+        page.getByRole("button", { name: "Edit company details", exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel("Phone", { exact: true })).toHaveValue(
+        officePhone,
+    );
+    await page.goto("/leads");
+    await page
+        .getByRole("link", { name: "Add new contact", exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/people$/);
+    await expect(page.locator("table")).toHaveCount(0);
+    await expect(page.getByLabel("Record type")).toHaveValue("contacts");
     await page.getByLabel("Name", { exact: true }).fill(contactName);
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Phone", { exact: true }).fill(phone);
@@ -99,19 +135,12 @@ test("creates a complete contact profile, appends notes and edits details from i
         animations: "disabled",
     });
     await page
-        .getByRole("button", { name: "Create customer", exact: true })
+        .getByRole("button", { name: "Create contact", exact: true })
         .click();
-    await expect(page).toHaveURL(/people\?table=contacts/);
-    await page
-        .getByRole("textbox", { name: "Search contacts", exact: true })
-        .fill(email);
-    const records = page.getByRole("table", {
-        name: "Contacts records",
-        exact: true,
-    });
-    await expect(records.locator("tbody tr")).toHaveCount(1);
-    await records.getByRole("link", { name: contactName, exact: true }).click();
-    await expect(page).toHaveURL(/people\/contacts\/\d+$/);
+    await expect(page).toHaveURL(/\/people\/contacts\/\d+$/);
+    await expect(
+        page.getByRole("heading", { name: contactName, exact: true, level: 1 }),
+    ).toBeVisible();
     const contactUrl = page.url();
     const profile = page.locator("section").filter({
         has: page.getByRole("heading", {
@@ -204,8 +233,11 @@ test("creates a complete contact profile, appends notes and edits details from i
     await page
         .getByRole("button", { name: "Save changes", exact: true })
         .click();
-    await expect(page).toHaveURL(/people\?table=contacts/);
-    await page.goto(contactUrl);
+    await expect(page).toHaveURL(contactUrl);
+    await expect(
+        page.getByRole("button", { name: "Edit contact details", exact: true }),
+    ).toBeVisible();
+    await page.reload();
     await expect(profile).toContainText("Jerusalem");
     await expect(profile).toContainText("Anytime");
     await expect(profile).toContainText("Monday");

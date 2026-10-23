@@ -14,6 +14,13 @@ test("navigation keeps a clean canvas with a persistent rail or accessible mobil
         page.locator(".crm-topbar, .crm-eyebrow, .crm-caption"),
     ).toHaveCount(0);
     const sidebar = page.locator(".crm-sidebar");
+    await expect(
+        sidebar.getByRole("link", {
+            name: "Contacts & companies",
+            exact: true,
+            includeHidden: true,
+        }),
+    ).toHaveCount(0);
     const open = page.getByRole("button", {
         name: "Open navigation",
         exact: true,
@@ -113,6 +120,23 @@ test("navigation keeps a clean canvas with a persistent rail or accessible mobil
             .click();
         await expect(sidebar).toBeHidden();
     }
+    await page.goto("/leads");
+    await page
+        .getByRole("link", { name: "Add new contact", exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/people$/);
+    await expect(
+        page.getByRole("heading", {
+            name: "Add new contact",
+            exact: true,
+            level: 1,
+        }),
+    ).toBeVisible();
+    await expect(page.locator("table")).toHaveCount(0);
+    const cancel = page.getByRole("link", { name: "Cancel", exact: true });
+    await expect(cancel).toHaveAttribute("href", "/leads");
+    await cancel.click();
+    await expect(page).toHaveURL(/\/leads$/);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(sidebar).toHaveCSS("transition-duration", "0s");
     expect(

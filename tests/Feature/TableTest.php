@@ -1,11 +1,15 @@
 <?php
 
 use App\Models\User;
+use Awove\Core\Access;
 use Awove\Core\Installation;
+use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
 use Awove\Core\Models\Task;
 use Awove\Core\Services\Leads;
+use Awove\Core\Tables\Query;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -28,6 +32,14 @@ function tableLead(User $u, string $title, string $priority = 'normal', array $e
 function tableUrl(array $query): string
 {
     return '/leads?'.http_build_query($query);
+}
+function tableIdentityQuery(User $user, array $input = [], string $type = 'contacts'): array
+{
+    $user = $user->fresh();
+    $request = Request::create('/', 'GET', $input);
+    $request->setUserResolver(fn () => $user);
+
+    return app(Query::class)->run(Access::identities($user, $type === 'contacts' ? Contact::class : Company::class), $type, $request);
 }
 it('sorts priorities semantically and supports deterministic multi-column sorting across pages', function () {
     $u = tableEmployee();
@@ -112,8 +124,8 @@ it('persists independent per-table and per-user layouts, widths, pins and named 
     $this->postJson('/preferences', ['table' => 'contacts', 'columns' => ['email', 'name']])->assertOk();
     $r = $this->get('/leads')->assertOk();
     expect($r->inertiaProps('table.preferences.columns'))->toBe(['priority', 'title', 'contact_email'])->and($r->inertiaProps('table.preferences.widths.title'))->toBe(360)->and($r->inertiaProps('table.preferences.views.0.name'))->toBe('High first');
-    $r = $this->get('/people?table=contacts')->assertOk();
-    expect($r->inertiaProps('table.preferences.columns'))->toBe(['email', 'name']);
+    $contactTable = tableIdentityQuery($u);
+    expect($contactTable['preferences']['columns'])->toBe(['email', 'name']);
     $r = $this->actingAs($other)->get('/leads')->assertOk();
     expect($r->inertiaProps('table.preferences.columns'))->not->toBe(['priority', 'title', 'contact_email']);
 });
@@ -125,9 +137,9 @@ it('uses the same field catalog for restricted contacts and assigned follow-ups'
     foreach ([[$own, $u], [$foreign, $other]] as [$lead,$assignee]) {
         Task::create(['title' => $lead->title.' follow-up', 'lead_id' => $lead->id, 'assignee_id' => $assignee->id, 'due_at' => now()->addDay(), 'remind_at' => now(), 'priority' => 'normal']);
     }
-    $r = $this->actingAs($u)->get('/people?table=contacts')->assertOk();
-    expect($r->inertiaProps('table.page.total'))->toBe(1)->and(array_column($r->inertiaProps('table.columns'), 'id'))->toContain('email', 'phone', 'company');
-    $r = $this->get('/tasks')->assertOk();
+    $contactTable = tableIdentityQuery($u);
+    expect($contactTable['page']->total())->toBe(1)->and(array_column($contactTable['columns'], 'id'))->toContain('email', 'phone', 'company');
+    $r = $this->actingAs($u)->get('/tasks')->assertOk();
     expect($r->inertiaProps('table.page.total'))->toBe(1)->and($r->inertiaProps('table.page.data.0.cells.title'))->toBe('Own follow-up');
 });
 
@@ -164,16 +176,29 @@ it('exposes contact availability and secondary details as scoped searchable and 
     $contact->notes()->create(['body' => 'Call after the office opens.', 'author_id' => $user->id]);
     $foreign = tableEmployee('Uri Ben David');
     Contact::create(['name' => 'Private contact', 'created_by' => $foreign->id, 'search_key' => 'privatecontact', 'city' => 'Tel Aviv']);
-    $response = $this->actingAs($user)->get('/people?'.http_build_query(['table' => 'contacts', 'q' => 'Tel Aviv']))->assertOk();
-    expect($response->inertiaProps('table.page.total'))->toBe(1);
-    $cells = $response->inertiaProps('table.page.data.0.cells');
+    $contactTable = tableIdentityQuery($user, ['q' => 'Tel Aviv']);
+    expect($contactTable['page']->total())->toBe(1);
+    $cells = $contactTable['page']->items()[0]->getAttribute('cells');
     expect($cells)->toMatchArray(['secondary_phone' => '+1 202-555-0171', 'preferred_contact_times' => 'Mornings, Evenings', 'preferred_contact_days' => 'Monday, Saturday, Sunday', 'city' => 'Tel Aviv', 'country' => 'Israel', 'notes_count' => 1]);
-    expect(array_column($response->inertiaProps('table.columns'), 'id'))->toContain('secondary_phone', 'secondary_phone_label', 'preferred_contact_method', 'preferred_contact_times', 'preferred_contact_days', 'address', 'city', 'country', 'source', 'notes_count');
-    $response = $this->get('/people?'.http_build_query(['table' => 'contacts', 'filters' => [['id' => 'preferred_contact_method', 'op' => 'eq', 'value' => 'whatsapp'], ['id' => 'preferred_contact_days', 'op' => 'contains', 'value' => 'Monday']]]))->assertOk();
-    expect($response->inertiaProps('table.page.total'))->toBe(1);
+    expect(array_column($contactTable['columns'], 'id'))->toContain('secondary_phone', 'secondary_phone_label', 'preferred_contact_method', 'preferred_contact_times', 'preferred_contact_days', 'address', 'city', 'country', 'source', 'notes_count');
+    $contactTable = tableIdentityQuery($user, ['filters' => [['id' => 'preferred_contact_method', 'op' => 'eq', 'value' => 'whatsapp'], ['id' => 'preferred_contact_days', 'op' => 'contains', 'value' => 'Monday']]]);
+    expect($contactTable['page']->total())->toBe(1);
     $lead = app(Leads::class)->create($user, ['contact_id' => $contact->id, 'owner_id' => $user->id, 'status_id' => 'new']);
-    $response = $this->get(tableUrl(['filters' => [['id' => 'contact_secondary_phone', 'op' => 'ends', 'value' => '0171']]]))->assertOk();
+    $response = $this->actingAs($user)->get(tableUrl(['filters' => [['id' => 'contact_secondary_phone', 'op' => 'ends', 'value' => '0171']]]))->assertOk();
     expect($response->inertiaProps('table.page.data.0.id'))->toBe($lead->id)
         ->and($response->inertiaProps('table.page.data.0.cells.contact_preferred_contact_times'))->toBe('Mornings, Evenings')
         ->and($response->inertiaProps('table.page.data.0.cells.contact_notes_count'))->toBe(1);
+});
+
+it('retains scoped company catalog queries without exposing a company directory route', function () {
+    $user = tableEmployee('Noa Cohen');
+    $other = tableEmployee('Uri Ben David');
+    foreach ([[$user, 'Levi Solutions', 'office@levi.example.test'], [$other, 'Hidden company', 'office@hidden.example.test']] as [$owner, $name, $email]) {
+        Company::create(['name' => $name, 'email' => $email, 'phone' => '+1 202-555-0170', 'search_key' => strtolower($name), 'created_by' => $owner->id]);
+    }
+    $companyTable = tableIdentityQuery($user, ['q' => 'office@'], 'companies');
+    expect($companyTable['page']->total())->toBe(1)
+        ->and($companyTable['page']->items()[0]->getAttribute('cells')['email'])->toBe('office@levi.example.test')
+        ->and(array_column($companyTable['columns'], 'id'))->toContain('name', 'email', 'phone')
+        ->and(array_column($companyTable['columns'], 'id'))->not->toContain('secondary_phone', 'preferred_contact_method');
 });

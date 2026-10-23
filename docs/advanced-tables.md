@@ -1,6 +1,6 @@
 # Shared Material data tables
 
-Leads, contacts, companies and follow-ups use the same Material 3 table component, backed by TanStack Vue Table 8 and a permission-scoped PostgreSQL query engine. Each table exposes its authorized business-field catalog; authentication secrets and unrelated record data are never table fields.
+Leads and follow-ups use the shared Material 3 table component, backed by TanStack Vue Table 8 and a permission-scoped PostgreSQL query engine. Each table exposes its authorized business-field catalog; authentication secrets and unrelated record data are never table fields.
 
 ## Controls
 
@@ -12,7 +12,7 @@ Leads, contacts, companies and follow-ups use the same Material 3 table componen
 - **Views:** save named column/search/sort/filter combinations to the current user's account, select them later, or delete them. Column widths, pins, row density and text wrapping are also persisted separately per user and table. Views do not modify anyone else's records or layout.
 - **Reading:** sticky headers, pinned columns, internal horizontal scrolling, selectable comfortable/compact rows, wrapping, meaningful empty/error/loading states and selectable page sizes of 10/20/25/50/100. Selection is explicitly limited to the current page; Copy rows copies selected visible cells as tab-separated text. It performs no bulk data mutation.
 
-All available lead business fields include linked contact/company names and communication details, owner, source, priority, stable pipeline projection, creation/update/archive timestamps, record identifiers, external reference, next follow-up, follow-up counts, notes count and last activity. Configured typed custom fields appear automatically. Contacts/companies and follow-ups have their own domain-specific catalogs. Internal implementation columns and secrets are deliberately excluded.
+All available lead business fields include linked contact/company names and communication details, owner, source, priority, stable pipeline projection, creation/update/archive timestamps, record identifiers, external reference, next follow-up, follow-up counts, notes count and last activity. Configured typed custom fields appear automatically. Linked contact/company details are available as lead columns; follow-ups have their own domain-specific catalog. Contact/company intake is a form-only flow reached through Add new contact in Leads. Internal implementation columns and secrets are deliberately excluded.
 
 ## Backend boundaries
 

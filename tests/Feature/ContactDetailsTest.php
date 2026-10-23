@@ -43,8 +43,9 @@ it('creates a complete contact with an authored initial note and exposes the sav
     $user = contactDetailsEmployee();
     $company = Company::create(['name' => 'Levi Solutions', 'created_by' => $user->id, 'search_key' => 'levisolutions']);
     $details = contactDetailsPayload(['company_id' => $company->id]);
-    $this->actingAs($user)->post('/people/contacts', [...$details, 'notes' => '  Ask about the new office.  ', 'created_by' => 999])->assertRedirect('/people?table=contacts');
+    $response = $this->actingAs($user)->post('/people/contacts', [...$details, 'notes' => '  Ask about the new office.  ', 'created_by' => 999]);
     $contact = Contact::sole();
+    $response->assertRedirect('/people/contacts/'.$contact->id);
     expect($contact->only(array_keys($details)))->toBe([...$details, 'email' => 'shira@example.test'])
         ->and($contact->created_by)->toBe($user->id);
     $note = ContactNote::sole();
@@ -122,7 +123,7 @@ it('ignores empty notes fields on contact edits without replacing history', func
     $this->actingAs($user)->post('/people/contacts', [...contactDetailsPayload(), 'notes' => 'Keep the original conversation.'])->assertRedirect();
     $contact = Contact::sole();
     foreach ([null, '', []] as $empty) {
-        $this->patch('/people/contacts/'.$contact->id, ['city' => 'Haifa', 'notes' => $empty])->assertRedirect('/people?table=contacts')->assertSessionHasNoErrors();
+        $this->patch('/people/contacts/'.$contact->id, ['city' => 'Haifa', 'notes' => $empty])->assertRedirect('/people/contacts/'.$contact->id)->assertSessionHasNoErrors();
         expect($contact->fresh()->city)->toBe('Haifa')
             ->and(ContactNote::sole()->body)->toBe('Keep the original conversation.');
     }
@@ -134,11 +135,11 @@ it('strips empty contact-only fields from company create and edit payloads', fun
     foreach ([null, '', []] as $index => $empty) {
         $emptyFields = array_fill_keys([...$contactOnly, 'company_id', 'notes'], $empty);
         $email = 'office'.$index.'@example.test';
-        $this->actingAs($user)->post('/people/companies', ['name' => 'Levi Solutions', 'email' => $email, ...$emptyFields, 'accept_duplicate' => true])
-            ->assertRedirect('/people?table=companies')->assertSessionHasNoErrors();
+        $response = $this->actingAs($user)->post('/people/companies', ['name' => 'Levi Solutions', 'email' => $email, ...$emptyFields, 'accept_duplicate' => true]);
         $company = Company::where('email', $email)->sole();
+        $response->assertRedirect('/people/companies/'.$company->id)->assertSessionHasNoErrors();
         $this->patch('/people/companies/'.$company->id, ['phone' => '+1 202-555-0172', ...$emptyFields, 'accept_duplicate' => true])
-            ->assertRedirect('/people?table=companies')->assertSessionHasNoErrors();
+            ->assertRedirect('/people/companies/'.$company->id)->assertSessionHasNoErrors();
         expect($company->fresh()->phone)->toBe('+1 202-555-0172')->and($company->fresh()->email)->toBe($email);
     }
     expect(Company::count())->toBe(3)->and(ContactNote::count())->toBe(0);

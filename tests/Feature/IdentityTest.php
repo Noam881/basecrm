@@ -30,18 +30,56 @@ function identityCompany(User $user, string $name = 'Fictional company'): Compan
     return Company::create(['name' => $name, 'created_by' => $user->id, 'search_key' => 'fictionalcompany']);
 }
 
+it('opens focused contact and company intake without exposing a directory payload', function () {
+    $user = identityEmployee();
+    $company = identityCompany($user, 'Levi Solutions');
+    identityContact($user, 'Shira Levi');
+    identityCompany(identityEmployee(), 'Restricted company');
+    foreach (['/people' => 'contacts', '/people?type=companies' => 'companies', '/people?table=companies' => 'companies', '/people?type=contacts&table=companies' => 'contacts'] as $url => $type) {
+        $this->actingAs($user)->get($url)->assertOk()->assertInertia(fn (Assert $p) => $p
+            ->component('Core/People')->where('recordType', $type)
+            ->has('companyOptions', 1)->where('companyOptions.0.id', $company->id)->where('companyOptions.0.name', 'Levi Solutions')
+            ->has('contactOptions.methods')->has('contactOptions.sources')
+            ->missing('table')->missing('contacts')->missing('companies'));
+    }
+});
+
+it('requires contact creation permission to open intake and rejects unknown record types', function () {
+    $user = identityEmployee();
+    $this->actingAs($user)->getJson('/people?type=unknown')->assertUnprocessable()->assertJsonValidationErrors('type');
+    $this->getJson('/people?table=unknown')->assertUnprocessable()->assertJsonValidationErrors('type');
+    $user->syncRoles([]);
+    $user->givePermissionTo('leads.view.own');
+    $this->get('/people')->assertForbidden();
+    $this->get('/people?type=companies')->assertForbidden();
+    $this->post('/people/contacts', ['name' => 'Shira Levi'])->assertForbidden();
+    expect(Contact::count())->toBe(0);
+});
+
+it('opens each newly created identity profile directly', function () {
+    $user = identityEmployee();
+    $response = $this->actingAs($user)->post('/people/contacts', ['name' => 'Shira Levi']);
+    $contact = Contact::sole();
+    $response->assertRedirect('/people/contacts/'.$contact->id);
+    $this->get('/people/contacts/'.$contact->id)->assertInertia(fn (Assert $p) => $p->where('identity.name', 'Shira Levi')->where('returnTo', '/leads'));
+    $response = $this->post('/people/companies', ['name' => 'Levi Solutions']);
+    $company = Company::sole();
+    $response->assertRedirect('/people/companies/'.$company->id);
+    $this->get('/people/companies/'.$company->id)->assertInertia(fn (Assert $p) => $p->where('identity.name', 'Levi Solutions')->where('returnTo', '/leads'));
+});
+
 it('edits an owned contact and company and refreshes normalized details', function () {
     $user = identityEmployee();
     $contact = identityContact($user);
     $company = identityCompany($user);
-    $this->actingAs($user)->get('/people/contacts/'.$contact->id)->assertOk()->assertInertia(fn (Assert $p) => $p->component('Core/Person')->where('editable', true)->where('identity.name', $contact->name)->where('type', 'contacts'));
-    $this->patch('/people/contacts/'.$contact->id, ['name' => 'Changed contact', 'email' => 'Changed@Example.Test', 'phone' => '+357 99 123 456', 'company_id' => $company->id, 'created_by' => 999])->assertRedirect('/people?table=contacts');
+    $this->actingAs($user)->get('/people/contacts/'.$contact->id)->assertOk()->assertInertia(fn (Assert $p) => $p->component('Core/Person')->where('editable', true)->where('identity.name', $contact->name)->where('type', 'contacts')->where('returnTo', '/leads'));
+    $this->patch('/people/contacts/'.$contact->id, ['name' => 'Changed contact', 'email' => 'Changed@Example.Test', 'phone' => '+357 99 123 456', 'company_id' => $company->id, 'created_by' => 999])->assertRedirect('/people/contacts/'.$contact->id);
     $contact->refresh();
     expect($contact->name)->toBe('Changed contact')->and($contact->email)->toBe('changed@example.test')->and($contact->phone)->toBe('+357 99 123 456')->and($contact->company_id)->toBe($company->id)->and($contact->created_by)->toBe($user->id)->and($contact->search_key)->toContain('changedcontactchanged@example.test35799123456');
-    $this->get('/people?table=contacts&q=changed%40example.test')->assertInertia(fn (Assert $p) => $p->where('table.page.total', 1)->where('table.page.data.0.cells.phone', '+357 99 123 456'));
+    $this->get('/people/contacts/'.$contact->id)->assertInertia(fn (Assert $p) => $p->where('identity.email', 'changed@example.test')->where('identity.phone', '+357 99 123 456'));
     $this->patch('/people/contacts/'.$contact->id, ['phone' => null, 'email' => null, 'company_id' => null])->assertRedirect();
     expect($contact->fresh()->phone)->toBeNull()->and($contact->fresh()->email)->toBeNull()->and($contact->fresh()->company_id)->toBeNull();
-    $this->patch('/people/companies/'.$company->id, ['name' => 'Changed studio', 'email' => 'Studio@Example.Test', 'phone' => '+357 25 123456', 'company_id' => null])->assertRedirect('/people?table=companies');
+    $this->patch('/people/companies/'.$company->id, ['name' => 'Changed studio', 'email' => 'Studio@Example.Test', 'phone' => '+357 25 123456', 'company_id' => null])->assertRedirect('/people/companies/'.$company->id);
     expect($company->fresh()->name)->toBe('Changed studio')->and($company->fresh()->email)->toBe('studio@example.test');
 });
 
@@ -130,11 +168,12 @@ it('preserves a restricted existing company link while editing other contact det
 it('bounds derived search keys while preserving valid long customer details on create and update', function () {
     $user = identityEmployee();
     $details = ['name' => str_repeat('א', 120), 'email' => str_repeat('a', 60).'@'.str_repeat('b', 60).'.test', 'phone' => '+357 99 123 456'];
-    $this->actingAs($user)->post('/people/companies', $details)->assertRedirect('/people?table=companies');
+    $response = $this->actingAs($user)->post('/people/companies', $details);
     $company = Company::sole();
+    $response->assertRedirect('/people/companies/'.$company->id);
     expect($company->name)->toBe($details['name'])->and($company->email)->toBe($details['email'])->and($company->phone)->toBe($details['phone'])->and(mb_strlen($company->search_key))->toBe(255);
     $contact = identityContact($user);
-    $this->patch('/people/contacts/'.$contact->id, $details)->assertRedirect('/people?table=contacts');
+    $this->patch('/people/contacts/'.$contact->id, $details)->assertRedirect('/people/contacts/'.$contact->id);
     $contact->refresh();
     expect($contact->name)->toBe($details['name'])->and($contact->email)->toBe($details['email'])->and($contact->phone)->toBe($details['phone'])->and($contact->search_key)->toBe($company->search_key);
 });

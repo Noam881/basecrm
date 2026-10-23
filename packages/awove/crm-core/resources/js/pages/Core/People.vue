@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { contactFormData, type Person, type ContactOptions } from "../../types";
 import ContactFields from "../../components/ContactFields.vue";
-import DataTable from "../../components/table/DataTable.vue";
-import type { TablePayload } from "../../components/table/types";
 const props = defineProps<{
-    table: TablePayload;
+    recordType: "contacts" | "companies";
     companyOptions: Person[];
     contactOptions: ContactOptions;
-    q: string;
 }>();
 const capabilities = usePage().props.capabilities as string[];
-const type = ref(props.table.id);
+const type = ref(props.recordType);
+const title = computed(() =>
+    type.value === "contacts" ? "Add new contact" : "Add new company",
+);
 const form = useForm({
     ...contactFormData(),
     notes: "",
@@ -33,15 +33,18 @@ function createCustomer() {
 }
 </script>
 <template>
-    <Head title="Contacts & companies" />
+    <Head :title="title" />
+    <Link href="/leads" class="crm-back">← Back to leads</Link>
     <div class="crm-heading">
-        <h1>Contacts & companies</h1>
+        <h1>{{ title }}</h1>
     </div>
     <section
         v-if="capabilities.includes('leads.create')"
         class="crm-card crm-flow"
     >
-        <h2>Add a customer</h2>
+        <h2>
+            {{ type === "contacts" ? "Contact details" : "Company details" }}
+        </h2>
         <form class="crm-form-grid" @submit.prevent="createCustomer">
             <label class="crm-field crm-form-span">
                 <span class="crm-field-label">Record type</span>
@@ -114,26 +117,14 @@ function createCustomer() {
             </label>
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">
-                    Create customer
+                    {{
+                        type === "contacts"
+                            ? "Create contact"
+                            : "Create company"
+                    }}
                 </button>
+                <Link href="/leads" class="crm-secondary">Cancel</Link>
             </div>
         </form>
     </section>
-    <div class="crm-tabs md-quick-views">
-        <Link
-            href="/people?table=contacts"
-            :aria-current="table.id === 'contacts' ? 'page' : undefined"
-            >Contacts</Link
-        ><Link
-            href="/people?table=companies"
-            :aria-current="table.id === 'companies' ? 'page' : undefined"
-            >Companies</Link
-        >
-    </div>
-    <DataTable
-        :payload="table"
-        endpoint="/people"
-        :title="table.id === 'contacts' ? 'Contacts' : 'Companies'"
-        :base-query="{ table: table.id }"
-    />
 </template>

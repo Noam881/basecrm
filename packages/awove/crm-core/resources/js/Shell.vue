@@ -18,7 +18,6 @@ const capabilities = computed(() => page.props.capabilities as string[]);
 const navigation = computed(() => [
     { label: "Overview", href: "/dashboard", icon: "space_dashboard" },
     { label: brand.value.lead_label, href: "/leads", icon: "view_list" },
-    { label: "Contacts & companies", href: "/people", icon: "contacts" },
     { label: "Follow-ups", href: "/tasks", icon: "task_alt" },
     { label: "Reminders", href: "/reminders", icon: "notifications" },
     ...(page.props.moduleNavigation as { label: string; href: string }[]).map(
@@ -62,6 +61,11 @@ watch(collapsed, (value) => {
 });
 function selected(href: string) {
     const current = page.url.split("?")[0];
+    if (
+        href === "/leads" &&
+        (current === "/people" || current.startsWith("/people/"))
+    )
+        return true;
     return current === href || current.startsWith(`${href}/`);
 }
 function openNavigation() {

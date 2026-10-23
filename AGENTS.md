@@ -18,6 +18,8 @@ This is the independent Base CRM project. Its only canonical Git remote is `http
 - Core and installed extensions must use the same primitives. Change global tokens/modifiers when needed; use page-specific CSS only for genuine page layout. Preserve compact table/menu layouts, OTP internals, keyboard access and reduced-motion behavior.
 - For new or changed forms, inspect desktop and mobile spacing and verify the actual save/reload flow. Demo identities use the guarded fixture catalog with Jewish/Hebrew names written in English and fictional email/phone data. Keep future synthetic names in English too.
 
+- Contact/company creation belongs to Add new contact within Leads. Do not add a separate Contacts & companies sidebar entry or a records table below the intake form. Contact/company profiles remain accessible from lead records.
+
 - Lead tables present contact/company names first. Enquiry titles are optional, hidden by default and available through the column chooser; preserve existing personal column choices.
 
 ## Browser fixture isolation

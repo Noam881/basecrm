@@ -44,7 +44,6 @@ test("opening an email link signs in immediately and navigation stays usable", a
     await expect(page).toHaveURL(/\/dashboard$/);
     for (const [name, path] of [
         ["Leads", "/leads"],
-        ["Contacts & companies", "/people"],
         ["Follow-ups", "/tasks"],
         ["Reminders", "/reminders"],
     ]) {
@@ -59,6 +58,26 @@ test("opening an email link signs in immediately and navigation stays usable", a
             .click();
         await expect(page).toHaveURL(new RegExp(`${path}$`));
     }
+    await expect(
+        page.locator(".crm-sidebar").getByRole("link", {
+            name: "Contacts & companies",
+            exact: true,
+            includeHidden: true,
+        }),
+    ).toHaveCount(0);
+    await page.goto("/leads");
+    await page
+        .getByRole("link", { name: "Add new contact", exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/people$/);
+    await expect(
+        page.getByRole("heading", {
+            name: "Add new contact",
+            exact: true,
+            level: 1,
+        }),
+    ).toBeVisible();
+    await expect(page.locator("table")).toHaveCount(0);
     await page.goto("/settings/security");
     await expect(
         page.getByRole("heading", { name: "Account sign-in", exact: true }),

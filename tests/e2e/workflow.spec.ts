@@ -19,22 +19,44 @@ async function createdCustomerId(
     name: string,
     email: string,
 ) {
-    const title = type === "contacts" ? "Contacts" : "Companies";
+    await expect(page).toHaveURL(new RegExp(`/people/${type}/\\d+$`));
+    await expect(
+        page.getByRole("heading", { name, exact: true, level: 1 }),
+    ).toBeVisible();
+    // Creation now opens the saved profile directly; reload verifies persistence.
+    await page.reload();
+    if (type === "companies") {
+        await expect(page.getByLabel("Email", { exact: true })).toHaveValue(
+            email,
+        );
+    } else {
+        await expect(
+            page.getByRole("link", { name: email, exact: true }),
+        ).toHaveAttribute("href", `mailto:${email}`);
+    }
+    return new URL(page.url()).pathname.split("/").at(-1)!;
+}
+async function openContactIntake(page: Page) {
+    await navigate(page, "Leads");
+    await expect(
+        page.locator(".crm-sidebar").getByRole("link", {
+            name: "Contacts & companies",
+            exact: true,
+            includeHidden: true,
+        }),
+    ).toHaveCount(0);
     await page
-        .getByRole("textbox", { name: `Search ${type}`, exact: true })
-        .fill(email);
-    const records = page.getByRole("table", {
-        name: `${title} records`,
-        exact: true,
-    });
-    const row = records.locator("tbody tr");
-    await expect(row).toHaveCount(1);
-    await expect(row).toContainText(email);
-    const href = await row
-        .getByRole("link", { name, exact: true })
-        .getAttribute("href");
-    expect(href).toMatch(new RegExp(`^/people/${type}/\\d+$`));
-    return href!.split("/").at(-1)!;
+        .getByRole("link", { name: "Add new contact", exact: true })
+        .click();
+    await expect(page).toHaveURL(/\/people$/);
+    await expect(
+        page.getByRole("heading", {
+            name: "Add new contact",
+            exact: true,
+            level: 1,
+        }),
+    ).toBeVisible();
+    await expect(page.locator("table")).toHaveCount(0);
 }
 test("persisted workflow, reminders, dashboard and responsive layout", async ({
     page,
@@ -54,7 +76,7 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
     const contactEmail = `uri.${runId}@demo.example.test`;
     const enquiryTitle = "Service enquiry";
     const followUpTitle = "Call Uri Ben David";
-    await navigate(page, "Contacts & companies");
+    await openContactIntake(page);
     await page.getByLabel("Record type").selectOption("companies");
     await page.getByLabel("Name", { exact: true }).fill(companyName);
     await page.getByLabel("Email", { exact: true }).fill(companyEmail);
@@ -64,14 +86,17 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
             name: "Keep a separate record if a duplicate is found",
         })
         .check();
-    await page.getByRole("button", { name: "Create customer" }).click();
+    await page
+        .getByRole("button", { name: "Create company", exact: true })
+        .click();
     const companyId = await createdCustomerId(
         page,
         "companies",
         companyName,
         companyEmail,
     );
-    await page.getByLabel("Record type").selectOption("contacts");
+    await openContactIntake(page);
+    await expect(page.getByLabel("Record type")).toHaveValue("contacts");
     await page.getByLabel("Name", { exact: true }).fill(contactName);
     await page.getByLabel("Email", { exact: true }).fill(contactEmail);
     await page.getByLabel("Phone", { exact: true }).fill("+1 202-555-0189");
@@ -83,7 +108,9 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
     await page
         .getByRole("combobox", { name: "Company", exact: true })
         .selectOption(companyId);
-    await page.getByRole("button", { name: "Create customer" }).click();
+    await page
+        .getByRole("button", { name: "Create contact", exact: true })
+        .click();
     const contactId = await createdCustomerId(
         page,
         "contacts",

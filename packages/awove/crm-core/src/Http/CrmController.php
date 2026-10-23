@@ -176,24 +176,25 @@ class CrmController
 
     public function people(Request $r)
     {
-        $selected = $r->input('table', 'contacts');
-        validator(['table' => $selected], ['table' => ['required', Rule::in(['contacts', 'companies'])]])->validate();
-        $engine = app(Query::class);
-        $table = $engine->run(Access::identities($r->user(), $selected === 'contacts' ? Contact::class : Company::class), $selected, $r);
-        $contacts = $selected === 'contacts' ? $table['page'] : Access::identities($r->user(), Contact::class)->paginate(20);
-        $companies = $selected === 'companies' ? $table['page'] : Access::identities($r->user(), Company::class)->paginate(20);
+        Gate::authorize('leads.create');
+        $type = $r->query('type', $r->query('table', 'contacts'));
+        validator(['type' => $type], ['type' => ['required', Rule::in(['contacts', 'companies'])]])->validate();
 
-        return Inertia::render('Core/People', ['table' => $table, 'contacts' => $contacts, 'companies' => $companies, 'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']), 'contactOptions' => ContactDetails::options()]);
+        return Inertia::render('Core/People', [
+            'recordType' => $type,
+            'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']),
+            'contactOptions' => ContactDetails::options(),
+        ]);
     }
 
     public function identity(Request $r, string $type, Identities $service)
     {
-        $service->create($r->user(), $type, $r->all());
+        $identity = $service->create($r->user(), $type, $r->all());
 
-        return redirect('/people?table='.$type);
+        return redirect('/people/'.$type.'/'.$identity->id);
     }
 
-    private function identityReturnTo(Request $r, string $type): string
+    private function identityReturnTo(Request $r): string
     {
         $r->validate(['from_lead' => 'nullable|integer|min:1']);
         if ($r->filled('from_lead')) {
@@ -202,7 +203,7 @@ class CrmController
             return '/leads/'.$r->integer('from_lead');
         }
 
-        return '/people?table='.$type;
+        return '/leads';
     }
 
     public function showIdentity(Request $r, string $type, int $id, Identities $service)
@@ -215,7 +216,7 @@ class CrmController
             $companies->push($current ?? new Company(['id' => $identity->getAttribute('company_id'), 'name' => 'Current company (restricted)']));
         }
 
-        $returnTo = $this->identityReturnTo($r, $type);
+        $returnTo = $this->identityReturnTo($r);
         $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
         $details = $identity->only(['id', ...($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone'])]);
         if ($identity instanceof Contact) {
@@ -242,15 +243,15 @@ class CrmController
 
     public function updateIdentity(Request $r, string $type, int $id, Identities $service)
     {
-        $returnTo = $this->identityReturnTo($r, $type);
+        $returnTo = $this->identityReturnTo($r);
         $service->update($r->user(), $type, $id, $r->all());
 
-        return redirect($returnTo);
+        return redirect($r->filled('from_lead') ? $returnTo : '/people/'.$type.'/'.$id);
     }
 
     public function contactNote(Request $r, int $id, Identities $service)
     {
-        $this->identityReturnTo($r, 'contacts');
+        $this->identityReturnTo($r);
         $service->note($r->user(), $id, $r->all());
         $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
 
