@@ -184,7 +184,9 @@ test("server validation describes the invalid field and uses the Material error 
 }, info) => {
     await page.goto("/login");
     const email = page.getByLabel("Email address", { exact: true });
-    await email.fill(`material-invalid-email-${info.project.name}`);
+    await email.fill(
+        `material-invalid-email-${info.project.name}-${Date.now()}`,
+    );
     await email.evaluate((input: HTMLInputElement) => {
         if (input.form) input.form.noValidate = true;
     });
