@@ -3,7 +3,6 @@
 namespace Awove\ServiceDetails;
 
 use Awove\Core\Events\LeadCreated;
-use Awove\Core\Http\RequireMfa;
 use Awove\Core\Modules;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -16,7 +15,7 @@ class ServiceDetailsServiceProvider extends ServiceProvider
     {
         app(Modules::class)->register(new ServiceDetailsModule);
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        Route::middleware(['web', 'auth', RequireMfa::class])->prefix('modules/service-details')->name('service-details.')->group(function () {
+        Route::middleware(['web', 'auth', 'verified'])->prefix('modules/service-details')->name('service-details.')->group(function () {
             Route::get('/leads/{lead}', [ServiceDetailsController::class, 'show'])->name('show');
             Route::put('/leads/{lead}', [ServiceDetailsController::class, 'save'])->name('save');
         });

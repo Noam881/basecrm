@@ -9,8 +9,6 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 
-$installation = getenv('CRM_INSTALLATION') ?: ($_ENV['CRM_INSTALLATION'] ?? 'alpha');
-
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

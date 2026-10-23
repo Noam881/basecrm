@@ -3,90 +3,71 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Notifications\MagicLoginLink;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\RateLimiter;
-use Laravel\Fortify\Features;
+use Illuminate\Support\Facades\Notification;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered()
+    protected function setUp(): void
     {
-        $response = $this->get(route('login'));
-
-        $response->assertOk();
+        parent::setUp();
+        $this->withoutVite();
     }
 
-    public function test_users_can_authenticate_using_the_login_screen()
+    public function test_login_screen_has_no_password_authentication_properties(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->post(route('login.store'), [
-            'email' => $user->email,
-            'password' => 'password',
-        ]);
-
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
-    }
-
-    public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
-    {
-        $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
-
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-        ]);
-
-        $user = User::factory()->withTwoFactor()->create();
-
-        $response = $this->post(route('login'), [
-            'email' => $user->email,
-            'password' => 'password',
-        ]);
-
-        $response->assertRedirect(route('two-factor.login'));
-        $response->assertSessionHas('login.id', $user->id);
+        $this->get('/login')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->missing('canResetPassword')
+            ->missing('passwordRules'));
         $this->assertGuest();
     }
 
-    public function test_users_can_not_authenticate_with_invalid_password()
+    public function test_submitting_legacy_credentials_only_sends_an_email_link_and_never_authenticates(): void
     {
-        $user = User::factory()->create();
+        Notification::fake();
+        $user = User::factory()->create(['name' => 'Noa Levi', 'email' => 'noa.levi@fictional.example.test']);
 
-        $this->post(route('login.store'), [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
+        foreach (['password', 'incorrect-fictional-password'] as $password) {
+            $this->post('/login', ['email' => $user->email, 'password' => $password])
+                ->assertSessionHasNoErrors()
+                ->assertRedirect(route('login'));
+            $this->assertGuest();
+        }
 
+        Notification::assertSentToTimes($user, MagicLoginLink::class, 2);
+        $this->assertDatabaseCount('magic_login_tokens', 1);
+        $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_unknown_login_addresses_do_not_create_accounts_or_send_notifications(): void
+    {
+        Notification::fake();
+        $this->post('/login', ['email' => 'unknown@fictional.example.test', 'password' => 'password'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('login'));
+        Notification::assertNothingSent();
+        $this->assertDatabaseCount('users', 0);
         $this->assertGuest();
     }
 
-    public function test_users_can_logout()
+    public function test_protected_pages_require_email_link_authentication(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->post(route('logout'));
-
-        $response->assertRedirect(route('home'));
-
+        foreach (['/dashboard', '/settings/profile', '/settings/security'] as $path) {
+            $this->get($path)->assertRedirect('/login');
+        }
         $this->assertGuest();
     }
 
-    public function test_users_are_rate_limited()
+    public function test_users_can_logout_and_cannot_reuse_the_authenticated_session(): void
     {
-        $user = User::factory()->create();
-
-        RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
-
-        $response = $this->post(route('login.store'), [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-
-        $response->assertTooManyRequests();
+        $user = User::factory()->create(['name' => 'Noa Levi', 'email' => 'noa.levi@fictional.example.test']);
+        $this->actingAs($user)->post('/logout')->assertRedirect(route('home'));
+        $this->assertGuest();
+        $this->get('/dashboard')->assertRedirect('/login');
     }
 }

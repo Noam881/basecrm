@@ -4,46 +4,42 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Inertia\Testing\AssertableInertia as Assert;
-use Laravel\Fortify\Features;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class TwoFactorChallengeTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    public function test_the_legacy_challenge_screen_redirects_to_email_sign_in(): void
     {
-        parent::setUp();
-
-        $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+        $this->get('/two-factor-challenge')->assertRedirect('/login');
+        $this->assertGuest();
     }
 
-    public function test_two_factor_challenge_redirects_to_login_when_not_authenticated(): void
+    #[DataProvider('legacyMfaEndpoints')]
+    public function test_legacy_mfa_endpoints_are_unavailable_and_cannot_change_enrolled_secrets(string $method, string $path): void
     {
-        $response = $this->get(route('two-factor.login'));
+        $user = User::factory()->withTwoFactor()->create(['name' => 'Noa Levi', 'email' => 'noa.levi@fictional.example.test']);
+        $secrets = array_intersect_key($user->getRawOriginal(), array_flip(['two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at']));
+        $response = $this->actingAs($user)->call($method, $path, ['code' => '123456', 'recovery_code' => 'recovery-code-1']);
 
-        $response->assertRedirect(route('login'));
+        $this->assertContains($response->getStatusCode(), [404, 405]);
+        $this->assertSame($secrets, array_intersect_key($user->fresh()->getRawOriginal(), $secrets));
+        $this->assertAuthenticatedAs($user);
     }
 
-    public function test_two_factor_challenge_can_be_rendered(): void
+    public static function legacyMfaEndpoints(): array
     {
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-        ]);
-
-        $user = User::factory()->withTwoFactor()->create();
-
-        $this->post(route('login'), [
-            'email' => $user->email,
-            'password' => 'password',
-        ]);
-
-        $this->get(route('two-factor.login'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('auth/TwoFactorChallenge'),
-            );
+        return [
+            'challenge' => ['POST', '/two-factor-challenge'],
+            'enable' => ['POST', '/user/two-factor-authentication'],
+            'confirm' => ['POST', '/user/confirmed-two-factor-authentication'],
+            'disable' => ['DELETE', '/user/two-factor-authentication'],
+            'regenerate recovery codes' => ['POST', '/user/two-factor-recovery-codes'],
+            'read recovery codes' => ['GET', '/user/two-factor-recovery-codes'],
+            'read QR code' => ['GET', '/user/two-factor-qr-code'],
+            'read secret' => ['GET', '/user/two-factor-secret-key'],
+        ];
     }
 }

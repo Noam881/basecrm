@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage, router } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import {
     date,
     type Lead,
@@ -16,6 +16,7 @@ const props = defineProps<{
     statuses: Stage[];
     fields: Record<string, Field>;
     editable: boolean;
+    identityPermissions: { contact: boolean; company: boolean };
     panels: {
         id: string;
         label: string;
@@ -27,6 +28,12 @@ const props = defineProps<{
 const page = usePage();
 const zone = (page.props.brand as { timezone: string }).timezone;
 const capabilities = page.props.capabilities as string[];
+const customerName = computed(
+    () =>
+        props.lead.contact?.name ??
+        props.lead.company?.name ??
+        props.lead.title,
+);
 const form = useForm({
     title: props.lead.title,
     owner_id: props.lead.owner_id,
@@ -91,19 +98,11 @@ function changeTask(t: Task) {
 }
 </script>
 <template>
-    <Head :title="lead.title" /><Link href="/leads" class="crm-back"
+    <Head :title="customerName" /><Link href="/leads" class="crm-back"
         >← Back to leads</Link
     >
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">LEAD #{{ lead.id }}</p>
-            <h1>{{ lead.title }}</h1>
-            <p>
-                {{ lead.contact?.name ?? lead.company?.name }} ·
-                {{ lead.status.name }}
-                <span v-if="lead.archived_at">· Archived</span>
-            </p>
-        </div>
+        <h1>{{ customerName }}</h1>
         <button
             v-if="editable && capabilities.includes('records.archive')"
             class="crm-secondary"
@@ -114,15 +113,22 @@ function changeTask(t: Task) {
     </div>
     <div class="crm-profile-grid">
         <div class="crm-stack">
-            <section class="crm-card">
+            <section class="crm-card crm-flow">
                 <h2>Lead details</h2>
+                <p class="crm-muted">
+                    Lead #{{ lead.id }} ·
+                    {{ lead.contact?.name ?? lead.company?.name }} ·
+                    {{ lead.status.name }}
+                    <span v-if="lead.archived_at">· Archived</span>
+                </p>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <label
-                        ><span class="crm-field-label">Title</span
+                        ><span class="crm-field-label"
+                            >Enquiry title (optional)</span
                         ><input
                             v-model="form.title"
                             :disabled="!editable"
-                            required /></label
+                            maxlength="160" /></label
                     ><label
                         ><span class="crm-field-label">Status</span
                         ><select v-model="form.status_id" :disabled="!editable">
@@ -191,10 +197,11 @@ function changeTask(t: Task) {
                     </div>
                 </form>
             </section>
-            <section class="crm-card">
+            <section class="crm-card crm-flow">
                 <h2>Notes</h2>
                 <form
                     v-if="editable"
+                    class="crm-form"
                     @submit.prevent="
                         note.post(`/leads/${lead.id}/notes`, {
                             preserveScroll: true,
@@ -258,21 +265,44 @@ function changeTask(t: Task) {
             <section class="crm-card">
                 <h2>Customer</h2>
                 <div
-                    v-for="person in [lead.contact, lead.company].filter(
-                        Boolean,
-                    )"
-                    :key="person?.id"
+                    v-for="item in [
+                        {
+                            type: 'contacts',
+                            label: 'contact',
+                            person: lead.contact,
+                            editable: identityPermissions.contact,
+                        },
+                        {
+                            type: 'companies',
+                            label: 'company',
+                            person: lead.company,
+                            editable: identityPermissions.company,
+                        },
+                    ].filter((item) => item.person)"
+                    :key="item.type"
                     class="crm-note"
                 >
-                    <strong>{{ person?.name }}</strong>
-                    <p>{{ person?.email ?? "No email" }}</p>
-                    <p>{{ person?.phone ?? "No phone" }}</p>
+                    <strong
+                        ><Link
+                            :href="`/people/${item.type}/${item.person?.id}`"
+                            >{{ item.person?.name }}</Link
+                        ></strong
+                    >
+                    <p>{{ item.person?.email ?? "No email" }}</p>
+                    <p>{{ item.person?.phone ?? "No phone" }}</p>
+                    <div v-if="item.editable" class="crm-form-action">
+                        <Link
+                            :href="`/people/${item.type}/${item.person?.id}?from_lead=${lead.id}`"
+                            class="crm-secondary"
+                            >Edit {{ item.label }}</Link
+                        >
+                    </div>
                 </div>
             </section>
             <section class="crm-card">
                 <h2>Follow-ups</h2>
                 <p v-if="!lead.tasks?.length" class="crm-muted">
-                    Plan the next conversation.
+                    No follow-ups scheduled.
                 </p>
                 <article v-for="t in lead.tasks" :key="t.id" class="crm-note">
                     <strong>{{ t.title }}</strong>
@@ -293,6 +323,7 @@ function changeTask(t: Task) {
                     </div>
                     <form
                         v-if="reschedule === t.id"
+                        class="crm-form"
                         @submit.prevent="changeTask(t)"
                     >
                         <label
@@ -314,7 +345,7 @@ function changeTask(t: Task) {
                 </article>
                 <form
                     v-if="editable"
-                    class="crm-stack"
+                    class="crm-form"
                     @submit.prevent="addTask"
                 >
                     <h3>Schedule a follow-up</h3>

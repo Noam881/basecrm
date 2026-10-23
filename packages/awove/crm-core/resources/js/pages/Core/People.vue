@@ -1,88 +1,130 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from "@inertiajs/vue3";
-import { ref } from "vue";
-import type { Person, Page } from "../../types";
-import DataTable from "../../components/table/DataTable.vue";
-import type { TablePayload } from "../../components/table/types";
+import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
+import { computed, ref, watch } from "vue";
+import { contactFormData, type Person, type ContactOptions } from "../../types";
+import ContactFields from "../../components/ContactFields.vue";
 const props = defineProps<{
-    table: TablePayload;
+    recordType: "contacts" | "companies";
     companyOptions: Person[];
-    contacts: Page<Person>;
-    companies: Page<Person>;
-    q: string;
+    contactOptions: ContactOptions;
 }>();
-const type = ref("contacts");
+const capabilities = usePage().props.capabilities as string[];
+const type = ref(props.recordType);
+const title = computed(() =>
+    type.value === "contacts" ? "Add new contact" : "Add new company",
+);
 const form = useForm({
-    name: "",
-    email: "",
-    phone: "",
-    company_id: null as number | null,
+    ...contactFormData(),
+    notes: "",
     accept_duplicate: false,
 });
+watch(type, () => form.clearErrors());
+function createCustomer() {
+    form.transform((data) =>
+        type.value === "contacts"
+            ? data
+            : {
+                  name: data.name,
+                  email: data.email,
+                  phone: data.phone,
+                  accept_duplicate: data.accept_duplicate,
+              },
+    ).post(`/people/${type.value}`, { onSuccess: () => form.reset() });
+}
 </script>
 <template>
-    <Head title="Contacts & companies" />
+    <Head :title="title" />
+    <Link href="/leads" class="crm-back">← Back to leads</Link>
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">PEOPLE BEFORE PIPELINES</p>
-            <h1>Contacts & companies</h1>
-            <p>One identity. A history of possibilities.</p>
-        </div>
+        <h1>{{ title }}</h1>
     </div>
-    <section class="crm-card">
-        <h2>Add a customer</h2>
-        <form
-            class="crm-form-grid"
-            @submit.prevent="
-                form.post(`/people/${type}`, { onSuccess: () => form.reset() })
-            "
-        >
-            <label
-                ><span class="crm-field-label">Record type</span
-                ><select v-model="type">
+    <section
+        v-if="capabilities.includes('leads.create')"
+        class="crm-card crm-flow"
+    >
+        <h2>
+            {{ type === "contacts" ? "Contact details" : "Company details" }}
+        </h2>
+        <form class="crm-form-grid" @submit.prevent="createCustomer">
+            <label class="crm-field crm-form-span">
+                <span class="crm-field-label">Record type</span>
+                <select v-model="type">
                     <option value="contacts">Contact</option>
                     <option value="companies">Company</option>
-                </select></label
-            ><label
-                ><span class="crm-field-label">Name</span
-                ><input v-model="form.name" required /></label
-            ><label
-                ><span class="crm-field-label">Email</span
-                ><input v-model="form.email" type="email" /></label
-            ><label
-                ><span class="crm-field-label">Phone</span
-                ><input v-model="form.phone" type="tel" /></label
-            ><label v-if="type === 'contacts'"
-                ><span class="crm-field-label">Company</span
-                ><select v-model="form.company_id">
-                    <option :value="null">Individual</option>
-                    <option
-                        v-for="c in companyOptions"
-                        :key="c.id"
-                        :value="c.id"
+                </select>
+            </label>
+            <ContactFields
+                v-if="type === 'contacts'"
+                :form="form"
+                :options="contactOptions"
+                :companies="companyOptions"
+                :errors="form.errors"
+                initial-notes
+            />
+            <template v-else>
+                <label class="crm-field">
+                    <span class="crm-field-label">Name</span>
+                    <input
+                        v-model="form.name"
+                        required
+                        maxlength="120"
+                        autocomplete="organization"
+                        :aria-invalid="!!form.errors.name"
+                    />
+                    <small
+                        v-if="form.errors.name"
+                        data-slot="input-error"
+                        role="alert"
+                        >{{ form.errors.name }}</small
                     >
-                        {{ c.name }}
-                    </option>
-                </select></label
-            ><label class="crm-checkbox"
-                ><input v-model="form.accept_duplicate" type="checkbox" />Keep a
-                separate record if a duplicate is found</label
-            >
+                </label>
+                <label class="crm-field">
+                    <span class="crm-field-label">Email</span>
+                    <input
+                        v-model="form.email"
+                        type="email"
+                        maxlength="160"
+                        autocomplete="email"
+                        :aria-invalid="!!form.errors.email"
+                    />
+                    <small
+                        v-if="form.errors.email"
+                        data-slot="input-error"
+                        role="alert"
+                        >{{ form.errors.email }}</small
+                    >
+                </label>
+                <label class="crm-field">
+                    <span class="crm-field-label">Phone</span>
+                    <input
+                        v-model="form.phone"
+                        type="tel"
+                        maxlength="40"
+                        autocomplete="tel"
+                        :aria-invalid="!!form.errors.phone"
+                    />
+                    <small
+                        v-if="form.errors.phone"
+                        data-slot="input-error"
+                        role="alert"
+                        >{{ form.errors.phone }}</small
+                    >
+                </label>
+            </template>
+            <label class="crm-checkbox crm-form-span">
+                <input v-model="form.accept_duplicate" type="checkbox" />
+                Keep a separate record if a duplicate is found
+            </label>
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">
-                    Create customer
+                    {{
+                        type === "contacts"
+                            ? "Create contact"
+                            : "Create company"
+                    }}
                 </button>
+                <Link href="/leads" class="crm-secondary">Cancel</Link>
             </div>
         </form>
     </section>
-    <div class="crm-tabs md-quick-views">
-        <Link href="/people?table=contacts">Contacts</Link
-        ><Link href="/people?table=companies">Companies</Link>
-    </div>
-    <DataTable
-        :payload="table"
-        endpoint="/people"
-        :title="table.id === 'contacts' ? 'Contacts' : 'Companies'"
-        :base-query="{ table: table.id }"
-    />
 </template>

@@ -2,6 +2,7 @@
 
 namespace Awove\Core\Tables;
 
+use Awove\Core\ContactDetails;
 use Awove\Core\Contracts\LeadTableContributor;
 use Awove\Core\Installation;
 use Awove\Core\Models\Status;
@@ -18,15 +19,40 @@ class Catalog
         };
         $person = fn (string $fk) => "(SELECT name FROM users WHERE users.id = $fk)";
         $priorities = [['value' => 'low', 'label' => 'Low'], ['value' => 'normal', 'label' => 'Normal'], ['value' => 'high', 'label' => 'High']];
+        $choices = fn (array $labels) => array_map(fn ($value, $label) => compact('value', 'label'), array_keys($labels), array_values($labels));
+        $availability = function (string $sql, array $labels): string {
+            $cases = [];
+            foreach ($labels as $value => $label) {
+                $cases[] = "WHEN '".str_replace("'", "''", $value)."' THEN '".str_replace("'", "''", $label)."'";
+            }
+
+            return '(SELECT string_agg(CASE choice.value '.implode(' ', $cases)." END, ', ' ORDER BY choice.ordinality) FROM jsonb_array_elements_text(COALESCE(($sql)::jsonb, '[]'::jsonb)) WITH ORDINALITY AS choice(value, ordinality))";
+        };
+        $contactColumns = function (string $t, string $prefix = '', bool $related = false) use ($add, $choices, $availability): void {
+            $expression = fn (string $field) => $related ? "(SELECT $field FROM crm_contacts WHERE crm_contacts.id=$t.contact_id)" : "$t.$field";
+            $label = $related ? 'Contact ' : '';
+            foreach (['secondary_phone' => 'Secondary phone', 'address' => 'Address', 'city' => 'City', 'country' => 'Country'] as $field => $name) {
+                $add($prefix.$field, $label.$name, $expression($field), 'text', 'Contact details', width: $field === 'address' ? 280 : 200);
+            }
+            foreach (['secondary_phone_label' => ['Secondary phone type', ContactDetails::PHONE_LABELS], 'preferred_contact_method' => ['Preferred contact method', ContactDetails::METHODS], 'source' => ['How they heard about us', ContactDetails::SOURCES]] as $field => [$name, $labels]) {
+                $add($prefix.$field, $label.$name, $expression($field), 'select', 'Contact details', $choices($labels), 220);
+            }
+            $add($prefix.'preferred_contact_times', $label.'Best contact time', $availability($expression('preferred_contact_times'), ContactDetails::TIMES), 'text', 'Contact details', width: 240);
+            $add($prefix.'preferred_contact_days', $label.'Best contact days', $availability($expression('preferred_contact_days'), ContactDetails::DAYS), 'text', 'Contact details', width: 280);
+            $contactId = $related ? "$t.contact_id" : "$t.id";
+            $add($prefix.'notes_count', $label.'Notes', "(SELECT COUNT(*) FROM crm_contact_notes WHERE contact_id=$contactId)", 'number', 'Activity');
+        };
+
         if ($table === 'leads') {
             $t = 'crm_leads';
             $add('id', 'Lead ID', "$t.id", 'number');
-            $add('title', 'Lead title', "$t.title", width: 280);
+            $add('title', 'Enquiry title', "$t.title", width: 280);
             foreach (['contact' => 'crm_contacts', 'company' => 'crm_companies'] as $key => $related) {
                 foreach (['name', 'email', 'phone'] as $field) {
                     $add($field === 'name' ? $key : $key.'_'.$field, ucfirst($key).' '.ucfirst($field), "(SELECT $field FROM $related WHERE $related.id=$t.{$key}_id)", 'text', 'Customer', width: $field === 'email' ? 240 : 200);
                 }
             }
+            $contactColumns($t, 'contact_', true);
             $add('owner', 'Owner', $person("$t.owner_id"), 'text', 'Ownership');
             $add('owner_id', 'Owner ID', "$t.owner_id", 'number', 'Ownership');
             $add('created_by', 'Created by', $person("$t.created_by"), 'text', 'Ownership');
@@ -70,6 +96,7 @@ class Catalog
             $add('created_by', 'Created by', $person("$t.created_by"), 'text', 'Ownership');
             if ($table === 'contacts') {
                 $add('company', 'Company', "(SELECT name FROM crm_companies WHERE id=$t.company_id)", 'text', 'Customer', width: 220);
+                $contactColumns($t);
             }
         } elseif ($table === 'tasks') {
             $t = 'crm_tasks';
@@ -86,10 +113,10 @@ class Catalog
             abort(404);
         }
         foreach (['created_at' => 'Created', 'updated_at' => 'Last updated'] as $id => $label) {
-            $add($id,$label,"$t.$id",'datetime','Activity',width: 220);
+            $add($id, $label, "$t.$id", 'datetime', 'Activity', width: 220);
         }
         if ($table === 'leads') {
-            $add('archived_at','Archived',"$t.archived_at",'datetime','Activity',width: 220);
+            $add('archived_at', 'Archived', "$t.archived_at", 'datetime', 'Activity', width: 220);
         }
 
         return $c;
@@ -98,7 +125,7 @@ class Catalog
     public function defaults(string $table): array
     {
         return match ($table) {
-            'leads' => ['title', 'contact', 'company', 'status', 'owner', 'priority', 'next_action_at'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
+            'leads' => ['contact', 'company', 'status', 'owner', 'contact_phone', 'contact_email', 'priority', 'next_action_at'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
         };
     }
 }

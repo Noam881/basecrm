@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Auth\MagicLogin;
+use App\Models\User;
+use App\Notifications\MagicLoginLink;
+use Awove\Core\Events\SignInLinkRequested;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +31,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        Event::listen(SignInLinkRequested::class, function (SignInLinkRequested $event): void {
+            $user = User::where('active', true)->find($event->userId);
+            if ($user) {
+                $link = app(MagicLogin::class)->issue($user);
+                $user->notify(new MagicLoginLink($link['url']));
+            }
+        });
     }
 
     /**
@@ -38,16 +49,6 @@ class AppServiceProvider extends ServiceProvider
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
-        );
-
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
         );
     }
 }

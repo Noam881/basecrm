@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
+import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
 import type { Lead, Page, Person, Stage, Field } from "../../types";
 import DataTable from "../../components/table/DataTable.vue";
@@ -32,37 +32,38 @@ const form = useForm({
 <template>
     <Head :title="brand.lead_label" />
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">BUILD LASTING RELATIONSHIPS</p>
-            <h1>{{ brand.lead_label }}</h1>
-            <p>Every conversation has a next step.</p>
-        </div>
-        <button
+        <h1>{{ brand.lead_label }}</h1>
+        <div
             v-if="capabilities.includes('leads.create')"
-            class="crm-button"
-            @click="showCreate = !showCreate"
+            class="crm-form-action"
         >
-            {{ showCreate ? "Close form" : "+ Create lead" }}
-        </button>
+            <Link href="/people" class="crm-secondary">Add new contact</Link>
+            <button class="crm-button" @click="showCreate = !showCreate">
+                {{ showCreate ? "Close form" : "+ Create lead" }}
+            </button>
+        </div>
     </div>
     <section v-if="showCreate" class="crm-card">
         <h2>New lead</h2>
         <p v-if="!contacts.length && !companies.length">
-            Start by <Link href="/people">creating a contact or company</Link>.
+            Start by <Link href="/people">adding a new contact</Link>.
         </p>
         <form class="crm-form-grid" @submit.prevent="form.post('/leads')">
+            <div class="crm-field">
+                <label
+                    ><span class="crm-field-label">Contact</span>
+                    <select v-model="form.contact_id">
+                        <option :value="null">No contact</option>
+                        <option v-for="p in contacts" :key="p.id" :value="p.id">
+                            {{ p.name }}
+                        </option>
+                    </select>
+                </label>
+                <Link href="/people" class="crm-field-supporting-action"
+                    >Create a contact</Link
+                >
+            </div>
             <label
-                ><span class="crm-field-label">Title</span
-                ><input v-model="form.title" required maxlength="160" /></label
-            ><label
-                ><span class="crm-field-label">Contact</span
-                ><select v-model="form.contact_id">
-                    <option :value="null">No contact</option>
-                    <option v-for="p in contacts" :key="p.id" :value="p.id">
-                        {{ p.name }}
-                    </option>
-                </select></label
-            ><label
                 ><span class="crm-field-label">Company</span
                 ><select v-model="form.company_id">
                     <option :value="null">No company</option>
@@ -70,6 +71,9 @@ const form = useForm({
                         {{ p.name }}
                     </option>
                 </select></label
+            ><label
+                ><span class="crm-field-label">Enquiry title (optional)</span
+                ><input v-model="form.title" maxlength="160" /></label
             ><label
                 ><span class="crm-field-label">Owner</span
                 ><select v-model="form.owner_id">
@@ -125,13 +129,22 @@ const form = useForm({
         </form>
     </section>
     <div class="crm-tabs md-quick-views" aria-label="Lead quick views">
-        <Link href="/leads">All leads</Link
-        ><Link href="/leads?view=missing">Missing follow-up</Link
+        <Link href="/leads" :aria-current="!filters.view ? 'page' : undefined"
+            >All leads</Link
+        ><Link
+            href="/leads?view=missing"
+            :aria-current="filters.view === 'missing' ? 'page' : undefined"
+            >Missing follow-up</Link
         ><Link
             v-if="capabilities.includes('leads.view.all')"
             href="/leads?view=unassigned"
+            :aria-current="filters.view === 'unassigned' ? 'page' : undefined"
             >Unassigned</Link
-        ><Link href="/leads?view=archived">Archived</Link>
+        ><Link
+            href="/leads?view=archived"
+            :aria-current="filters.view === 'archived' ? 'page' : undefined"
+            >Archived</Link
+        >
     </div>
     <DataTable
         :payload="table"

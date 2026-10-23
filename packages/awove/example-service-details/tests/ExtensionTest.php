@@ -71,5 +71,12 @@ it('uses two brands and vocabularies with the same core', function () {
     $a = Installation::manifest();
     config(['core.installation' => 'beta']);
     $b = Installation::manifest();
-    expect($a['color'])->not->toBe($b['color'])->and($a['modules'])->toBe([])->and($b['modules'])->toBe(['service-details'])->and($b['lead_label'])->toBe('Enquiries');
+    expect($a['color'])->toBe('#262626')
+        ->and($b['color'])->toBe('#262626')
+        ->and($a['name'])->not->toBe($b['name'])
+        ->and($a['logo'])->not->toBe($b['logo'])
+        ->and($a['modules'])->toBe([])
+        ->and($b['modules'])->toBe(['service-details'])
+        ->and($a['lead_label'])->toBe('Leads')
+        ->and($b['lead_label'])->toBe('Enquiries');
 });

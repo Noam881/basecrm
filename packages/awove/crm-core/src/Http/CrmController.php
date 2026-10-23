@@ -3,6 +3,7 @@
 namespace Awove\Core\Http;
 
 use Awove\Core\Access;
+use Awove\Core\ContactDetails;
 use Awove\Core\Installation;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
@@ -11,6 +12,7 @@ use Awove\Core\Models\Reminder;
 use Awove\Core\Models\Status;
 use Awove\Core\Models\Task;
 use Awove\Core\Modules;
+use Awove\Core\Services\Identities;
 use Awove\Core\Services\Leads;
 use Awove\Core\Services\Tasks;
 use Awove\Core\Services\Users;
@@ -22,7 +24,6 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CrmController
@@ -66,7 +67,7 @@ class CrmController
 
     private function leadData(Request $r, bool $update = false): array
     {
-        $data = $r->validate(['title' => ($update ? 'sometimes' : 'required').'|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited']);
+        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited']);
         foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $key => $model) {
             if (! empty($data[$key])) {
                 abort_unless(Access::identities($r->user(), $model)->whereKey($data[$key])->exists(), 403);
@@ -97,7 +98,7 @@ class CrmController
     {
         Gate::authorize('view', $lead);
 
-        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'panels' => app(Modules::class)->panels($r->user())]);
+        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'panels' => app(Modules::class)->panels($r->user())]);
     }
 
     public function update(Request $r, Lead $lead, Leads $service)
@@ -175,49 +176,86 @@ class CrmController
 
     public function people(Request $r)
     {
-        $selected = $r->input('table', 'contacts');
-        validator(['table' => $selected], ['table' => ['required', Rule::in(['contacts', 'companies'])]])->validate();
-        $engine = app(Query::class);
-        $table = $engine->run(Access::identities($r->user(), $selected === 'contacts' ? Contact::class : Company::class), $selected, $r);
-        $contacts = $selected === 'contacts' ? $table['page'] : Access::identities($r->user(), Contact::class)->paginate(20);
-        $companies = $selected === 'companies' ? $table['page'] : Access::identities($r->user(), Company::class)->paginate(20);
+        Gate::authorize('leads.create');
+        $type = $r->query('type', $r->query('table', 'contacts'));
+        validator(['type' => $type], ['type' => ['required', Rule::in(['contacts', 'companies'])]])->validate();
 
-        return Inertia::render('Core/People', ['table' => $table, 'contacts' => $contacts, 'companies' => $companies, 'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name'])]);
+        return Inertia::render('Core/People', [
+            'recordType' => $type,
+            'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']),
+            'contactOptions' => ContactDetails::options(),
+        ]);
     }
 
-    private static function normalize(string $value): string
+    public function identity(Request $r, string $type, Identities $service)
     {
-        return mb_strtolower(preg_replace('/[^\p{L}\p{N}@.]+/u', '', $value));
+        $identity = $service->create($r->user(), $type, $r->all());
+
+        return redirect('/people/'.$type.'/'.$identity->id);
     }
 
-    public function identity(Request $r, string $type)
+    private function identityReturnTo(Request $r): string
     {
-        abort_unless($r->user()->can('leads.create'), 403);
-        $data = $r->validate(['name' => 'required|string|max:120', 'email' => 'nullable|email|max:160', 'phone' => 'nullable|string|max:40', 'company_id' => 'nullable|integer', 'accept_duplicate' => 'sometimes|boolean']);
-        $model = $type === 'contacts' ? Contact::class : Company::class;
-        if (! empty($data['company_id'])) {
-            abort_unless(Access::identities($r->user(), Company::class)->whereKey($data['company_id'])->exists(), 403);
-        }if ($type === 'companies') {
-            unset($data['company_id']);
-        }$duplicate = Access::identities($r->user(), $model)->where(function ($q) use ($data) {
-            $q->whereRaw('lower(name)=?', [mb_strtolower($data['name'])]);
-            if (! empty($data['email'])) {
-                $q->orWhere('email', mb_strtolower($data['email']));
-            }if (! empty($data['phone'])) {
-                $normalized = preg_replace('/[^0-9]/', '', $data['phone']);
-                if ($normalized !== '') {
-                    $q->orWhereRaw("regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g') = ?", [$normalized]);
-                }
-            }
-        })->exists();
-        if ($duplicate && ! ($data['accept_duplicate'] ?? false)) {
-            throw ValidationException::withMessages(['name' => 'Possible duplicate. Review existing records or confirm keeping a separate record.']);
-        }unset($data['accept_duplicate']);
-        if (! empty($data['email'])) {
-            $data['email'] = mb_strtolower($data['email']);
-        }$model::forceCreate([...$data, 'created_by' => $r->user()->id, 'search_key' => self::normalize(implode(' ', array_filter($data)))]);
+        $r->validate(['from_lead' => 'nullable|integer|min:1']);
+        if ($r->filled('from_lead')) {
+            abort_unless(Access::leads($r->user())->whereKey($r->integer('from_lead'))->exists(), 403);
 
-        return redirect('/people?table='.$type);
+            return '/leads/'.$r->integer('from_lead');
+        }
+
+        return '/leads';
+    }
+
+    public function showIdentity(Request $r, string $type, int $id, Identities $service)
+    {
+        $identity = Access::identities($r->user(), $service->model($type))->findOrFail($id);
+        Gate::authorize('view', $identity);
+        $companies = Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']);
+        if ($type === 'contacts' && $identity->getAttribute('company_id') && ! $companies->contains('id', $identity->getAttribute('company_id'))) {
+            $current = Access::identities($r->user(), Company::class)->find($identity->getAttribute('company_id'), ['id', 'name']);
+            $companies->push($current ?? new Company(['id' => $identity->getAttribute('company_id'), 'name' => 'Current company (restricted)']));
+        }
+
+        $returnTo = $this->identityReturnTo($r);
+        $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
+        $details = $identity->only(['id', ...($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone'])]);
+        if ($identity instanceof Contact) {
+            $details['company'] = $companies->firstWhere('id', $identity->getAttribute('company_id'))?->only(['id', 'name']);
+            $details['notes'] = $identity->notes()->with('author:id,name')->latest('created_at')->orderByDesc('id')->get()->map(fn ($note) => [
+                'id' => $note->id,
+                'body' => $note->body,
+                'created_at' => $note->created_at,
+                'author' => $note->author?->only(['id', 'name']),
+            ]);
+        }
+
+        return Inertia::render('Core/Person', [
+            'identity' => $details,
+            'type' => $type,
+            'editable' => Gate::allows('update', $identity),
+            'companyOptions' => $companies,
+            'contactOptions' => ContactDetails::options(),
+            'returnTo' => $returnTo,
+            'saveUrl' => '/people/'.$type.'/'.$id.$context,
+            'noteUrl' => $type === 'contacts' ? '/people/contacts/'.$id.'/notes'.$context : null,
+        ]);
+    }
+
+    public function updateIdentity(Request $r, string $type, int $id, Identities $service)
+    {
+        $returnTo = $this->identityReturnTo($r);
+        $service->update($r->user(), $type, $id, $r->all());
+
+        return redirect($r->filled('from_lead') ? $returnTo : '/people/'.$type.'/'.$id);
+    }
+
+    public function contactNote(Request $r, int $id, Identities $service)
+    {
+        $this->identityReturnTo($r);
+        $service->note($r->user(), $id, $r->all());
+        $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
+
+        return redirect('/people/contacts/'.$id.$context);
     }
 
     private function reminderQuery($u)

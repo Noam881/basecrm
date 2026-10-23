@@ -18,12 +18,7 @@ const props = withDefaults(
 <template>
     <div
         data-slot="dialog-footer"
-        :class="
-            cn(
-                'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
-                props.class,
-            )
-        "
+        :class="cn('crm-material-dialog-footer', props.class)"
     >
         <slot />
         <DialogClose v-if="showCloseButton" as-child>

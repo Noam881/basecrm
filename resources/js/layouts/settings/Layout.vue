@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from "@inertiajs/vue3";
-import Heading from "@/components/Heading.vue";
+import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCurrentUrl } from "@/composables/useCurrentUrl";
@@ -15,20 +15,22 @@ const sidebarNavItems: NavItem[] = [
         href: editProfile(),
     },
     {
-        title: "Security",
+        title: "Sign-in method",
         href: editSecurity(),
     },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
+const title = computed(() =>
+    isCurrentOrParentUrl(editSecurity()) ? "Account settings" : "Profile",
+);
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
-        />
+    <div>
+        <div class="crm-heading">
+            <h1>{{ title }}</h1>
+        </div>
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">
@@ -40,10 +42,10 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                         v-for="item in sidebarNavItems"
                         :key="toUrl(item.href)"
                         variant="ghost"
-                        :class="[
-                            'w-full justify-start',
-                            { 'bg-muted': isCurrentOrParentUrl(item.href) },
-                        ]"
+                        class="w-full crm-control-start"
+                        :aria-current="
+                            isCurrentOrParentUrl(item.href) ? 'page' : undefined
+                        "
                         as-child
                     >
                         <Link :href="item.href">

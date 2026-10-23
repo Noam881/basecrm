@@ -22,7 +22,7 @@ Modules, custom-field definitions and asset paths are locked by default. Secrets
 
 ## Authorization and historical integrity
 
-Administrator and Employee are permission presets. Employees view/edit owned leads by default. `leads.view.all` does not grant `leads.edit.all`. Assignment, archival, identities, settings and users have separate capabilities. Every CRM route is authenticated; privileged users must confirm MFA enrollment. Deactivation is checked against the current stored user and invalidates sessions/remember tokens. Historical users cannot be deleted; the last active administrator is protected by a transaction and PostgreSQL advisory lock.
+Administrator and Employee are permission presets. Employees view/edit owned leads by default. `leads.view.all` does not grant `leads.edit.all`. Assignment, archival, identities, settings and users have separate capabilities. Every CRM route is authenticated through single-use email links; privileges are enforced by role permissions. Deactivation is checked against the current stored user and invalidates sessions/remember tokens. Historical users cannot be deleted; the last active administrator is protected by a transaction and PostgreSQL advisory lock.
 
 All lead lists, dashboards, direct URLs, linked record lookups, notes, tasks, reminders and extension requests check server scopes/policies. A contact/company becomes visible through an accessible lead, or through creator/admin access; its profile data never includes unrelated leads. Duplicate warnings are scoped to visible identities and never silently merge. Shared identity editing is not exposed in this checkpoint.
 
@@ -39,3 +39,5 @@ A follow-up is not a calendar appointment. `next_action_at` is derived from open
 ## Release boundaries
 
 Installations use immutable host/core and approved extension versions, not client branches. Their environment, real manifests/brand assets, database contents and uploaded files live outside the release image. Fictional examples are the only client examples committed here. Promote a missing reusable behavior to a reviewed core contract, then implement the client variation above it. Do not patch vendor files or copy Vue profiles into client folders.
+
+Administrator bootstrap and invitations dispatch the core `SignInLinkRequested` event after account creation. The host listener issues a single-use link and sends the encrypted queued `MagicLoginLink` notification; the reusable core does not depend on host authentication classes.
