@@ -9,15 +9,12 @@ use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
-use Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 class MagicLoginTest extends TestCase
@@ -45,7 +42,7 @@ class MagicLoginTest extends TestCase
         $inactive = $this->user(['name' => 'Daniel Cohen', 'email' => 'daniel.cohen@fictional.example.test', 'active' => false]);
 
         $this->post(route('magic-login.email'), ['email' => strtoupper($user->email)])
-            ->assertRedirect(route('magic-login.request'))
+            ->assertRedirect(route('login'))
             ->assertSessionHasNoErrors()
             ->assertSessionHas('status');
         $status = session('status');
@@ -53,7 +50,7 @@ class MagicLoginTest extends TestCase
 
         foreach (['unknown@fictional.example.test', $inactive->email] as $email) {
             $this->post(route('magic-login.email'), ['email' => $email])
-                ->assertRedirect(route('magic-login.request'))
+                ->assertRedirect(route('login'))
                 ->assertSessionHasNoErrors()
                 ->assertSessionHas('status', $status);
         }
@@ -81,7 +78,7 @@ class MagicLoginTest extends TestCase
             $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.$attempt])
                 ->post(route('magic-login.email'), ['email' => strtoupper($user->email)])
                 ->assertSessionHasNoErrors()
-                ->assertRedirect(route('magic-login.request'));
+                ->assertRedirect(route('login'));
         }
 
         $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.4'])
@@ -92,12 +89,12 @@ class MagicLoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_request_ip_limits_cover_unknown_addresses_without_disabling_password_login(): void
+    public function test_request_ip_limits_cover_unknown_addresses_without_creating_accounts_or_sending_mail(): void
     {
         $user = $this->user();
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             $this->post(route('magic-login.email'), ['email' => 'unknown'.$attempt.'@fictional.example.test'])
-                ->assertRedirect(route('magic-login.request'));
+                ->assertRedirect(route('login'));
         }
         $this->post(route('magic-login.email'), ['email' => 'another-unknown@fictional.example.test'])
             ->assertTooManyRequests();
@@ -105,10 +102,7 @@ class MagicLoginTest extends TestCase
         $this->assertDatabaseCount('magic_login_tokens', 0);
         $this->assertGuest();
 
-        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'Fictional-Noa-Password!123'])
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/dashboard');
-        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseCount('users', 1);
     }
 
     public function test_consumption_is_rate_limited_without_destroying_a_valid_link(): void
@@ -152,7 +146,7 @@ class MagicLoginTest extends TestCase
         $this->assertNull($service->peek($first['token']));
         $this->assertSame($user->id, $service->peek($second['token'])?->id);
         $this->post($first['url'])
-            ->assertRedirect(route('magic-login.request'))
+            ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertGuest();
         $this->post($second['url'])->assertSessionHasNoErrors()->assertRedirect('/dashboard');
@@ -197,7 +191,7 @@ class MagicLoginTest extends TestCase
                     ->where('action', '')
                     ->where('email', null));
             $this->post($url)
-                ->assertRedirect(route('magic-login.request'))
+                ->assertRedirect(route('login'))
                 ->assertSessionHasErrors('email');
             $this->assertGuest();
         }
@@ -221,7 +215,7 @@ class MagicLoginTest extends TestCase
             'redirect' => 'https://outside.example.test/',
         ])->assertSessionHasNoErrors()
             ->assertRedirect('/dashboard')
-            ->assertSessionHas('auth.password_confirmed_at')
+            ->assertSessionMissing('auth.password_confirmed_at')
             ->assertSessionMissing('login.id');
 
         $this->assertAuthenticatedAs($user);
@@ -231,6 +225,26 @@ class MagicLoginTest extends TestCase
         $this->assertTrue(Hash::check('Fictional-Noa-Password!123', $password));
         $this->assertDatabaseMissing('magic_login_tokens', ['user_id' => $user->id]);
         $this->assertDatabaseHas('magic_login_tokens', ['user_id' => $other->id]);
+    }
+
+    public function test_inertia_confirmation_starts_a_fresh_dashboard_document_without_leaking_the_token(): void
+    {
+        $user = $this->user();
+        $link = app(MagicLogin::class)->issue($user);
+        $this->get($link['url'])->assertOk()->assertHeader('Referrer-Policy', 'no-referrer');
+        $sessionId = session()->getId();
+
+        $response = $this->withHeader('X-Inertia', 'true')->post($link['url'])
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', route('dashboard'));
+
+        $location = $response->headers->get('X-Inertia-Location');
+        $this->assertNotNull($location);
+        $this->assertStringNotContainsString($link['token'], $location);
+        $this->assertNull(parse_url($location, PHP_URL_QUERY));
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotSame($sessionId, session()->getId());
+        $this->assertDatabaseMissing('magic_login_tokens', ['user_id' => $user->id]);
     }
 
     public function test_a_consumed_link_cannot_be_replayed_in_a_later_session(): void
@@ -243,7 +257,7 @@ class MagicLoginTest extends TestCase
         $this->post(route('logout'))->assertRedirect();
         $this->assertGuest();
         $this->post($link['url'])
-            ->assertRedirect(route('magic-login.request'))
+            ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertGuest();
         $this->assertDatabaseMissing('magic_login_tokens', ['user_id' => $user->id]);
@@ -261,7 +275,7 @@ class MagicLoginTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('auth/ConfirmMagicLogin')->where('valid', false));
         $this->assertDatabaseHas('magic_login_tokens', ['user_id' => $user->id]);
         $this->post($link['url'])
-            ->assertRedirect(route('magic-login.request'))
+            ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertGuest();
     }
@@ -277,7 +291,7 @@ class MagicLoginTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('auth/ConfirmMagicLogin')->where('valid', false));
         $this->post($link['url'])
-            ->assertRedirect(route('magic-login.request'))
+            ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertGuest();
     }
@@ -286,8 +300,6 @@ class MagicLoginTest extends TestCase
     {
         return [
             'email changed' => ['email'],
-            'password changed' => ['password'],
-            'MFA changed' => ['mfa'],
             'account deactivated' => ['inactive'],
         ];
     }
@@ -299,7 +311,7 @@ class MagicLoginTest extends TestCase
         $link = app(MagicLogin::class)->issue($user);
 
         $this->actingAs($other)->post($link['url'])
-            ->assertRedirect(route('magic-login.request'))
+            ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
         $this->assertAuthenticatedAs($other);
         $this->assertDatabaseHas('magic_login_tokens', ['user_id' => $user->id]);
@@ -315,173 +327,121 @@ class MagicLoginTest extends TestCase
 
         $this->actingAs($user)->post($link['url'])
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('auth.password_confirmed_at')
+            ->assertSessionMissing('auth.password_confirmed_at')
             ->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
         $this->assertDatabaseMissing('magic_login_tokens', ['user_id' => $user->id]);
     }
 
-    public function test_configured_mfa_is_required_before_a_magic_link_session_is_authenticated(): void
+    public function test_legacy_password_and_mfa_fields_do_not_invalidate_or_block_email_sign_in(): void
     {
-        $user = $this->withMfa($this->user());
-        $link = app(MagicLogin::class)->issue($user);
+        $user = $this->user();
+        $service = app(MagicLogin::class);
+        $link = $service->issue($user);
+        $fingerprint = $service->fingerprint($user);
+        $user->forceFill(['password' => Str::random(64)])->save();
+        $this->withMfa($user);
 
+        $this->assertSame($fingerprint, $service->fingerprint($user->fresh()));
         $this->post($link['url'])
-            ->assertRedirect(route('two-factor.login'))
-            ->assertSessionHas('login.id', $user->id)
-            ->assertSessionHas('login.remember', false)
-            ->assertSessionHas('auth.magic_pending.user_id', $user->id)
-            ->assertSessionMissing('auth.password_confirmed_at');
-        $this->assertGuest();
-        $this->assertDatabaseMissing('magic_login_tokens', ['user_id' => $user->id]);
-        $this->get('/dashboard')->assertRedirect(route('login'));
-        $this->post(route('two-factor.login'), ['code' => 'invalid-code'])->assertSessionHasErrors();
-        $this->assertGuest();
-
-        $this->post(route('two-factor.login'), ['code' => $this->otp($user)])
             ->assertSessionHasNoErrors()
             ->assertSessionMissing('login.id')
             ->assertSessionMissing('auth.magic_pending')
-            ->assertSessionHas('auth.password_confirmed_at')
-            ->assertRedirect('/dashboard');
-        $this->assertAuthenticatedAs($user);
-    }
-
-    public function test_magic_mfa_accepts_and_rotates_a_recovery_code_without_invalidating_its_fingerprint(): void
-    {
-        $user = $this->withMfa($this->user());
-        $link = app(MagicLogin::class)->issue($user);
-        $fingerprint = app(MagicLogin::class)->fingerprint($user);
-        $this->post($link['url'])->assertRedirect(route('two-factor.login'));
-        $this->assertGuest();
-
-        $this->post(route('two-factor.login'), ['recovery_code' => 'fictional-recovery-code'])
-            ->assertSessionHasNoErrors()
-            ->assertSessionMissing('auth.magic_pending')
-            ->assertSessionHas('auth.password_confirmed_at')
-            ->assertRedirect('/dashboard');
-        $this->assertAuthenticatedAs($user);
-        $this->assertNotContains('fictional-recovery-code', $user->fresh()->recoveryCodes());
-        $this->assertSame($fingerprint, app(MagicLogin::class)->fingerprint($user->fresh()));
-    }
-
-    public function test_mfa_response_rechecks_eligibility_if_the_account_changes_after_the_challenge_guard(): void
-    {
-        $user = $this->withMfa($this->user());
-        $link = app(MagicLogin::class)->issue($user);
-        $this->post($link['url'])->assertRedirect(route('two-factor.login'));
-        Event::listen(ValidTwoFactorAuthenticationCodeProvided::class, function () use ($user): void {
-            DB::table('users')->where('id', $user->id)->update(['active' => false]);
-        });
-
-        $this->post(route('two-factor.login'), ['code' => $this->otp($user)])
-            ->assertRedirect(route('magic-login.request'))
-            ->assertSessionMissing('login.id')
-            ->assertSessionMissing('auth.magic_pending')
-            ->assertSessionMissing('auth.password_confirmed_at');
-        $this->assertGuest();
-        $this->get('/dashboard')->assertRedirect(route('login'));
-    }
-
-    public function test_a_pending_magic_challenge_cannot_be_rebound_to_another_login_id(): void
-    {
-        $user = $this->withMfa($this->user());
-        $other = $this->withMfa($this->user(['name' => 'Daniel Cohen', 'email' => 'daniel.cohen@fictional.example.test']));
-        $link = app(MagicLogin::class)->issue($user);
-        $this->post($link['url'])->assertRedirect(route('two-factor.login'));
-
-        $this->withSession(['login.id' => $other->id])
-            ->post(route('two-factor.login'), ['code' => $this->otp($other)])
-            ->assertRedirect(route('magic-login.request'))
-            ->assertSessionMissing('login.id')
-            ->assertSessionMissing('auth.magic_pending');
-        $this->assertGuest();
-    }
-
-    public function test_an_invalid_password_attempt_clears_an_older_magic_mfa_challenge(): void
-    {
-        $user = $this->withMfa($this->user());
-        $link = app(MagicLogin::class)->issue($user);
-        $this->post($link['url'])->assertRedirect(route('two-factor.login'));
-
-        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'incorrect-fictional-password'])
-            ->assertSessionHasErrors('email')
-            ->assertSessionMissing('login.id')
-            ->assertSessionMissing('auth.magic_pending')
-            ->assertSessionMissing('auth.password_confirmed_at');
-        $this->assertGuest();
-        $this->post(route('two-factor.login'), ['code' => $this->otp($user)])->assertSessionHasErrors();
-        $this->assertGuest();
-    }
-
-    public function test_ordinary_password_mfa_does_not_gain_magic_link_recent_authentication(): void
-    {
-        $user = $this->withMfa($this->user());
-        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'Fictional-Noa-Password!123'])
-            ->assertRedirect(route('two-factor.login'))
-            ->assertSessionMissing('auth.magic_pending');
-        $this->assertGuest();
-        $this->post(route('two-factor.login'), ['code' => $this->otp($user)])
-            ->assertSessionHasNoErrors()
             ->assertSessionMissing('auth.password_confirmed_at')
             ->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
     }
 
-    #[DataProvider('pendingChanges')]
-    public function test_pending_magic_mfa_rejects_expiry_or_changes_to_the_account(string $change): void
+    #[DataProvider('staleIntendedTargets')]
+    public function test_sign_in_always_lands_on_dashboard_instead_of_stale_security_or_external_targets(string $target): void
     {
-        $this->freezeTime();
-        $user = $this->withMfa($this->user());
+        $user = $this->user();
         $link = app(MagicLogin::class)->issue($user);
-        $this->post($link['url'])->assertRedirect(route('two-factor.login'));
-        $this->assertGuest();
 
-        if ($change === 'expired') {
-            $this->travel(11)->minutes();
-        } else {
-            $this->changeCredentials($user, $change);
-        }
-
-        $this->post(route('two-factor.login'), ['code' => $this->otp($user->fresh())])
-            ->assertRedirect()
+        $this->withSession([
+            'url.intended' => $target,
+            'login.id' => $user->id,
+            'login.remember' => true,
+            'auth.magic_pending' => ['user_id' => $user->id],
+            'auth.password_confirmed_at' => now()->timestamp,
+        ])->post($link['url'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionMissing('url.intended')
             ->assertSessionMissing('login.id')
-            ->assertSessionMissing('auth.magic_pending');
-        $this->assertGuest();
-        $this->get('/dashboard')->assertRedirect(route('login'));
+            ->assertSessionMissing('login.remember')
+            ->assertSessionMissing('auth.magic_pending')
+            ->assertSessionMissing('auth.password_confirmed_at')
+            ->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
     }
 
-    public static function pendingChanges(): array
+    public static function staleIntendedTargets(): array
     {
-        return [...self::credentialChanges(), 'pending challenge expired' => ['expired']];
+        return [
+            'security settings' => ['/settings/security'],
+            'password confirmation' => ['/user/confirm-password'],
+            'old MFA challenge' => ['/two-factor-challenge'],
+            'external target' => ['https://outside.example.test/'],
+        ];
     }
 
-    public function test_a_new_administrator_can_enroll_in_mfa_without_a_known_password_but_cannot_use_admin_features_first(): void
+    #[DataProvider('legacyMfaStates')]
+    public function test_an_administrator_reaches_every_navigation_page_without_password_or_mfa_enrollment(bool $legacyMfa): void
     {
         $user = $this->user(['password' => Str::random(64)]);
+        if ($legacyMfa) {
+            $this->withMfa($user);
+        }
         $user->assignRole('Administrator');
         $link = app(MagicLogin::class)->issue($user);
 
         $this->post($link['url'])
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('auth.password_confirmed_at')
+            ->assertSessionMissing('login.id')
+            ->assertSessionMissing('auth.magic_pending')
             ->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
-        $this->get('/dashboard')->assertRedirect('/settings/security');
-        $this->post('/users', ['name' => 'Daniel Cohen', 'email' => 'daniel.cohen@fictional.example.test', 'role' => 'Employee'])
-            ->assertRedirect('/settings/security');
+        foreach (['/dashboard', '/leads', '/people', '/tasks', '/reminders', '/business-settings', '/settings/profile', '/settings/security'] as $path) {
+            $this->get($path)->assertOk();
+            $this->assertAuthenticatedAs($user);
+        }
         $this->assertDatabaseCount('users', 1);
-        $this->get(route('security.edit'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('settings/Security')->where('twoFactorEnabled', false));
-        $this->postJson(route('two-factor.enable'))->assertOk();
-        $user->refresh();
-        $this->assertNotNull($user->two_factor_secret);
-        $this->assertNull($user->two_factor_confirmed_at);
-        $this->get('/dashboard')->assertRedirect('/settings/security');
-        $this->postJson(route('two-factor.confirm'), ['code' => $this->otp($user)])->assertOk();
-        $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
-        $this->get('/dashboard')->assertOk();
+    }
+
+    public static function legacyMfaStates(): array
+    {
+        return ['no MFA configured' => [false], 'legacy MFA configured' => [true]];
+    }
+
+    public function test_reopening_a_consumed_link_while_still_signed_in_returns_to_dashboard(): void
+    {
+        $user = $this->user();
+        $link = app(MagicLogin::class)->issue($user);
+        $this->post($link['url'])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
+
+        $this->get($link['url'])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseMissing('magic_login_tokens', ['user_id' => $user->id]);
+    }
+
+    public function test_automatic_confirmation_still_requires_a_valid_csrf_token(): void
+    {
+        $user = $this->user();
+        $link = app(MagicLogin::class)->issue($user);
+        $this->get($link['url'])->assertOk();
+        $environment = $this->app->environment();
+        // Exercise the real CSRF middleware instead of its normal testing bypass.
+        $this->app->instance('env', 'local');
+        try {
+            $this->post($link['url'])->assertStatus(419);
+            $this->assertGuest();
+            $this->assertDatabaseHas('magic_login_tokens', ['user_id' => $user->id]);
+            $this->post($link['url'], ['_token' => csrf_token()])->assertRedirect('/dashboard');
+            $this->assertAuthenticatedAs($user);
+        } finally {
+            $this->app->instance('env', $environment);
+        }
     }
 
     private function user(array $attributes = []): User
@@ -509,14 +469,7 @@ class MagicLoginTest extends TestCase
     {
         $user->forceFill(match ($change) {
             'email' => ['email' => 'noa.updated@fictional.example.test'],
-            'password' => ['password' => 'Changed-Fictional-Password!456'],
-            'mfa' => ['two_factor_secret' => encrypt('GEZDGNBVGY3TQOJQ'), 'two_factor_confirmed_at' => now()],
             'inactive' => ['active' => false],
         })->save();
-    }
-
-    private function otp(User $user): string
-    {
-        return app(Google2FA::class)->getCurrentOtp(decrypt($user->two_factor_secret));
     }
 }

@@ -1,6 +1,8 @@
 <?php
 
+use App\Auth\MagicLogin;
 use App\Models\User;
+use App\Notifications\MagicLoginLink;
 use Awove\Core\Access;
 use Awove\Core\CustomFields;
 use Awove\Core\Installation;
@@ -14,11 +16,9 @@ use Awove\Core\Models\Setting;
 use Awove\Core\Models\Status;
 use Awove\Core\Models\Task;
 use Awove\Core\Services\Leads;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
-use PragmaRX\Google2FA\Google2FA;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -109,12 +109,14 @@ it('rejects stale status and ownership versions without overwriting', function (
     $this->patch('/leads/'.$lead->id, ['version' => 1, 'owner_id' => null])->assertConflict();
     expect($lead->fresh()->owner_id)->toBe($admin->id);
 });
-it('requires administrator MFA and prohibits public registration', function () {
+it('lets an administrator use the CRM without security setup and prohibits public registration', function () {
+    Notification::fake();
     $u = employee();
     $u->syncRoles(['Administrator']);
-    $this->actingAs($u)->get('/dashboard')->assertRedirect('/settings/security');
-    $this->get('/business-settings')->assertRedirect('/settings/security');
-    $this->post('/users', ['name' => 'No', 'email' => 'no@example.test', 'role' => 'Employee'])->assertRedirect('/settings/security');
+    $this->actingAs($u)->get('/dashboard')->assertOk();
+    $this->get('/business-settings')->assertOk();
+    $this->post('/users', ['name' => 'Noa Levi', 'email' => 'noa@example.test', 'role' => 'Employee'])->assertRedirect();
+    Notification::assertSentTo(User::where('email', 'noa@example.test')->firstOrFail(), MagicLoginLink::class);
     auth()->logout();
     $this->get('/register')->assertNotFound();
     $this->post('/register', [])->assertNotFound();
@@ -242,17 +244,16 @@ it('keeps the activity interface append-only', function () {
     expect(fn () => Activity::first()->update(['event' => 'forged']))->toThrow(LogicException::class);
 });
 
-it('completes Fortify TOTP challenge and rejects inactive sign-in', function () {
+it('signs an enrolled administrator in with only an email link and rejects inactive accounts', function () {
     $u = administrator();
-    $u->forceFill(['password' => 'A-local-test-password!', 'two_factor_recovery_codes' => encrypt(json_encode(['test-recovery-code']))])->save();
-    $this->post('/login', ['email' => $u->email, 'password' => 'A-local-test-password!'])->assertRedirect('/two-factor-challenge');
-    $this->assertGuest();
-    $otp = app(Google2FA::class)->getCurrentOtp(decrypt($u->two_factor_secret));
-    $this->post('/two-factor-challenge', ['code' => $otp])->assertRedirect('/dashboard');
+    $link = app(MagicLogin::class)->issue($u);
+    $this->post($link['url'])->assertRedirect('/dashboard');
     $this->assertAuthenticatedAs($u);
+    $this->get('/dashboard')->assertOk();
     $this->post('/logout');
     $u->forceFill(['active' => false])->save();
-    $this->post('/login', ['email' => $u->email, 'password' => 'A-local-test-password!'])->assertSessionHasErrors();
+    $link = app(MagicLogin::class)->issue($u);
+    $this->post($link['url'])->assertRedirect('/login')->assertSessionHasErrors('email');
     $this->assertGuest();
 });
 it('preserves intentionally changed role permissions when seeding defaults again', function () {
@@ -275,26 +276,28 @@ it('bootstraps one administrator with an expiring single-use onboarding link', f
     $this->artisan('crm:bootstrap-admin', ['email' => 'first-admin@example.test'])->assertSuccessful();
     $admin = User::where('email', 'first-admin@example.test')->firstOrFail();
     expect($admin->hasRole('Administrator'))->toBeTrue()->and($admin->email_verified_at)->not->toBeNull();
-    $token = null;
-    Notification::assertSentTo($admin, ResetPassword::class, function ($notification) use (&$token) {
-        $token = $notification->token;
+    $url = null;
+    Notification::assertSentTo($admin, MagicLoginLink::class, function ($notification) use (&$url) {
+        $url = $notification->url;
 
         return true;
     });
-    $this->post('/reset-password', ['token' => $token, 'email' => $admin->email, 'password' => 'Local-onboarding-password!', 'password_confirmation' => 'Local-onboarding-password!'])->assertRedirect('/login');
-    $this->post('/reset-password', ['token' => $token, 'email' => $admin->email, 'password' => 'Another-local-password!', 'password_confirmation' => 'Another-local-password!'])->assertSessionHasErrors('email');
+    $this->post($url)->assertRedirect('/dashboard');
+    $this->assertAuthenticatedAs($admin);
+    $this->get('/dashboard')->assertOk();
+    $this->post('/logout');
+    $this->post($url)->assertRedirect('/login')->assertSessionHasErrors('email');
     $this->artisan('crm:bootstrap-admin', ['email' => 'second-admin@example.test'])->assertFailed();
-    $this->actingAs($admin)->get('/dashboard')->assertRedirect('/settings/security');
-    expect(config('auth.passwords.users.expire'))->toBe(60);
+    expect(MagicLogin::LIFETIME_MINUTES)->toBe(10);
 });
 
-it('allows an enrolled administrator to invite an employee without a known password', function () {
+it('allows an administrator to invite an employee using a passwordless sign-in link', function () {
     Notification::fake();
     $admin = administrator();
     $this->actingAs($admin)->post('/users', ['name' => 'Invited teammate', 'email' => 'teammate@example.test', 'role' => 'Employee'])->assertRedirect();
     $user = User::where('email', 'teammate@example.test')->firstOrFail();
     expect($user->hasRole('Employee'))->toBeTrue()->and($user->active)->toBeTrue();
-    Notification::assertSentTo($user, ResetPassword::class);
+    Notification::assertSentTo($user, MagicLoginLink::class);
 });
 
 it('validates all five supported custom-field types and rejects invalid values', function () {

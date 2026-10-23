@@ -1,17 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
-const fixtures = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
+import { signIn } from "./auth";
 
 test("navigation keeps a clean canvas with a persistent rail or accessible mobile drawer", async ({
     page,
 }, info) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto("/login");
-    const account = fixtures[`tables_alpha_${info.project.name}`];
-    await page.getByLabel("Email address").fill(account.email);
-    await page.getByLabel("Password", { exact: true }).fill(account.password);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
+    await signIn(page, info.project.name);
     await expect(
         page.getByRole("heading", { name: "Overview", exact: true }),
     ).toBeVisible();

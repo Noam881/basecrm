@@ -1,20 +1,17 @@
-# Email sign-in
+# Email-only sign-in
 
-Existing active users can choose **Email me a sign-in link** from `/login`, enter their account email, and open the email's **Sign in to CRM** link. The landing page shows the account and requires an explicit **Continue to sign in**. No password or password reset is required. Request a fresh link if it has expired; only the latest link for the account works.
+Active users enter their account email at `/login` and open the email’s **Sign in to CRM** link. The browser completes sign-in automatically and opens `/dashboard`. There is no password, reset, confirmation button, authenticator challenge or required security setup. Administrator and employee navigation use the same flow. Account settings show the current sign-in method.
 
-Administrator MFA requirements remain in place. A new administrator can reach authenticator enrollment after email sign-in without confirming an unknown password. An enrolled administrator must complete the existing TOTP or recovery-code challenge before authentication finishes. The password confirmation screen also offers email sign-in for later reauthentication. Password login and password reset remain available.
+## Link and session behavior
 
-## Implementation boundaries
+- Links expire after ten minutes, are single use, and only the latest link for an account works. Tokens are random, stored as hashes, and bound to the configured installation and current email. A versioned credential fingerprint invalidates older links during this transition.
+- GET and HEAD requests do not consume links, so ordinary mail scanners and prefetchers leave them usable. The browser landing page submits once automatically; the POST checks the signature, expiry, active account and fingerprint under a row lock before consuming the token.
+- Responses conceal account existence, normalize email input and apply request/consume throttles. Queued email payloads are encrypted. Links always use the configured installation origin rather than an incoming Host header.
+- Successful sign-in verifies the email, regenerates the session and opens the dashboard directly, clearing stale intended destinations. Opening an already-used link while signed in keeps the current session. After logout the same link cannot sign in again. Different authenticated accounts cannot consume each other’s links.
+- Existing password hashes and encrypted MFA data remain stored, but password and MFA authentication routes and enforcement are disabled by the owner’s explicit choice. Legacy GET pages lead to email sign-in; old password/MFA mutation endpoints are unavailable. Active-user checks, permissions and last-administrator protection remain enforced.
 
-- `App\Auth\MagicLogin` issues random 64-character, purpose-bound tokens lasting ten minutes. PostgreSQL stores a SHA-256 token hash, expiry and an account-credential fingerprint, with one row per user. An atomic transaction/row lock consumes the token once. New issuance replaces an earlier link.
-- Signed URLs use the configured application origin, never an untrusted request Host. Only signed URL/route data authorizes consumption; POST body values cannot replace it. GET and HEAD never consume a link or authenticate. The CSRF-protected POST is the only consumption operation. Token pages prohibit caching, indexing and referrer transmission.
-- Request responses are identical for known, unknown and inactive email addresses. No account is created. Request limits are five per minute per IP and three per ten minutes per normalized email/installation. Confirmation requests are limited to twenty per minute per IP/installation.
-- Credential fingerprints bind the installation, email, password and MFA configuration. Email/password/MFA changes, inactive accounts, expiry and replay invalidate the corresponding flow. Different authenticated accounts cannot consume each other's links.
-- `MagicLoginLink` is queued after commit and implements `ShouldBeEncrypted`, so the queued bearer link is encrypted at rest. The normal production queue worker and SMTP transport deliver the message. Never copy a live link or queue payload into logs, issue text, screenshots or Git.
-- A completed flow regenerates the session and establishes recent authentication. Confirmed MFA users remain guests while the challenge is pending; its identity, credentials, eligibility and ten-minute deadline are checked before and after Fortify completes the second factor. Recent authentication is granted only after success. Switching back to password login clears the entire pending magic challenge.
+## Operations and verification
 
-## Deployment and verification
+Bootstrap and administrator invitations send `MagicLoginLink` through the same queue as normal sign-in. Configure a real production mail transport, supervise the database worker and retain each installation’s persistent application key. If mail delivery fails, repair it and request a new sign-in link for the existing account; do not repeatedly bootstrap accounts or set shared passwords.
 
-Deploy the additive `magic_login_tokens` migration through the native Enhance release hook, refresh the website PHP container, and verify the supervised queue resolves the new release. Existing passwords, roles, MFA configuration and customer data are retained. The production owner can request an email sign-in link immediately; do not run fixture scripts or set a shared administrator password.
-
-`tests/Feature/Auth/MagicLoginTest.php` covers issuance, scanner-safe requests, signatures, hashes, expiry/replay, account changes, session rotation, MFA, reauthentication and limits. `tests/e2e/magic-login.spec.ts` exercises actual local Mailpit delivery and desktop/mobile confirmation using dedicated fictional fixture accounts. Live owner links are delivered to the owner and must not be opened by an automated test.
+Deploy through the native Enhance GitHub hook, refresh the website PHP container and verify the queue resolves the activated release. No production owner link is opened by automated tests. Backend tests cover signatures, expiry, replay, concurrent consumption, admin navigation, account changes and limits. Desktop/mobile browser tests use isolated fictional accounts and local Mailpit delivery to verify automatic sign-in and normal navigation.

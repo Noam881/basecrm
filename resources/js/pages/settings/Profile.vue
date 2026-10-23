@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { edit } from "@/routes/profile";
-import { send } from "@/routes/verification";
 
 defineOptions({
     layout: {
@@ -72,20 +71,12 @@ const user = computed(() => page.props.auth.user);
                 <p class="text-sm text-muted-foreground">
                     Your email address is unverified.
                     <Link
-                        :href="send()"
-                        as="button"
+                        href="/login"
                         class="text-primary underline decoration-current underline-offset-4"
                     >
-                        Click here to re-send the verification email.
+                        Sign in with an email link to verify this address.
                     </Link>
                 </p>
-
-                <div
-                    v-if="page.props.status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-primary"
-                >
-                    A new verification link has been sent to your email address.
-                </div>
             </div>
 
             <div class="crm-form-action">

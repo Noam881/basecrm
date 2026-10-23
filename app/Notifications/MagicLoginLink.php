@@ -31,7 +31,7 @@ class MagicLoginLink extends Notification implements ShouldBeEncrypted, ShouldQu
             ->greeting('Sign in to '.config('app.name'))
             ->line('Use this one-time link to sign in. No password or password reset is needed.')
             ->action('Sign in to CRM', $this->url)
-            ->line('This link expires in '.MagicLogin::LIFETIME_MINUTES.' minutes. Confirm sign-in on the page that opens.')
+            ->line('This link expires in '.MagicLogin::LIFETIME_MINUTES.' minutes. Click it to open your CRM.')
             ->line('If you did not request this link, you can ignore this email.');
     }
 }

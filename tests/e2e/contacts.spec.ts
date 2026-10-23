@@ -1,7 +1,5 @@
 import { test, expect } from "./fixtures";
-import { readFileSync } from "node:fs";
-
-const credentials = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
+import { signIn } from "./auth";
 
 test("edits contact details from the customer table and lead customer card", async ({
     page,
@@ -18,14 +16,7 @@ test("edits contact details from the customer table and lead customer card", asy
         info.project.name === "desktop" ? "+1 202-555-0171" : "+1 202-555-0181";
     const finalPhone =
         info.project.name === "desktop" ? "+1 202-555-0172" : "+1 202-555-0182";
-    const credential = credentials[`tables_alpha_${info.project.name}`];
-    await page.goto("/login");
-    await page.getByLabel("Email address").fill(credential.email);
-    await page
-        .getByLabel("Password", { exact: true })
-        .fill(credential.password);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
-    await expect(page).toHaveURL(/dashboard/);
+    await signIn(page, info.project.name);
     await page.goto("/people");
     await page.getByLabel("Record type").selectOption("companies");
     await page.getByLabel("Name", { exact: true }).fill(companyName);

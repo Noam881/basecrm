@@ -195,12 +195,12 @@ onBeforeUnmount(closeNavigation);
                     :aria-current="
                         selected('/settings/security') ? 'page' : undefined
                     "
-                    aria-label="Account security"
-                    :title="railCollapsed ? 'Account security' : undefined"
+                    aria-label="Account settings"
+                    :title="railCollapsed ? 'Account settings' : undefined"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >security</span
-                    ><span class="crm-nav-label">Account security</span>
+                    ><span class="crm-nav-label">Account settings</span>
                 </Link>
                 <Link
                     href="/settings/profile"

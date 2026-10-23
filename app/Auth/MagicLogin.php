@@ -41,9 +41,7 @@ class MagicLogin
             config('core.installation'),
             config('app.url'),
             strtolower($user->email),
-            $user->password,
-            $user->two_factor_secret ?? '',
-            $user->two_factor_confirmed_at?->toIso8601String() ?? '',
+            'email-only-v1',
         ]), config('app.key'));
     }
 

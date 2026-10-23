@@ -1,6 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
-const credentials = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
+import { signIn } from "./auth";
 async function openNavigation(page: Page) {
     const open = page.getByRole("button", {
         name: "Open navigation",
@@ -16,17 +15,7 @@ async function navigate(page: Page, name: string) {
         .click();
 }
 async function login(page: Page, installation: "alpha" | "beta") {
-    await page.goto(
-        `http://127.0.0.1:${installation === "alpha" ? 8091 : 8092}/login`,
-    );
-    const credential =
-        credentials[`tables_${installation}_${test.info().project.name}`];
-    await page.getByLabel("Email address").fill(credential.email);
-    await page
-        .getByLabel("Password", { exact: true })
-        .fill(credential.password);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
-    await expect(page).toHaveURL(/dashboard/);
+    await signIn(page, test.info().project.name, installation);
     await navigate(page, installation === "alpha" ? "Leads" : "Enquiries");
 }
 test("table columns reorder, resize, pin, persist and save views", async ({

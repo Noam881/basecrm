@@ -13,8 +13,6 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Timebox;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Fortify\Contracts\LoginResponse;
-use Laravel\Fortify\Events\TwoFactorAuthenticationChallenged;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class MagicLoginController extends Controller
@@ -23,9 +21,13 @@ class MagicLoginController extends Controller
 
     public function __construct(private MagicLogin $links, private StatefulGuard $guard) {}
 
-    public function create(Request $request): Response
+    public function create(Request $request): Response|RedirectResponse
     {
-        return Inertia::render('auth/MagicLogin', [
+        if ($request->user()?->active && $request->user()->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+
+        return Inertia::render('auth/Login', [
             'status' => $request->session()->get('status'),
             'email' => $request->user()?->email,
         ]);
@@ -45,12 +47,15 @@ class MagicLoginController extends Controller
             }
         }, 200000);
 
-        return redirect()->route('magic-login.request')->with('status', self::SENT_MESSAGE);
+        return redirect()->route('login')->with('status', self::SENT_MESSAGE);
     }
 
     public function show(Request $request, string $token): HttpResponse
     {
         $user = $request->hasValidSignature() ? $this->links->peek($token) : null;
+        if ($request->user()?->active && $request->user()->hasVerifiedEmail() && (! $user || $request->user()->id === $user->id)) {
+            return redirect()->route('dashboard');
+        }
         $valid = $user && (! $request->user() || $request->user()->id === $user->id);
 
         $response = Inertia::render('auth/ConfirmMagicLogin', [
@@ -77,35 +82,19 @@ class MagicLoginController extends Controller
         if (! $user) {
             return $this->invalid();
         }
-        $request->session()->forget(['login.id', 'login.remember', 'auth.magic_pending', 'auth.password_confirmed_at']);
-        if ($user->hasEnabledTwoFactorAuthentication()) {
-            if ($this->guard->check()) {
-                $this->guard->logout();
-            }
-            $request->session()->regenerate();
-            $request->session()->put([
-                'login.id' => $user->id,
-                'login.remember' => false,
-                'auth.magic_pending' => [
-                    'user_id' => $user->id,
-                    'credential_hash' => $this->links->fingerprint($user),
-                    'expires_at' => now()->addMinutes(MagicLogin::LIFETIME_MINUTES)->timestamp,
-                ],
-            ]);
-            TwoFactorAuthenticationChallenged::dispatch($user);
-
-            return redirect()->route('two-factor.login');
-        }
+        $request->session()->forget(['login.id', 'login.remember', 'auth.magic_pending', 'auth.password_confirmed_at', 'url.intended']);
         $this->guard->login($user);
         $request->session()->regenerate();
-        $request->session()->passwordConfirmed();
         $request->session()->put('auth.method', 'magic_link');
 
-        return app(LoginResponse::class)->toResponse($request);
+        // Leave the signed document and its no-referrer policy before normal CRM saves.
+        return $request->header('X-Inertia')
+            ? Inertia::location(route('dashboard'))
+            : redirect()->route('dashboard');
     }
 
     private function invalid(): RedirectResponse
     {
-        return redirect()->route('magic-login.request')->withErrors(['email' => MagicLogin::INVALID_MESSAGE]);
+        return redirect()->route('login')->withErrors(['email' => MagicLogin::INVALID_MESSAGE]);
     }
 }

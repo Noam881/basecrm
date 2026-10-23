@@ -1,7 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
-
-const fixtures = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
+import { signIn } from "./auth";
 
 // Current baseline values, including the four updated light on-container roles.
 const lightRoles = {
@@ -99,14 +97,16 @@ test("light baseline fields retain semantic labels while empty, focused and popu
         "background-color",
         "rgb(250, 250, 250)",
     );
-    const login = page.getByRole("button", { name: "Log in", exact: true });
+    const login = page.getByRole("button", {
+        name: "Email me a sign-in link",
+        exact: true,
+    });
     await expect(login).toHaveCSS("background-color", "rgb(103, 80, 164)");
     await expect(login).toHaveCSS("color", "rgb(255, 255, 255)");
 
     const email = page.getByLabel("Email address", { exact: true });
-    const password = page.getByLabel("Password", { exact: true });
     await expect(email).toHaveCount(1);
-    await expect(password).toHaveCount(1);
+    await expect(page.locator("form input")).toHaveCount(1);
     await page.getByRole("heading", { level: 1 }).click();
     const field = fieldFor(page, email);
     const label = field.locator(".crm-floating-label");
@@ -133,14 +133,14 @@ test("light baseline fields retain semantic labels while empty, focused and popu
         .poll(async () => Math.abs((await labelCenter(label)) - emptyBox.y))
         .toBeLessThan(2);
     await email.fill("noa.levi@example.test");
-    await password.focus();
+    await page.getByRole("heading", { level: 1 }).click();
     await expect(field).toHaveAttribute("data-filled", "true");
     await expect
         .poll(async () => Math.abs((await labelCenter(label)) - emptyBox.y))
         .toBeLessThan(2);
     await expect(email).toHaveValue("noa.levi@example.test");
     await email.fill("");
-    await password.focus();
+    await page.getByRole("heading", { level: 1 }).click();
     await expect(field).toHaveAttribute("data-filled", "false");
     await expect
         .poll(async () =>
@@ -150,31 +150,33 @@ test("light baseline fields retain semantic labels while empty, focused and popu
         )
         .toBeLessThan(2);
 
-    // Every visible control remains reachable in natural DOM order.
+    // The email and submit action remain reachable in natural DOM order.
     await email.focus();
-    await page.keyboard.press("Tab");
-    await expect(password).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(
-        page.getByRole("button", { name: "Show password", exact: true }),
-    ).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(
-        page.getByRole("link", { name: "Forgot your password?" }),
-    ).toBeFocused();
-    await page.keyboard.press("Tab");
-    const remember = page.getByRole("checkbox", { name: "Remember me" });
-    await expect(remember).toBeFocused();
-    await page.keyboard.press("Space");
-    await expect(remember).toBeChecked();
-    await page.keyboard.press("Space");
-    await expect(remember).not.toBeChecked();
     await page.keyboard.press("Tab");
     await expect(login).toBeFocused();
     await expect(login).toHaveCSS("outline-width", "3px");
     await expect(login).toHaveCSS("outline-style", "solid");
     await expect(login).toHaveCSS("outline-color", "rgb(98, 91, 113)");
     await expect(login).toHaveCSS("outline-offset", "2px");
+
+    // Exercise keyboard submission without sending another email in a visual test.
+    await page.route("**/login", async (route) => {
+        if (route.request().method() !== "POST") {
+            await route.continue();
+            return;
+        }
+        await route.fulfill({ status: 303, headers: { location: "/login" } });
+    });
+    await email.fill("noa.levi@example.test");
+    const submission = page.waitForRequest(
+        (request) =>
+            request.method() === "POST" &&
+            new URL(request.url()).pathname === "/login",
+    );
+    await page.keyboard.press("Enter");
+    expect((await submission).postDataJSON()).toEqual({
+        email: "noa.levi@example.test",
+    });
 });
 
 test("server validation describes the invalid field and uses the Material error role", async ({
@@ -182,14 +184,16 @@ test("server validation describes the invalid field and uses the Material error 
 }, info) => {
     await page.goto("/login");
     const email = page.getByLabel("Email address", { exact: true });
-    await email.fill(`material-validation-${info.project.name}@example.test`);
+    await email.fill(`material-invalid-email-${info.project.name}`);
+    await email.evaluate((input: HTMLInputElement) => {
+        if (input.form) input.form.noValidate = true;
+    });
     await page
-        .getByLabel("Password", { exact: true })
-        .fill("fictional-invalid-password");
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
+        .getByRole("button", { name: "Email me a sign-in link", exact: true })
+        .click();
     const error = page
         .getByRole("alert")
-        .filter({ hasText: /credentials|match|incorrect/i });
+        .filter({ hasText: /email.*valid|valid.*email/i });
     await expect(error).toBeVisible();
     await expect(error).toHaveCSS("color", "rgb(179, 38, 30)");
     await expect(email).toHaveAttribute("aria-invalid", "true");
@@ -210,33 +214,31 @@ test("server validation describes the invalid field and uses the Material error 
     await expect(email).toHaveCSS("border-top-color", "rgb(179, 38, 30)");
 });
 
-test("one interactive layer responds to pointer hover and press without changing the field value", async ({
+test("one interactive layer responds to pointer hover and press without changing the email", async ({
     page,
 }) => {
     await page.goto("/login");
-    const password = page.getByLabel("Password", { exact: true });
-    await password.fill("fictional-demo-password");
-    const toggle = page.getByRole("button", {
-        name: /^(Show|Hide) password$/,
+    const email = page.getByLabel("Email address", { exact: true });
+    await email.fill("noa.levi@example.test");
+    const login = page.getByRole("button", {
+        name: "Email me a sign-in link",
         exact: true,
     });
-    const layer = toggle.locator(":scope > .crm-state-layer");
+    const layer = login.locator(":scope > .crm-state-layer");
     await expect(layer).toHaveCount(1);
-    await expect(toggle.locator("md-ripple")).toHaveCount(0);
-    await toggle.hover();
+    await expect(login.locator("md-ripple")).toHaveCount(0);
+    await login.hover();
     await expect(layer).toHaveCSS("opacity", "0.08");
     await page.mouse.down();
     try {
         await expect(layer).toHaveCSS("opacity", "0.1");
     } finally {
+        // Release outside the button so this visual check sends no email.
+        await page.mouse.move(0, 0);
         await page.mouse.up();
     }
-    await expect(
-        page.getByRole("button", { name: "Hide password", exact: true }),
-    ).toBeVisible();
-    await expect(password).toHaveAttribute("type", "text");
-    await expect(password).toHaveValue("fictional-demo-password");
-    await page.mouse.move(0, 0);
+    await expect(email).toHaveAttribute("type", "email");
+    await expect(email).toHaveValue("noa.levi@example.test");
     await expect(layer).toHaveCSS("opacity", "0");
 });
 
@@ -248,22 +250,22 @@ test("reduced motion makes field and interaction feedback immediate", async ({
     const email = page.getByLabel("Email address", { exact: true });
     const label = fieldFor(page, email).locator(".crm-floating-label");
     await expect(label).toHaveCSS("transition-duration", /^0s(?:, 0s)*$/);
-    const toggle = page.getByRole("button", {
-        name: /^(Show|Hide) password$/,
+    const login = page.getByRole("button", {
+        name: "Email me a sign-in link",
         exact: true,
     });
-    const layer = toggle.locator(":scope > .crm-state-layer");
+    const layer = login.locator(":scope > .crm-state-layer");
     await expect(layer).toHaveCount(1);
-    await toggle.hover();
+    await login.hover();
     expect(await nextFrameOpacity(layer)).toBe(0.08);
     await page.mouse.down();
     try {
         expect(await nextFrameOpacity(layer)).toBe(0.1);
         await expect(layer).toHaveCSS("clip-path", "none");
     } finally {
+        await page.mouse.move(0, 0);
         await page.mouse.up();
     }
-    await page.mouse.move(0, 0);
     expect(await nextFrameOpacity(layer)).toBe(0);
 });
 
@@ -287,7 +289,10 @@ test("dark baseline is applied to real auth controls without rewriting the light
         "background-color",
         "rgb(20, 18, 24)",
     );
-    const login = page.getByRole("button", { name: "Log in", exact: true });
+    const login = page.getByRole("button", {
+        name: "Email me a sign-in link",
+        exact: true,
+    });
     await expect(login).toHaveCSS("background-color", "rgb(208, 188, 255)");
     await expect(login).toHaveCSS("color", "rgb(56, 30, 114)");
     await expect(page.getByLabel("Email address", { exact: true })).toHaveCSS(
@@ -300,13 +305,8 @@ test("a native table dialog uses elevated containment and restores keyboard focu
     page,
     isMobile,
 }, info) => {
-    // Balance valid logins across installations while keeping the shared login limiter intact.
-    const account = fixtures[`tables_beta_${info.project.name}`];
     const origin = "http://127.0.0.1:8092";
-    await page.goto(`${origin}/login`);
-    await page.getByLabel("Email address").fill(account.email);
-    await page.getByLabel("Password", { exact: true }).fill(account.password);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
+    await signIn(page, info.project.name, "beta");
     await expect(page).toHaveURL(`${origin}/dashboard`);
     if (isMobile)
         await page.getByRole("button", { name: "Open navigation" }).click();

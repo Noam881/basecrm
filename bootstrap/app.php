@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\EnsureMagicLoginChallenge;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Awove\Core\Http\ActiveUser;
@@ -9,8 +8,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
-
-$installation = getenv('CRM_INSTALLATION') ?: ($_ENV['CRM_INSTALLATION'] ?? 'alpha');
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,7 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             ActiveUser::class,
-            EnsureMagicLoginChallenge::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

@@ -62,14 +62,14 @@ APP_ENV=beta php artisan schedule:work
 
 ## First administrator
 
-Users can sign in without a password through **Email me a sign-in link** on the login page. Links expire after ten minutes and are used once; administrator MFA still applies. See [email sign-in and security behavior](docs/authentication.md).
+Sign-in uses email links only. Enter an active account email at `/login` and click **Sign in to CRM** in the email to open the dashboard immediately. Links expire after ten minutes and work once. Passwords and authenticator challenges are unavailable. See [email sign-in and security behavior](docs/authentication.md).
 
 ```sh
 php artisan crm:bootstrap-admin owner@alpha.example.test --name="Avraham Levi"
 php artisan --env=beta crm:bootstrap-admin owner@beta.example.test --name="Sarah Cohen"
 ```
 
-These commands create only the first administrator, using an unknown random password. Open the reset/onboarding link in local Mailpit within 60 minutes, set a password, sign in, confirm your password on Account security, and enroll/confirm MFA before using the CRM. Public registration and account deletion are unavailable. Administrator invitations use the same expiring reset mechanism. Recovery uses Fortify recovery codes, stored privately by the account holder; see the [operations runbook](docs/installations-and-upgrades.md).
+These commands create only the first administrator and send a ten-minute email sign-in link. Open it in local Mailpit to enter the CRM directly. Administrator invitations send the same sign-in link. Request a fresh link from `/login` when needed. Public registration and account deletion are unavailable; see the [operations runbook](docs/installations-and-upgrades.md).
 
 ## Repeatable container build
 

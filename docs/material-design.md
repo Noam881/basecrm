@@ -9,7 +9,7 @@ The CRM uses the exact published **Default Light and Default Dark baseline** rol
 - `core.css`: shell, page layout, drawer/rail and navigation. `table.css`: table structure, column controls and native table dialogs.
 - `resources/js/lib/material.ts`: semantic field enhancement and interruptible interaction springs, applied after Vue updates and to dynamic portal content. DOM-owned nodes are not reparented.
 
-Buttons use filled, outlined, tonal, elevated or text variants with shared 40px geometry and 48px compact touch targets. Outlined text fields are 56px high. Associated labels float on focus, remain floated when filled, and return when empty. Labels, border and placeholder transitions use the prescribed Web **standard easing `cubic-bezier(.2,0,0,1)` at 150ms**. Semantic label associations, supporting errors, native input behavior and password visibility controls remain accessible. Forms use a shared 24px field-to-action gap.
+Buttons use filled, outlined, tonal, elevated or text variants with shared 40px geometry and 48px compact touch targets. Outlined text fields are 56px high. Associated labels float on focus, remain floated when filled, and return when empty. Labels, border and placeholder transitions use the prescribed Web **standard easing `cubic-bezier(.2,0,0,1)` at 150ms**. Semantic label associations, supporting errors, native input behavior remain accessible. Forms use a shared 24px field-to-action gap.
 
 ## Motion and state
 
@@ -23,6 +23,6 @@ Shared shadow tokens map levels 0–5 to **0/1/3/6/8/12dp**. Outlined cards and 
 
 Roboto and Material Symbols are bundled locally. Advanced table search, typed filters, multi-sort, column visibility/order/resize/pinning, saved views and permission boundaries are preserved. Quick-view links expose the current page and use a shared active indicator.
 
-Validation: `npm run check`, `npm run types:check`, `npm run build`, and desktop/mobile Playwright workflows. `tests/e2e/material-design.spec.ts` covers actual field states, baseline colours, button interaction states, reduced motion, dark roles and dialog elevation. Existing contact, table, workflow and reset-password checks exercise save/reload behavior.
+Validation: `npm run check`, `npm run types:check`, `npm run build`, and desktop/mobile Playwright workflows. `tests/e2e/material-design.spec.ts` covers actual field states, baseline colours, button interaction states, reduced motion, dark roles and dialog elevation. Existing contact, table, workflow and email sign-in checks exercise save/reload behavior.
 
 Primary implementation references: [Standard spring tokens](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StandardMotionTokens.kt), [state tokens](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt), [Material Web elevation geometry](https://github.com/material-components/material-web/blob/main/elevation/internal/_elevation.scss).

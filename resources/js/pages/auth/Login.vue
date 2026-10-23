@@ -1,44 +1,35 @@
 <script setup lang="ts">
-import { Form, Head, Link } from "@inertiajs/vue3";
+import { Form, Head } from "@inertiajs/vue3";
 import InputError from "@/components/InputError.vue";
-import PasswordInput from "@/components/PasswordInput.vue";
-import TextLink from "@/components/TextLink.vue";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { store } from "@/routes/login";
-import { request } from "@/routes/password";
 
 defineOptions({
     layout: {
-        title: "Log in to your account",
-        description: "Enter your password, or sign in with an email link.",
+        title: "Sign in",
+        description: "Enter your email address to receive a sign-in link.",
     },
 });
 
 defineProps<{
-    status?: string;
-    canResetPassword: boolean;
+    status?: string | null;
+    email?: string | null;
 }>();
 </script>
 
 <template>
-    <Head title="Log in" />
-
-    <div
-        v-if="status"
-        role="status"
-        class="mb-4 text-center text-sm font-medium text-primary"
-    >
-        {{ status }}
-    </div>
+    <Head title="Sign in" />
 
     <div class="crm-stack">
+        <p v-if="status" role="status" class="text-sm text-primary">
+            {{ status }}
+        </p>
+
         <Form
-            v-bind="store.form()"
-            :reset-on-success="['password']"
+            action="/login"
+            method="post"
             v-slot="{ errors, processing }"
             class="crm-form"
         >
@@ -51,34 +42,10 @@ defineProps<{
                     required
                     v-focus
                     autocomplete="email"
+                    :default-value="email ?? ''"
                     placeholder="email@example.com"
                 />
                 <InputError :message="errors.email" />
-            </div>
-
-            <div class="crm-field">
-                <Label for="password">Password</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    required
-                    autocomplete="current-password"
-                    placeholder="Password"
-                />
-                <InputError :message="errors.password" />
-                <TextLink
-                    v-if="canResetPassword"
-                    :href="request()"
-                    class="crm-field-supporting-action"
-                    >Forgot your password?</TextLink
-                >
-            </div>
-
-            <div class="flex items-center justify-between">
-                <Label for="remember" class="crm-checkbox">
-                    <Checkbox id="remember" name="remember" />
-                    <span>Remember me</span>
-                </Label>
             </div>
 
             <div class="crm-form-action">
@@ -89,13 +56,9 @@ defineProps<{
                     data-test="login-button"
                 >
                     <Spinner v-if="processing" />
-                    Log in
+                    Email me a sign-in link
                 </Button>
             </div>
         </Form>
-
-        <Button as-child variant="outline" class="w-full">
-            <Link href="/magic-login">Email me a sign-in link</Link>
-        </Button>
     </div>
 </template>

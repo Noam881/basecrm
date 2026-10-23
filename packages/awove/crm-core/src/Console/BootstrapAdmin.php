@@ -2,16 +2,16 @@
 
 namespace Awove\Core\Console;
 
+use Awove\Core\Events\SignInLinkRequested;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class BootstrapAdmin extends Command
 {
     protected $signature = 'crm:bootstrap-admin {email} {--name=Administrator}';
 
-    protected $description = 'Create the first administrator and send a time-limited password onboarding link';
+    protected $description = 'Create the first administrator and send a time-limited email sign-in link';
 
     public function handle(): int
     {
@@ -31,8 +31,8 @@ class BootstrapAdmin extends Command
 
             return self::FAILURE;
         }
-        Password::sendResetLink(['email' => $user->email]);
-        $this->info('Administrator created. Check the configured local mail catcher for onboarding. MFA enrollment is required.');
+        event(new SignInLinkRequested($user->id));
+        $this->info('Administrator created. Check your email for the sign-in link. No password is required.');
 
         return self::SUCCESS;
     }

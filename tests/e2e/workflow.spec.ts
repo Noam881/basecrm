@@ -1,8 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { signIn } from "./auth";
 import { execFileSync } from "node:child_process";
-const fixture = JSON.parse(readFileSync(".local-fixtures.json", "utf8"));
 async function navigate(page: Page, name: string) {
     const open = page.getByRole("button", {
         name: "Open navigation",
@@ -47,12 +46,7 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
     await expect(
         page.locator(".crm-auth-form").getByText("Alpha CRM", { exact: true }),
     ).toBeVisible();
-    const credential = fixture[`tables_alpha_${info.project.name}`];
-    await page.getByLabel("Email address").fill(credential.email);
-    await page
-        .getByLabel("Password", { exact: true })
-        .fill(credential.password);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
+    await signIn(page, info.project.name);
     await expect(page).toHaveURL(/dashboard/);
     const companyName = "Oren Solutions";
     const contactName = "Uri Ben David";
@@ -205,12 +199,7 @@ test("Beta branding and extension use the shared lead profile", async ({
     await expect(
         page.locator(".crm-auth-form").getByText("Beta CRM", { exact: true }),
     ).toBeVisible();
-    const credential = fixture[`tables_beta_${info.project.name}`];
-    await page.getByLabel("Email address").fill(credential.email);
-    await page
-        .getByLabel("Password", { exact: true })
-        .fill(credential.password);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
+    await signIn(page, info.project.name, "beta");
     await expect(page).toHaveURL(/8092\/dashboard/);
     await navigate(page, "Enquiries");
     await page

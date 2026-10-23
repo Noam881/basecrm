@@ -15,14 +15,14 @@ const sidebarNavItems: NavItem[] = [
         href: editProfile(),
     },
     {
-        title: "Security",
+        title: "Sign-in method",
         href: editSecurity(),
     },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
 const title = computed(() =>
-    isCurrentOrParentUrl(editSecurity()) ? "Account security" : "Profile",
+    isCurrentOrParentUrl(editSecurity()) ? "Account settings" : "Profile",
 );
 </script>
 
