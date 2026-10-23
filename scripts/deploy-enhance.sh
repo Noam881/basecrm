@@ -61,8 +61,7 @@ if (!((major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major >=
 '
 
 # Read only the deployment guard values; never source or print the secret dotenv file.
-installation=$(php /dev/stdin "$shared_env" "$shared_manifest" <<'PHP'
-<?php
+installation=$(php -r "$(cat <<'PHP'
 function stopDeploy(string $message): never {
     fwrite(STDERR, "Base CRM deploy: $message\n");
     exit(1);
@@ -99,7 +98,7 @@ try {
 if (!is_array($manifest) || ($manifest['id'] ?? '') !== $id) stopDeploy('The manifest id must match CRM_INSTALLATION.');
 echo $id;
 PHP
-)
+)" -- "$shared_env" "$shared_manifest")
 
 if [[ -e .env || -L .env ]]; then
     [[ -L .env && "$(readlink -- .env)" == "$shared_env" ]] || fail 'Release .env already exists and is not the expected private symlink; preserve and inspect it.'
@@ -131,8 +130,7 @@ npm run build
 [[ -s public/build/manifest.json ]] || fail 'The frontend build did not produce public/build/manifest.json.'
 
 # Check effective Laravel configuration too: server environment variables can override .env.
-php /dev/stdin "$shared_manifest" "$installation" "$shared_env" <<'PHP'
-<?php
+php -r "$(cat <<'PHP'
 require getcwd().'/vendor/autoload.php';
 $app = require getcwd().'/bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
@@ -151,6 +149,7 @@ if (!$app->isProduction() || config('app.debug') || config('database.default') !
     exit(1);
 }
 PHP
+)" -- "$shared_manifest" "$installation" "$shared_env"
 
 # Backups/write coordination are an operator prerequisite. These commands do not seed fixtures.
 php artisan migrate --force --no-interaction
