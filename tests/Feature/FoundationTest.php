@@ -186,10 +186,31 @@ it('validates typed fields and rejects executable or deployment-controlled setti
     expect(fn () => CustomFields::validate(['service_type' => 'Unknown']))->toThrow(ValidationException::class);
     $admin = administrator();
     $this->actingAs($admin)->patch('/business-settings', ['modules' => ['service-details']])->assertSessionHasErrors();
-    $this->patch('/business-settings', ['color' => '<script>'])->assertSessionHasErrors();
-    $this->patch('/business-settings', ['color' => '#25635b'])->assertSessionHasErrors('color');
-    $this->patch('/business-settings', ['color' => '#333333'])->assertRedirect();
-    expect(Installation::settings()['color'])->toBe('#333333');
+    foreach (['<script>', '#25635b', '#333333', '#6750A4'] as $color) {
+        $this->patch('/business-settings', ['name' => 'Rejected name', 'color' => $color])->assertSessionHasErrors('color');
+    }
+    expect(Installation::settings()['color'])->toBe('#6750A4')
+        ->and(Setting::whereIn('key', ['name', 'color'])->count())->toBe(0);
+    $this->patch('/business-settings', ['name' => 'Customer CRM', 'timezone' => 'Europe/London', 'lead_label' => 'Enquiries'])->assertRedirect();
+    expect(Installation::settings())->toMatchArray(['name' => 'Customer CRM', 'timezone' => 'Europe/London', 'lead_label' => 'Enquiries', 'color' => '#6750A4']);
+});
+it('accepts legacy manifest colors without overriding the fixed Material baseline', function () {
+    $manifest = Installation::manifest();
+    $file = tempnam(sys_get_temp_dir(), 'base-crm-brand-');
+    config(['core.manifest' => $file, 'core.locks' => []]);
+    Setting::create(['key' => 'color', 'value' => '#484848']);
+    try {
+        foreach (['#333333', '#25635b'] as $color) {
+            $manifest['color'] = $color;
+            file_put_contents($file, json_encode($manifest));
+            expect(Installation::manifest()['color'])->toBe('#6750A4')
+                ->and(Installation::settings()['color'])->toBe('#6750A4')
+                ->and(Installation::locks())->toContain('color');
+        }
+        expect(Setting::where('key', 'color')->value('value'))->toBe('#484848');
+    } finally {
+        unlink($file);
+    }
 });
 it('retains customer configuration during repeated default installation', function () {
     Status::find('new')->update(['name' => 'Customer label', 'position' => 17]);

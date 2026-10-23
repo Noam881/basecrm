@@ -121,13 +121,22 @@ const form = useForm({
         </form>
     </section>
     <div class="crm-tabs md-quick-views" aria-label="Lead quick views">
-        <Link href="/leads">All leads</Link
-        ><Link href="/leads?view=missing">Missing follow-up</Link
+        <Link href="/leads" :aria-current="!filters.view ? 'page' : undefined"
+            >All leads</Link
+        ><Link
+            href="/leads?view=missing"
+            :aria-current="filters.view === 'missing' ? 'page' : undefined"
+            >Missing follow-up</Link
         ><Link
             v-if="capabilities.includes('leads.view.all')"
             href="/leads?view=unassigned"
+            :aria-current="filters.view === 'unassigned' ? 'page' : undefined"
             >Unassigned</Link
-        ><Link href="/leads?view=archived">Archived</Link>
+        ><Link
+            href="/leads?view=archived"
+            :aria-current="filters.view === 'archived' ? 'page' : undefined"
+            >Archived</Link
+        >
     </div>
     <DataTable
         :payload="table"

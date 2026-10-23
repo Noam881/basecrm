@@ -5,7 +5,6 @@ import type { Person, Stage } from "../../types";
 const p = defineProps<{
     settings: {
         name: string;
-        color: string;
         timezone: string;
         lead_label: string;
     };
@@ -14,7 +13,11 @@ const p = defineProps<{
     system: unknown;
     locks: string[];
 }>();
-const form = useForm({ ...p.settings });
+const form = useForm({
+    name: p.settings.name,
+    timezone: p.settings.timezone,
+    lead_label: p.settings.lead_label,
+});
 const user = useForm({ name: "", email: "", role: "Employee" });
 const stages = ref(p.statuses.map((s) => ({ ...s })));
 const targets = ref<Record<number, number | null>>({});
@@ -29,28 +32,11 @@ const targets = ref<Record<number, number | null>>({});
             <h2>Identity & preferences</h2>
             <form
                 class="crm-form-grid"
-                @submit.prevent="
-                    form
-                        .transform((d) => ({
-                            name: d.name,
-                            color: d.color,
-                            timezone: d.timezone,
-                            lead_label: d.lead_label,
-                        }))
-                        .patch('/business-settings')
-                "
+                @submit.prevent="form.patch('/business-settings')"
             >
                 <label
                     ><span class="crm-field-label">Application name</span
                     ><input v-model="form.name" /></label
-                ><label
-                    ><span class="crm-field-label">Primary neutral tone</span
-                    ><select v-model="form.color">
-                        <option value="#202020">Charcoal</option>
-                        <option value="#333333">Graphite</option>
-                        <option value="#484848">Dark grey</option>
-                        <option value="#5e5e5e">Slate</option>
-                    </select></label
                 ><label
                     ><span class="crm-field-label">Timezone</span
                     ><input v-model="form.timezone" /></label

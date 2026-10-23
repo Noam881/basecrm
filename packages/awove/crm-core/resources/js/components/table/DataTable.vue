@@ -631,13 +631,13 @@ onBeforeUnmount(() => {
                         {{ view.name }}
                     </option></select
                 ><button
-                    class="md-text-button"
+                    class="crm-ghost md-text-button"
                     @click="viewDialog?.showModal()"
                 >
                     Save view</button
                 ><button
                     v-if="activeView"
-                    class="md-text-button"
+                    class="crm-ghost md-text-button"
                     @click="removeView"
                 >
                     Delete view
@@ -663,7 +663,7 @@ onBeforeUnmount(() => {
                 }}<span class="material-symbols-outlined" aria-hidden="true"
                     >close</span
                 ></button
-            ><button class="md-text-button" @click="clearFilters">
+            ><button class="crm-ghost md-text-button" @click="clearFilters">
                 Clear filters
             </button>
         </div>
@@ -673,9 +673,10 @@ onBeforeUnmount(() => {
             role="status"
         >
             <strong>{{ selectedRows.length }} selected on this page</strong
-            ><button class="md-text-button" @click="copyRows">Copy rows</button
+            ><button class="crm-ghost md-text-button" @click="copyRows">
+                Copy rows</button
             ><button
-                class="md-text-button"
+                class="crm-ghost md-text-button"
                 @click="
                     selected = {};
                     copied = '';
@@ -717,20 +718,22 @@ onBeforeUnmount(() => {
                             @dragleave="dropTarget = null"
                             @drop.prevent="drop(column.id)"
                         >
-                            <input
+                            <label
                                 v-if="column.id === '__select'"
-                                type="checkbox"
-                                aria-label="Select all rows on this page"
-                                :checked="table.getIsAllPageRowsSelected()"
-                                :indeterminate="
-                                    table.getIsSomePageRowsSelected()
-                                "
-                                @change="table.toggleAllPageRowsSelected()"
-                            />
+                                class="md-checkbox-target"
+                                ><input
+                                    type="checkbox"
+                                    aria-label="Select all rows on this page"
+                                    :checked="table.getIsAllPageRowsSelected()"
+                                    :indeterminate="
+                                        table.getIsSomePageRowsSelected()
+                                    "
+                                    @change="table.toggleAllPageRowsSelected()"
+                            /></label>
                             <template v-else
                                 ><div class="md-header-content">
                                     <button
-                                        class="md-header-sort"
+                                        class="crm-ghost md-header-sort"
                                         :aria-label="`Sort by ${catalog.get(column.id)?.label}`"
                                         @click="
                                             sorted(column.id, $event.shiftKey)
@@ -758,7 +761,7 @@ onBeforeUnmount(() => {
                                             >{{ sortNumber(column.id) }}</sup
                                         ></button
                                     ><button
-                                        class="md-drag-handle"
+                                        class="crm-icon-control md-drag-handle"
                                         draggable="true"
                                         :aria-label="`Move ${catalog.get(column.id)?.label} column; Alt and arrow keys to reorder`"
                                         @dragstart="
@@ -781,7 +784,7 @@ onBeforeUnmount(() => {
                                             >drag_indicator</span
                                         ></button
                                     ><button
-                                        class="md-header-menu"
+                                        class="crm-icon-control md-header-menu"
                                         :aria-label="`Options for ${catalog.get(column.id)?.label}`"
                                         @click="openColumn(column.id)"
                                     >
@@ -847,13 +850,15 @@ onBeforeUnmount(() => {
                                     catalog.get(column.id)?.type === 'number',
                             }"
                         >
-                            <input
+                            <label
                                 v-if="column.id === '__select'"
-                                type="checkbox"
-                                :aria-label="`Select ${recordName(row.original)}`"
-                                :checked="row.getIsSelected()"
-                                @change="row.toggleSelected()"
-                            /><template v-else
+                                class="md-checkbox-target"
+                                ><input
+                                    type="checkbox"
+                                    :aria-label="`Select ${recordName(row.original)}`"
+                                    :checked="row.getIsSelected()"
+                                    @change="row.toggleSelected()" /></label
+                            ><template v-else
                                 ><Link
                                     v-if="
                                         link(row.original) &&
@@ -910,7 +915,7 @@ onBeforeUnmount(() => {
                 <p>Try a different search or remove a filter.</p>
                 <button
                     v-if="state.q || state.filters.length"
-                    class="md-text-button"
+                    class="crm-ghost md-text-button"
                     @click="clearFilters"
                 >
                     Clear search and filters
@@ -1021,14 +1026,14 @@ onBeforeUnmount(() => {
             /></label>
             <div class="md-dialog-actions-inline">
                 <button
-                    class="md-text-button"
+                    class="crm-ghost md-text-button"
                     @click="
                         order = payload.columns.map((c) => c.id);
                         persist();
                     "
                 >
                     Show all fields</button
-                ><button class="md-text-button" @click="reset">
+                ><button class="crm-ghost md-text-button" @click="reset">
                     Reset layout
                 </button>
             </div>
@@ -1252,7 +1257,7 @@ onBeforeUnmount(() => {
                 No conditions yet. All accessible records are included.
             </p>
             <button
-                class="md-text-button"
+                class="crm-ghost md-text-button"
                 :disabled="state.filters.length >= 20"
                 @click="addFilter"
             >
@@ -1263,7 +1268,7 @@ onBeforeUnmount(() => {
         </div>
         <footer>
             <button
-                class="md-text-button"
+                class="crm-ghost md-text-button"
                 @click="
                     state.filters = [];
                     apply();
@@ -1338,7 +1343,7 @@ onBeforeUnmount(() => {
                 </button>
             </div>
             <button
-                class="md-text-button"
+                class="crm-ghost md-text-button"
                 :disabled="state.sorts.length >= 5"
                 @click="
                     state.sorts.push({
@@ -1422,6 +1427,7 @@ onBeforeUnmount(() => {
         </header>
         <div class="md-dialog-body md-column-actions">
             <button
+                class="crm-menu-item"
                 @click="
                     sorted(activeColumn, false, 'asc');
                     columnDialog?.close();
@@ -1431,6 +1437,7 @@ onBeforeUnmount(() => {
                     >arrow_upward</span
                 >{{ labelDirection(catalog.get(activeColumn), "asc") }}</button
             ><button
+                class="crm-menu-item"
                 @click="
                     sorted(activeColumn, false, 'desc');
                     columnDialog?.close();
@@ -1439,7 +1446,11 @@ onBeforeUnmount(() => {
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_downward</span
                 >{{ labelDirection(catalog.get(activeColumn), "desc") }}</button
-            ><button @click="pin(activeColumn)">
+            ><button
+                class="crm-menu-item"
+                :aria-pressed="pinned.includes(activeColumn)"
+                @click="pin(activeColumn)"
+            >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >keep</span
                 >{{
@@ -1447,15 +1458,24 @@ onBeforeUnmount(() => {
                         ? "Unpin column"
                         : "Pin to left"
                 }}</button
-            ><button @click="move(activeColumn, -1)">
+            ><button
+                class="crm-menu-item"
+                :disabled="order.indexOf(activeColumn) <= 0"
+                @click="move(activeColumn, -1)"
+            >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_back</span
                 >Move left</button
-            ><button @click="move(activeColumn, 1)">
+            ><button
+                class="crm-menu-item"
+                :disabled="order.indexOf(activeColumn) >= order.length - 1"
+                @click="move(activeColumn, 1)"
+            >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_forward</span
                 >Move right</button
             ><button
+                class="crm-menu-item"
                 :disabled="order.length <= 1"
                 @click="
                     toggle(activeColumn);

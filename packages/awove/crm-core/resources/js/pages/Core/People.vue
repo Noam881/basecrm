@@ -73,8 +73,15 @@ function createCustomer() {
         </form>
     </section>
     <div class="crm-tabs md-quick-views">
-        <Link href="/people?table=contacts">Contacts</Link
-        ><Link href="/people?table=companies">Companies</Link>
+        <Link
+            href="/people?table=contacts"
+            :aria-current="table.id === 'contacts' ? 'page' : undefined"
+            >Contacts</Link
+        ><Link
+            href="/people?table=companies"
+            :aria-current="table.id === 'companies' ? 'page' : undefined"
+            >Companies</Link
+        >
     </div>
     <DataTable
         :payload="table"

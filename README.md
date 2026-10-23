@@ -86,7 +86,9 @@ Run migrations and `crm:install` through deployment commands before opening a fr
 
 ## Material tables
 
-Leads, contacts, companies and follow-ups share an advanced neutral Material table with selectable/reorderable/resizable/pinnable columns, typed server-side filters, multi-sort, full-result search, per-user layouts and named views. Configured custom fields and authorized module fields are available in the column chooser. Lead tables start with contact and company names. The enquiry title is optional and hidden in the default layout; add it through Columns when useful. See [table controls and query contracts](docs/advanced-tables.md).
+The application uses the exact published Material 3 Default baseline palette, Standard motion physics, shared elevation levels and animated outlined fields. See the [shared design system](docs/material-design.md).
+
+Leads, contacts, companies and follow-ups share an advanced Material 3 table with selectable/reorderable/resizable/pinnable columns, typed server-side filters, multi-sort, full-result search, per-user layouts and named views. Configured custom fields and authorized module fields are available in the column chooser. Lead tables start with contact and company names. The enquiry title is optional and hidden in the default layout; add it through Columns when useful. See [table controls and query contracts](docs/advanced-tables.md).
 
 ## Customer details and shared controls
 

@@ -7,7 +7,6 @@ const brand = computed(
     () =>
         page.props.brand as {
             name: string;
-            color: string;
             logo: string;
             lead_label: string;
         },
@@ -97,11 +96,7 @@ watch(isMobile, closeNavigation);
 onBeforeUnmount(closeNavigation);
 </script>
 <template>
-    <div
-        class="crm"
-        :class="{ 'crm-sidebar-collapsed': railCollapsed }"
-        :style="{ '--md-sys-color-primary': brand.color }"
-    >
+    <div class="crm" :class="{ 'crm-sidebar-collapsed': railCollapsed }">
         <component
             :is="isMobile ? 'dialog' : 'aside'"
             id="crm-sidebar"

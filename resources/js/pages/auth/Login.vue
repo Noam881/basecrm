@@ -48,7 +48,6 @@ defineProps<{
                 name="email"
                 required
                 v-focus
-                :tabindex="1"
                 autocomplete="email"
                 placeholder="email@example.com"
             />
@@ -56,31 +55,26 @@ defineProps<{
         </div>
 
         <div class="crm-field">
-            <div class="flex items-center justify-between">
-                <Label for="password">Password</Label>
-                <TextLink
-                    v-if="canResetPassword"
-                    :href="request()"
-                    class="text-sm"
-                    :tabindex="5"
-                >
-                    Forgot your password?
-                </TextLink>
-            </div>
+            <Label for="password">Password</Label>
             <PasswordInput
                 id="password"
                 name="password"
                 required
-                :tabindex="2"
                 autocomplete="current-password"
                 placeholder="Password"
             />
             <InputError :message="errors.password" />
+            <TextLink
+                v-if="canResetPassword"
+                :href="request()"
+                class="crm-field-supporting-action"
+                >Forgot your password?</TextLink
+            >
         </div>
 
         <div class="flex items-center justify-between">
             <Label for="remember" class="crm-checkbox">
-                <Checkbox id="remember" name="remember" :tabindex="3" />
+                <Checkbox id="remember" name="remember" />
                 <span>Remember me</span>
             </Label>
         </div>
@@ -89,7 +83,6 @@ defineProps<{
             <Button
                 type="submit"
                 class="w-full"
-                :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
             >

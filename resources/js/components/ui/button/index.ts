@@ -7,7 +7,7 @@ export const buttonVariants = cva("crm-control", {
     variants: {
         variant: {
             default: "crm-button",
-            destructive: "crm-button",
+            destructive: "crm-destructive",
             outline: "crm-secondary",
             secondary: "crm-tonal",
             ghost: "crm-ghost",

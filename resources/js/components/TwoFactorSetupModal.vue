@@ -226,7 +226,7 @@ watch(
                                     >
                                         <Check
                                             v-if="copied"
-                                            class="w-4 text-neutral-500"
+                                            class="w-4 text-primary"
                                         />
                                         <Copy v-else class="w-4" />
                                     </button>

@@ -35,7 +35,7 @@ defineExpose({
             @click="showPassword = !showPassword"
             class="crm-password-toggle"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
-            :tabindex="-1"
+            :aria-pressed="showPassword"
         >
             <EyeOff v-if="showPassword" class="size-4" />
             <Eye v-else class="size-4" />

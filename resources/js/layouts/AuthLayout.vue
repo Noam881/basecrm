@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
 const page = usePage();
-const brand = page.props.brand as { name: string; color: string; logo: string };
+const brand = computed(
+    () => page.props.brand as { name: string; logo: string },
+);
 defineProps<{ title?: string; description?: string }>();
 </script>
 <template>
-    <div class="crm-auth" :style="{ '--md-sys-color-primary': brand.color }">
+    <div class="crm-auth">
         <main class="crm-auth-form">
             <div>
                 <div class="crm-auth-brand">

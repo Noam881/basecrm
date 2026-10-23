@@ -1,41 +1,5 @@
-/* Material Design 3: neutral color roles, standard type/shape scales and state layers. */
-:root {
-    --md-sys-color-primary: #202020;
-    --md-sys-color-on-primary: #ffffff;
-    --md-sys-color-primary-container: #e2e2e2;
-    --md-sys-color-on-primary-container: #1b1b1b;
-    --md-sys-color-secondary: #5e5e5e;
-    --md-sys-color-on-secondary: #ffffff;
-    --md-sys-color-secondary-container: #e8e8e8;
-    --md-sys-color-on-secondary-container: #202020;
-    --md-sys-color-surface: #fafafa;
-    --md-sys-color-surface-container-lowest: #ffffff;
-    --md-sys-color-surface-container-low: #f5f5f5;
-    --md-sys-color-surface-container: #eeeeee;
-    --md-sys-color-surface-container-high: #e8e8e8;
-    --md-sys-color-surface-container-highest: #e2e2e2;
-    --md-sys-color-on-surface: #1b1b1b;
-    --md-sys-color-on-surface-variant: #494949;
-    --md-sys-color-outline: #757575;
-    --md-sys-color-outline-variant: #c6c6c6;
-    --md-sys-color-error: #202020;
-    --md-sys-color-on-error: #ffffff;
-    --md-sys-shape-corner-extra-small: 4px;
-    --md-sys-shape-corner-small: 8px;
-    --md-sys-shape-corner-medium: 12px;
-    --md-sys-shape-corner-large: 16px;
-    --md-sys-shape-corner-extra-large: 28px;
-    --md-sys-shape-corner-full: 999px;
-    --md-sys-typescale-body-large-font: Roboto;
-    --md-sys-typescale-body-medium-font: Roboto;
-    --md-sys-typescale-label-large-font: Roboto;
-    --md-sys-typescale-title-large-font: Roboto;
-    --md-sys-motion-duration-short: 150ms;
-    --md-sys-motion-duration-medium: 250ms;
-    --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-    --md-sys-elevation-level1: 0 1px 2px #00000030, 0 1px 3px 1px #00000014;
-    --md-sys-elevation-level2: 0 1px 2px #00000030, 0 2px 6px 2px #00000014;
-}
+@import "./tokens.css";
+
 .crm,
 .crm-auth {
     --brand: var(--md-sys-color-primary);
@@ -74,25 +38,6 @@
     -webkit-font-smoothing: antialiased;
     flex-shrink: 0;
 }
-.md-interactive,
-.crm button,
-.crm .crm-button,
-.crm .crm-secondary,
-.crm-sidebar nav a,
-.crm-sidebar-bottom a,
-.crm-tabs a,
-.crm-stage-row,
-.crm-back,
-.crm-pagination a,
-.crm-auth button {
-    position: relative;
-    isolation: isolate;
-}
-md-ripple {
-    border-radius: inherit;
-    --md-ripple-hover-color: currentColor;
-    --md-ripple-pressed-color: currentColor;
-}
 .crm-sidebar {
     width: 280px;
     flex-shrink: 0;
@@ -109,8 +54,9 @@ md-ripple {
     height: 100dvh;
     max-height: none;
     max-width: none;
-    transition: width var(--md-sys-motion-duration-medium)
-        var(--md-sys-motion-easing-standard);
+    box-shadow: var(--md-sys-elevation-level0);
+    transition: width var(--crm-motion-spatial-fast-duration)
+        var(--crm-motion-spatial-fast-easing);
 }
 .crm-sidebar-top {
     display: flex;
@@ -173,19 +119,22 @@ md-ripple {
     color: var(--md-sys-color-on-surface-variant);
     text-decoration: none;
     transition:
-        background-color var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard),
-        color var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard),
-        gap var(--md-sys-motion-duration-medium)
-            var(--md-sys-motion-easing-standard);
+        background-color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        gap var(--crm-motion-spatial-fast-duration)
+            var(--crm-motion-spatial-fast-easing);
 }
-.crm-sidebar .selected {
+.crm-sidebar :is(.selected, [aria-current="page"]) {
     background: var(--md-sys-color-secondary-container);
     color: var(--md-sys-color-on-secondary-container);
     font-weight: 700;
 }
-.crm-sidebar nav a.selected .material-symbols-outlined {
+.crm-sidebar
+    nav
+    a:is(.selected, [aria-current="page"])
+    .material-symbols-outlined {
     font-variation-settings: "FILL" 1;
 }
 .crm-nav-label {
@@ -197,10 +146,10 @@ md-ripple {
     text-overflow: ellipsis;
     opacity: 1;
     transition:
-        max-width var(--md-sys-motion-duration-medium)
-            var(--md-sys-motion-easing-standard),
-        opacity var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard);
+        max-width var(--crm-motion-spatial-fast-duration)
+            var(--crm-motion-spatial-fast-easing),
+        opacity var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing);
 }
 .crm-sidebar-bottom {
     margin-top: auto;
@@ -305,9 +254,6 @@ md-ripple {
     flex-direction: column;
     background: var(--md-sys-color-surface-container-low);
     border-color: transparent;
-}
-.crm-metrics .crm-card:hover {
-    background: var(--md-sys-color-surface-container);
 }
 .crm-metrics span {
     color: var(--muted);
@@ -531,16 +477,32 @@ md-ripple {
     color: var(--muted);
 }
 .crm-tabs a {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 48px;
     padding: 12px 16px;
+    color: inherit;
+    text-decoration: none;
 }
-@media (hover: hover) {
-    .crm-tabs a:hover {
-        background: var(--md-sys-color-surface-container);
-    }
+.crm-tabs a::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 2px;
+    background: var(--md-sys-color-primary);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform var(--crm-motion-spatial-fast-duration)
+        var(--crm-motion-spatial-fast-easing);
+}
+.crm-tabs a[aria-current="page"] {
+    color: var(--md-sys-color-primary);
+}
+.crm-tabs a[aria-current="page"]::after {
+    transform: scaleX(1);
 }
 .crm-table-scroll {
     overflow: auto;
@@ -572,8 +534,15 @@ md-ripple {
 .crm td strong {
     font-weight: 500;
 }
-.crm tbody tr:hover {
-    background: var(--md-sys-color-surface-container-low);
+@media (hover: hover) {
+    .crm tbody tr:hover {
+        background: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface)
+                calc(var(--md-sys-state-hover-state-layer-opacity) * 100%),
+            transparent
+        );
+    }
 }
 .crm-pagination {
     display: flex;
@@ -659,11 +628,11 @@ md-ripple {
 }
 .crm-error {
     margin: 16px 32px 0;
-    border: 2px solid var(--md-sys-color-on-surface);
-    background: var(--md-sys-color-surface-container);
+    border: 1px solid var(--md-sys-color-error);
+    background: var(--md-sys-color-error-container);
     padding: 16px 24px;
     border-radius: var(--md-sys-shape-corner-medium);
-    color: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-on-error-container);
     font-size: 14px;
     line-height: 20px;
 }
@@ -760,21 +729,28 @@ md-ripple {
 }
 @media (max-width: 767px) {
     .crm-sidebar:is(dialog) {
+        --crm-drawer-closed-translation: -100%;
         position: fixed;
-        inset: 0 auto 0 0;
+        inset-block: 0;
+        inset-inline: 0 auto;
         width: min(320px, calc(100vw - 32px));
         height: 100dvh;
         max-height: 100dvh;
         border: 0;
         padding: 16px 12px;
-        border-radius: 0 var(--md-sys-shape-corner-large)
-            var(--md-sys-shape-corner-large) 0;
-        transform: translateX(-100%);
+        border-radius: 0;
+        border-start-end-radius: var(--md-sys-shape-corner-large);
+        border-end-end-radius: var(--md-sys-shape-corner-large);
+        box-shadow: var(--md-sys-elevation-level1);
+        transform: translateX(var(--crm-drawer-closed-translation));
         transition:
-            transform var(--md-sys-motion-duration-medium)
-                var(--md-sys-motion-easing-standard),
-            overlay var(--md-sys-motion-duration-medium) allow-discrete,
-            display var(--md-sys-motion-duration-medium) allow-discrete;
+            transform var(--crm-motion-spatial-fast-duration)
+                var(--crm-motion-spatial-fast-easing),
+            overlay var(--crm-motion-spatial-fast-duration) allow-discrete,
+            display var(--crm-motion-spatial-fast-duration) allow-discrete;
+    }
+    [dir="rtl"] .crm-sidebar:is(dialog) {
+        --crm-drawer-closed-translation: 100%;
     }
     .crm-sidebar:is(dialog):not([open]) {
         display: none;
@@ -782,23 +758,27 @@ md-ripple {
     .crm-sidebar:is(dialog)[open] {
         transform: translateX(0);
     }
-    .crm-sidebar::backdrop {
-        background: #00000052;
+    .crm-sidebar:is(dialog)::backdrop {
+        background: color-mix(
+            in srgb,
+            var(--md-sys-color-scrim) 32%,
+            transparent
+        );
         opacity: 0;
         transition:
-            opacity var(--md-sys-motion-duration-medium)
-                var(--md-sys-motion-easing-standard),
-            overlay var(--md-sys-motion-duration-medium) allow-discrete,
-            display var(--md-sys-motion-duration-medium) allow-discrete;
+            opacity var(--crm-motion-effects-default-duration)
+                var(--crm-motion-effects-default-easing),
+            overlay var(--crm-motion-spatial-fast-duration) allow-discrete,
+            display var(--crm-motion-spatial-fast-duration) allow-discrete;
     }
-    .crm-sidebar[open]::backdrop {
+    .crm-sidebar:is(dialog)[open]::backdrop {
         opacity: 1;
     }
     @starting-style {
         .crm-sidebar:is(dialog)[open] {
-            transform: translateX(-100%);
+            transform: translateX(var(--crm-drawer-closed-translation));
         }
-        .crm-sidebar[open]::backdrop {
+        .crm-sidebar:is(dialog)[open]::backdrop {
             opacity: 0;
         }
     }
@@ -902,30 +882,28 @@ md-ripple {
         padding: 4px 8px;
     }
 }
-.crm-icon-control,
 .crm-tabs a,
 .crm-stage-row,
 .crm-back,
 .crm-pagination a,
 .crm-metrics .crm-card,
-.crm td,
-.crm input,
-.crm select,
-.crm textarea {
+.crm tbody tr,
+.crm td {
     transition:
-        background-color var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard),
-        border-color var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard),
-        color var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard),
-        box-shadow var(--md-sys-motion-duration-short)
-            var(--md-sys-motion-easing-standard);
+        background-color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        border-color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        box-shadow var(--crm-motion-effects-default-duration)
+            var(--crm-motion-effects-default-easing);
 }
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
-    *::after {
+    *::after,
+    *::backdrop {
         scroll-behavior: auto !important;
         transition-duration: 0ms !important;
         animation-duration: 0ms !important;

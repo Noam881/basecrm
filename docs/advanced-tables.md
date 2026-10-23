@@ -1,6 +1,6 @@
 # Shared Material data tables
 
-Leads, contacts, companies and follow-ups use the same neutral Material table component, backed by TanStack Vue Table 8 and a permission-scoped PostgreSQL query engine. Each table exposes its authorized business-field catalog; authentication secrets and unrelated record data are never table fields.
+Leads, contacts, companies and follow-ups use the same Material 3 table component, backed by TanStack Vue Table 8 and a permission-scoped PostgreSQL query engine. Each table exposes its authorized business-field catalog; authentication secrets and unrelated record data are never table fields.
 
 ## Controls
 

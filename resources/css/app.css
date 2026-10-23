@@ -63,24 +63,6 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
-    }
-}
-
 @layer utilities {
     body,
     html {
@@ -90,41 +72,43 @@
     }
 }
 
-:root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 0% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(0 0% 61%);
-    --chart-2: hsl(0 0% 39%);
-    --chart-3: hsl(0 0% 24%);
-    --chart-4: hsl(0 0% 66%);
-    --chart-5: hsl(0 0% 67%);
-    --radius: 0.75rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(0 0% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(0 0% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+/* Host utilities consume the same Material roles as core and installed modules. */
+:root,
+.dark {
+    --background: var(--md-sys-color-surface);
+    --foreground: var(--md-sys-color-on-surface);
+    --card: var(--md-sys-color-surface-container-low);
+    --card-foreground: var(--md-sys-color-on-surface);
+    --popover: var(--md-sys-color-surface-container);
+    --popover-foreground: var(--md-sys-color-on-surface);
+    --primary: var(--md-sys-color-primary);
+    --primary-foreground: var(--md-sys-color-on-primary);
+    --secondary: var(--md-sys-color-secondary-container);
+    --secondary-foreground: var(--md-sys-color-on-secondary-container);
+    --muted: var(--md-sys-color-surface-container-high);
+    --muted-foreground: var(--md-sys-color-on-surface-variant);
+    --accent: var(--md-sys-color-secondary-container);
+    --accent-foreground: var(--md-sys-color-on-secondary-container);
+    --destructive: var(--md-sys-color-error);
+    --destructive-foreground: var(--md-sys-color-on-error);
+    --border: var(--md-sys-color-outline-variant);
+    --input: var(--md-sys-color-outline);
+    --ring: var(--md-sys-color-primary);
+    --chart-1: var(--md-sys-color-primary);
+    --chart-2: var(--md-sys-color-secondary);
+    --chart-3: var(--md-sys-color-tertiary);
+    --chart-4: var(--md-sys-color-primary-container);
+    --chart-5: var(--md-sys-color-tertiary-container);
+    --radius: var(--md-sys-shape-corner-medium);
+    --sidebar-background: var(--md-sys-color-surface-container-low);
+    --sidebar-foreground: var(--md-sys-color-on-surface-variant);
+    --sidebar-primary: var(--md-sys-color-primary);
+    --sidebar-primary-foreground: var(--md-sys-color-on-primary);
+    --sidebar-accent: var(--md-sys-color-secondary-container);
+    --sidebar-accent-foreground: var(--md-sys-color-on-secondary-container);
+    --sidebar-border: var(--md-sys-color-outline-variant);
+    --sidebar-ring: var(--md-sys-color-primary);
+    --sidebar: var(--md-sys-color-surface-container-low);
 }
 
 @layer base {
@@ -134,8 +118,4 @@
     body {
         @apply bg-background text-foreground;
     }
-}
-
-:root {
-    color-scheme: light;
 }
