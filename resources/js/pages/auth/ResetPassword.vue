@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Form, Head } from "@inertiajs/vue3";
-import { ref } from "vue";
 import InputError from "@/components/InputError.vue";
 import PasswordInput from "@/components/PasswordInput.vue";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,9 @@ defineOptions({
 
 const props = defineProps<{
     token: string;
-    email: string;
+    email: string | null;
     passwordRules: string;
 }>();
-
-const inputEmail = ref(props.email);
 </script>
 
 <template>
@@ -31,7 +28,7 @@ const inputEmail = ref(props.email);
     <Form
         class="crm-form"
         v-bind="update.form()"
-        :transform="(data) => ({ ...data, token, email })"
+        :transform="(data) => ({ ...data, token })"
         :reset-on-success="['password', 'password_confirmation']"
         v-slot="{ errors, processing }"
     >
@@ -41,9 +38,9 @@ const inputEmail = ref(props.email);
                 id="email"
                 type="email"
                 name="email"
-                autocomplete="email"
-                v-model="inputEmail"
-                readonly
+                autocomplete="username"
+                :default-value="props.email ?? ''"
+                required
             />
             <InputError :message="errors.email" />
         </div>
