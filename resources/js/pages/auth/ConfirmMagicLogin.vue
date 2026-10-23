@@ -56,7 +56,7 @@ onMounted(() => {
         </template>
 
         <template v-else>
-            <p role="status" class="text-sm text-muted-foreground">
+            <p role="status" class="crm-notice-panel text-sm">
                 This sign-in link is invalid or has expired. Request a new link
                 to continue.
             </p>

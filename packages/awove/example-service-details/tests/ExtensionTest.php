@@ -71,8 +71,8 @@ it('uses two brands and vocabularies with the same core', function () {
     $a = Installation::manifest();
     config(['core.installation' => 'beta']);
     $b = Installation::manifest();
-    expect($a['color'])->toBe('#6750A4')
-        ->and($b['color'])->toBe('#6750A4')
+    expect($a['color'])->toBe('#262626')
+        ->and($b['color'])->toBe('#262626')
         ->and($a['name'])->not->toBe($b['name'])
         ->and($a['logo'])->not->toBe($b['logo'])
         ->and($a['modules'])->toBe([])

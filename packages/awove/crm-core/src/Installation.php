@@ -16,7 +16,7 @@ class Installation
         }
         $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
         $result = array_replace(config('core.defaults'), $data);
-        // Legacy manifests may retain a color; the Material baseline is fixed.
+        // Legacy manifests may retain a color; the shared product palette is fixed.
         $result['color'] = config('core.defaults.color');
         if (! in_array($result['timezone'], timezone_identifiers_list()) || $result['locale'] !== 'en') {
             throw new \RuntimeException('Invalid installation branding, timezone or locale.');

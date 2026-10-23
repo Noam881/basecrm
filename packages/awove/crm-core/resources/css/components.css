@@ -47,36 +47,52 @@
             var(--crm-motion-effects-default-easing);
 }
 .crm-button {
-    color: var(--md-sys-color-on-primary);
-    background: var(--md-sys-color-primary);
+    color: var(--crm-on-accent);
+    background: var(--crm-accent);
 }
 .crm-destructive {
     color: var(--md-sys-color-on-error);
     background: var(--md-sys-color-error);
 }
 .crm-secondary {
-    color: var(--md-sys-color-primary);
+    color: var(--crm-accent);
     background: transparent;
-    border-color: var(--md-sys-color-outline);
+    border-color: var(--crm-accent);
 }
 .crm-tonal {
-    color: var(--md-sys-color-on-secondary-container);
-    background: var(--md-sys-color-secondary-container);
+    color: var(--crm-on-accent-container);
+    background: var(--crm-accent-container);
 }
 .crm-elevated {
-    color: var(--md-sys-color-primary);
+    color: var(--crm-accent);
     background: var(--md-sys-color-surface-container-low);
     box-shadow: var(--md-sys-elevation-level1);
 }
 .crm-ghost,
 .crm-text {
-    color: var(--md-sys-color-primary);
+    color: var(--crm-accent);
     background: transparent;
     padding-inline: var(--crm-button-padding-inline, var(--crm-space-3));
 }
 .crm-text {
     text-decoration: underline;
     text-underline-offset: 4px;
+}
+/* Accent scope is explicit: ordinary typography, fields and surfaces stay neutral. */
+.crm-notice {
+    color: var(--crm-accent);
+}
+.crm-notice-panel {
+    color: var(--crm-on-accent-container);
+    background: var(--crm-accent-container);
+    border: 1px solid var(--crm-accent);
+    border-radius: var(--md-sys-shape-corner-medium);
+    padding: var(--crm-space-4);
+}
+[data-slot="badge"] {
+    color: var(--crm-on-accent-container);
+    background: var(--crm-accent-container);
+    border-color: var(--crm-accent);
 }
 .crm-control-start {
     justify-content: flex-start;
@@ -387,15 +403,15 @@
     color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 .crm-outlined-field[data-invalid="true"] .crm-floating-label {
-    color: var(--md-sys-color-error);
+    color: var(--md-sys-color-primary);
 }
 .crm-outlined-field[data-invalid="true"] :is(input, textarea, select),
 .crm-input[aria-invalid="true"] {
-    border-color: var(--md-sys-color-error);
-    caret-color: var(--md-sys-color-error);
+    border-color: var(--md-sys-color-primary);
+    caret-color: var(--md-sys-color-primary);
 }
 .crm-outlined-field[data-invalid="true"] :is(input, textarea, select):focus {
-    box-shadow: inset 0 0 0 1px var(--md-sys-color-error);
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
 }
 .crm-field-supporting-action {
     justify-self: end;
@@ -441,13 +457,13 @@
     appearance: none;
     -webkit-appearance: none;
     padding-inline-end: 48px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2349454F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23525252' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-size: 24px;
     background-position: right 12px center;
 }
 .dark :is(.crm, .md-table-dialog) select:not([multiple]):not([size]) {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23CAC4D0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C7C7C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
 }
 [dir="rtl"] :is(.crm, .md-table-dialog) select:not([multiple]):not([size]) {
     background-position: left 12px center;
@@ -481,8 +497,8 @@
     cursor: pointer;
 }
 .crm-ghost[aria-current="page"] {
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
+    background: var(--crm-accent-container);
+    color: var(--crm-on-accent-container);
     font-weight: 500;
 }
 /* Portaled host menus/dialogs use the same roles, elevations, fields and motion as core dialogs. */
@@ -892,7 +908,7 @@
     cursor: default;
 }
 .crm-check[aria-invalid="true"] {
-    border-color: var(--md-sys-color-error);
+    border-color: var(--md-sys-color-primary);
 }
 .crm-check-indicator {
     display: grid;

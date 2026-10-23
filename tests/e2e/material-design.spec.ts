@@ -1,60 +1,64 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { signIn } from "./auth";
 
-// Current baseline values, including the four updated light on-container roles.
+// Shared product palette: neutral surfaces and controls with scoped pink accents.
 const lightRoles = {
-    primary: "#6750A4",
+    primary: "#262626",
     "on-primary": "#FFFFFF",
-    "primary-container": "#EADDFF",
-    "on-primary-container": "#4F378B",
-    "secondary-container": "#E8DEF8",
-    "on-secondary-container": "#4A4458",
-    "on-tertiary-container": "#633B48",
-    "on-error-container": "#8C1D18",
-    surface: "#FEF7FF",
-    "on-surface": "#1D1B20",
-    "on-surface-variant": "#49454F",
+    "primary-container": "#E8E8E8",
+    "on-primary-container": "#202020",
+    "secondary-container": "#EDEDED",
+    "on-secondary-container": "#292929",
+    surface: "#FFFFFF",
+    "on-surface": "#202020",
+    "on-surface-variant": "#525252",
     "surface-container-lowest": "#FFFFFF",
-    "surface-container-low": "#F7F2FA",
-    "surface-container": "#F3EDF7",
-    "surface-container-high": "#ECE6F0",
-    "surface-container-highest": "#E6E0E9",
-    outline: "#79747E",
-    "outline-variant": "#CAC4D0",
-    error: "#B3261E",
+    "surface-container-low": "#F5F5F5",
+    "surface-container": "#F0F0F0",
+    "surface-container-high": "#EBEBEB",
+    "surface-container-highest": "#E5E5E5",
+    outline: "#767676",
+    "outline-variant": "#C9C9C9",
+    error: "#9E3F65",
 };
 const darkRoles = {
-    primary: "#D0BCFF",
-    "on-primary": "#381E72",
-    "primary-container": "#4F378B",
-    "on-primary-container": "#EADDFF",
-    "secondary-container": "#4A4458",
-    "on-secondary-container": "#E8DEF8",
-    "on-tertiary-container": "#FFD8E4",
-    "on-error-container": "#F9DEDC",
-    surface: "#141218",
-    "on-surface": "#E6E0E9",
-    "on-surface-variant": "#CAC4D0",
-    "surface-container-lowest": "#0F0D13",
-    "surface-container-low": "#1D1B20",
-    "surface-container": "#211F26",
-    "surface-container-high": "#2B2930",
-    "surface-container-highest": "#36343B",
-    outline: "#938F99",
-    "outline-variant": "#49454F",
-    error: "#F2B8B5",
+    primary: "#E6E6E6",
+    surface: "#141414",
+    "on-surface": "#E6E6E6",
+    "on-surface-variant": "#C7C7C7",
+    "surface-container-low": "#1C1C1C",
+    "surface-container": "#212121",
+    "surface-container-high": "#2B2B2B",
+    "surface-container-highest": "#363636",
+    outline: "#939393",
+    error: "#F3ACC9",
+};
+const lightAccent = {
+    accent: "#9E3F65",
+    "on-accent": "#FFFFFF",
+    "accent-container": "#F9DCE7",
+    "on-accent-container": "#3E0B22",
+};
+const darkAccent = {
+    accent: "#F3ACC9",
+    "on-accent": "#5A1733",
+    "accent-container": "#5A1733",
+    "on-accent-container": "#FFD9E8",
 };
 
-async function expectRoles(page: Page, expected: Record<string, string>) {
-    const actual = await page
-        .locator(".crm-auth")
-        .evaluate((element, names) => {
+async function expectRoles(
+    page: Page,
+    expected: Record<string, string>,
+    prefix = "--md-sys-color-",
+) {
+    const actual = await page.locator(".crm-auth").evaluate(
+        (element, { names, prefix }) => {
             const style = getComputedStyle(element);
             return Object.fromEntries(
                 names.map((name) => [
                     name,
                     style
-                        .getPropertyValue(`--md-sys-color-${name}`)
+                        .getPropertyValue(`${prefix}${name}`)
                         .trim()
                         .toUpperCase()
                         .replace(
@@ -63,8 +67,21 @@ async function expectRoles(page: Page, expected: Record<string, string>) {
                         ),
                 ]),
             );
-        }, Object.keys(expected));
+        },
+        { names: Object.keys(expected), prefix },
+    );
     expect(actual).toEqual(expected);
+}
+
+async function expectNeutralColor(element: Locator, property: string) {
+    const color = await element.evaluate(
+        (node, name) => getComputedStyle(node).getPropertyValue(name),
+        property,
+    );
+    const channels = color.match(/^rgba?\(\s*(\d+)\D+(\d+)\D+(\d+)/);
+    expect(channels, `${property} must be an RGB colour`).not.toBeNull();
+    expect(channels?.[1], `${property} must stay neutral`).toBe(channels?.[2]);
+    expect(channels?.[2], `${property} must stay neutral`).toBe(channels?.[3]);
 }
 
 function fieldFor(page: Page, input: Locator) {
@@ -88,20 +105,22 @@ async function nextFrameOpacity(layer: Locator) {
     );
 }
 
-test("light baseline fields retain semantic labels while empty, focused and populated", async ({
+test("neutral light fields retain semantic labels while empty, focused and populated", async ({
     page,
 }) => {
     await page.goto("/login");
     await expectRoles(page, lightRoles);
+    await expectRoles(page, lightAccent, "--crm-");
     await expect(page.locator(".crm-auth")).toHaveCSS(
         "background-color",
         "rgb(250, 250, 250)",
     );
+    await expectNeutralColor(page.getByRole("heading", { level: 1 }), "color");
     const login = page.getByRole("button", {
         name: "Email me a sign-in link",
         exact: true,
     });
-    await expect(login).toHaveCSS("background-color", "rgb(103, 80, 164)");
+    await expect(login).toHaveCSS("background-color", "rgb(158, 63, 101)");
     await expect(login).toHaveCSS("color", "rgb(255, 255, 255)");
 
     const email = page.getByLabel("Email address", { exact: true });
@@ -110,8 +129,11 @@ test("light baseline fields retain semantic labels while empty, focused and popu
     await page.getByRole("heading", { level: 1 }).click();
     const field = fieldFor(page, email);
     const label = field.locator(".crm-floating-label");
+    await expectNeutralColor(email, "color");
+    await expectNeutralColor(email, "border-top-color");
+    await expectNeutralColor(label, "background-color");
     await expect(field).toHaveAttribute("data-filled", "false");
-    await expect(label).toHaveCSS("color", "rgb(73, 69, 79)");
+    await expect(label).toHaveCSS("color", "rgb(82, 82, 82)");
     const emptyBox = await email.boundingBox();
     if (!emptyBox) throw new Error("The email input must be visible.");
     await expect
@@ -128,7 +150,9 @@ test("light baseline fields retain semantic labels while empty, focused and popu
     );
 
     await email.focus();
-    await expect(label).toHaveCSS("color", "rgb(103, 80, 164)");
+    await expectNeutralColor(label, "color");
+    await expectNeutralColor(email, "border-top-color");
+    await expectNeutralColor(email, "caret-color");
     await expect
         .poll(async () => Math.abs((await labelCenter(label)) - emptyBox.y))
         .toBeLessThan(2);
@@ -156,7 +180,7 @@ test("light baseline fields retain semantic labels while empty, focused and popu
     await expect(login).toBeFocused();
     await expect(login).toHaveCSS("outline-width", "3px");
     await expect(login).toHaveCSS("outline-style", "solid");
-    await expect(login).toHaveCSS("outline-color", "rgb(98, 91, 113)");
+    await expect(login).toHaveCSS("outline-color", "rgb(82, 82, 82)");
     await expect(login).toHaveCSS("outline-offset", "2px");
 
     // Exercise keyboard submission without sending another email in a visual test.
@@ -179,7 +203,7 @@ test("light baseline fields retain semantic labels while empty, focused and popu
     });
 });
 
-test("server validation describes the invalid field and uses the Material error role", async ({
+test("validation uses a pink notice while the invalid field stays neutral", async ({
     page,
 }, info) => {
     await page.goto("/login");
@@ -197,7 +221,7 @@ test("server validation describes the invalid field and uses the Material error 
         .getByRole("alert")
         .filter({ hasText: /email.*valid|valid.*email/i });
     await expect(error).toBeVisible();
-    await expect(error).toHaveCSS("color", "rgb(179, 38, 30)");
+    await expect(error).toHaveCSS("color", "rgb(158, 63, 101)");
     await expect(email).toHaveAttribute("aria-invalid", "true");
     const errorId = await error.getAttribute("id");
     expect(errorId).toBeTruthy();
@@ -209,11 +233,11 @@ test("server validation describes the invalid field and uses the Material error 
     await expect(field).toHaveAttribute("data-invalid", "true");
     await expect(field.locator(".crm-floating-label")).toHaveCSS(
         "color",
-        "rgb(179, 38, 30)",
+        "rgb(38, 38, 38)",
     );
-    await expect(email).toHaveCSS("border-top-color", "rgb(179, 38, 30)");
+    await expect(email).toHaveCSS("border-top-color", "rgb(38, 38, 38)");
     await email.hover();
-    await expect(email).toHaveCSS("border-top-color", "rgb(179, 38, 30)");
+    await expect(email).toHaveCSS("border-top-color", "rgb(38, 38, 38)");
 });
 
 test("one interactive layer responds to pointer hover and press without changing the email", async ({
@@ -271,7 +295,7 @@ test("reduced motion makes field and interaction feedback immediate", async ({
     expect(await nextFrameOpacity(layer)).toBe(0);
 });
 
-test("dark baseline is applied to real auth controls without rewriting the light scheme", async ({
+test("dark controls stay neutral while the sign-in button retains its pink accent", async ({
     page,
     context,
 }) => {
@@ -287,19 +311,20 @@ test("dark baseline is applied to real auth controls without rewriting the light
     await page.goto("/login");
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expectRoles(page, darkRoles);
+    await expectRoles(page, darkAccent, "--crm-");
     await expect(page.locator(".crm-auth")).toHaveCSS(
         "background-color",
-        "rgb(20, 18, 24)",
+        "rgb(20, 20, 20)",
     );
     const login = page.getByRole("button", {
         name: "Email me a sign-in link",
         exact: true,
     });
-    await expect(login).toHaveCSS("background-color", "rgb(208, 188, 255)");
-    await expect(login).toHaveCSS("color", "rgb(56, 30, 114)");
+    await expect(login).toHaveCSS("background-color", "rgb(243, 172, 201)");
+    await expect(login).toHaveCSS("color", "rgb(90, 23, 51)");
     await expect(page.getByLabel("Email address", { exact: true })).toHaveCSS(
         "color",
-        "rgb(230, 224, 233)",
+        "rgb(230, 230, 230)",
     );
 });
 
@@ -310,6 +335,18 @@ test("a native table dialog uses elevated containment and restores keyboard focu
     const origin = "http://127.0.0.1:8092";
     await signIn(page, info.project.name, "beta");
     await expect(page).toHaveURL(`${origin}/dashboard`);
+    await expectNeutralColor(page.locator(".crm-sidebar"), "background-color");
+    await expectNeutralColor(
+        page.locator(".crm-metrics .crm-card").first(),
+        "background-color",
+    );
+    await expectNeutralColor(
+        page.locator(".crm-metrics strong").first(),
+        "color",
+    );
+    const count = page.locator(".crm-stage-row strong").first();
+    await expect(count).toHaveCSS("background-color", "rgb(249, 220, 231)");
+    await expect(count).toHaveCSS("color", "rgb(62, 11, 34)");
     if (isMobile)
         await page.getByRole("button", { name: "Open navigation" }).click();
     const leadNavigation = page.locator('.crm-sidebar nav a[href="/leads"]');
@@ -325,6 +362,8 @@ test("a native table dialog uses elevated containment and restores keyboard focu
     ).toBe(true);
     await expect(leadNavigation).toHaveAttribute("aria-current", "page");
     await expect(leadNavigation).toHaveClass(/\bcrm-interactive\b/);
+    await expectNeutralColor(leadNavigation, "background-color");
+    await expectNeutralColor(leadNavigation, "color");
     if (isMobile) {
         await expect(
             page.getByRole("dialog", { name: "Navigation", exact: true }),
@@ -359,7 +398,7 @@ test("a native table dialog uses elevated containment and restores keyboard focu
         exact: true,
     });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveCSS("background-color", "rgb(236, 230, 240)");
+    await expect(dialog).toHaveCSS("background-color", "rgb(235, 235, 235)");
     const shadow = await dialog.evaluate(
         (element) => getComputedStyle(element).boxShadow,
     );

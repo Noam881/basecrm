@@ -23,7 +23,7 @@ defineProps<{
     <Head title="Sign in" />
 
     <div class="crm-stack">
-        <p v-if="status" role="status" class="text-sm text-primary">
+        <p v-if="status" role="status" class="crm-notice-panel text-sm">
             {{ status }}
         </p>
 

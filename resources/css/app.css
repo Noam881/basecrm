@@ -72,7 +72,7 @@
     }
 }
 
-/* Host utilities consume the same Material roles as core and installed modules. */
+/* Host utilities share the neutral roles; pink accents are scoped by global components. */
 :root,
 .dark {
     --background: var(--crm-canvas-color);

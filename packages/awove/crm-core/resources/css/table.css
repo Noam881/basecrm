@@ -87,8 +87,8 @@
     height: 20px;
     border-radius: var(--md-sys-shape-corner-full);
     font-size: 11px;
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
+    background: var(--crm-accent-container);
+    color: var(--crm-on-accent-container);
     padding: 0 4px;
 }
 .md-table-tools {
@@ -392,7 +392,8 @@
     font-weight: 500;
     padding: 4px 8px;
     border-radius: var(--md-sys-shape-corner-small);
-    background: var(--md-sys-color-surface-container);
+    background: var(--crm-accent-container);
+    color: var(--crm-on-accent-container);
     max-width: 100%;
 }
 .md-table[data-density="compact"] td {
