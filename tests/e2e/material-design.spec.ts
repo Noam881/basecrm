@@ -1,7 +1,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { signIn } from "./auth";
 
-// Shared product palette: neutral surfaces and controls with scoped pink accents.
+// Shared product palette: neutral surfaces and controls with scoped Material baseline purple accents.
 const lightRoles = {
     primary: "#262626",
     "on-primary": "#FFFFFF",
@@ -19,7 +19,7 @@ const lightRoles = {
     "surface-container-highest": "#E5E5E5",
     outline: "#767676",
     "outline-variant": "#C9C9C9",
-    error: "#9E3F65",
+    error: "#6750A4",
 };
 const darkRoles = {
     primary: "#E6E6E6",
@@ -31,19 +31,19 @@ const darkRoles = {
     "surface-container-high": "#2B2B2B",
     "surface-container-highest": "#363636",
     outline: "#939393",
-    error: "#F3ACC9",
+    error: "#D0BCFF",
 };
 const lightAccent = {
-    accent: "#9E3F65",
+    accent: "#6750A4",
     "on-accent": "#FFFFFF",
-    "accent-container": "#F9DCE7",
-    "on-accent-container": "#3E0B22",
+    "accent-container": "#EADDFF",
+    "on-accent-container": "#21005D",
 };
 const darkAccent = {
-    accent: "#F3ACC9",
-    "on-accent": "#5A1733",
-    "accent-container": "#5A1733",
-    "on-accent-container": "#FFD9E8",
+    accent: "#D0BCFF",
+    "on-accent": "#381E72",
+    "accent-container": "#4F378B",
+    "on-accent-container": "#EADDFF",
 };
 
 async function expectRoles(
@@ -120,7 +120,7 @@ test("neutral light fields retain semantic labels while empty, focused and popul
         name: "Email me a sign-in link",
         exact: true,
     });
-    await expect(login).toHaveCSS("background-color", "rgb(158, 63, 101)");
+    await expect(login).toHaveCSS("background-color", "rgb(103, 80, 164)");
     await expect(login).toHaveCSS("color", "rgb(255, 255, 255)");
 
     const email = page.getByLabel("Email address", { exact: true });
@@ -203,7 +203,7 @@ test("neutral light fields retain semantic labels while empty, focused and popul
     });
 });
 
-test("validation uses a pink notice while the invalid field stays neutral", async ({
+test("validation uses a purple notice while the invalid field stays neutral", async ({
     page,
 }, info) => {
     await page.goto("/login");
@@ -221,7 +221,7 @@ test("validation uses a pink notice while the invalid field stays neutral", asyn
         .getByRole("alert")
         .filter({ hasText: /email.*valid|valid.*email/i });
     await expect(error).toBeVisible();
-    await expect(error).toHaveCSS("color", "rgb(158, 63, 101)");
+    await expect(error).toHaveCSS("color", "rgb(103, 80, 164)");
     await expect(email).toHaveAttribute("aria-invalid", "true");
     const errorId = await error.getAttribute("id");
     expect(errorId).toBeTruthy();
@@ -295,7 +295,7 @@ test("reduced motion makes field and interaction feedback immediate", async ({
     expect(await nextFrameOpacity(layer)).toBe(0);
 });
 
-test("dark controls stay neutral while the sign-in button retains its pink accent", async ({
+test("dark controls stay neutral while the sign-in button retains its purple accent", async ({
     page,
     context,
 }) => {
@@ -320,8 +320,8 @@ test("dark controls stay neutral while the sign-in button retains its pink accen
         name: "Email me a sign-in link",
         exact: true,
     });
-    await expect(login).toHaveCSS("background-color", "rgb(243, 172, 201)");
-    await expect(login).toHaveCSS("color", "rgb(90, 23, 51)");
+    await expect(login).toHaveCSS("background-color", "rgb(208, 188, 255)");
+    await expect(login).toHaveCSS("color", "rgb(56, 30, 114)");
     await expect(page.getByLabel("Email address", { exact: true })).toHaveCSS(
         "color",
         "rgb(230, 230, 230)",
@@ -345,8 +345,8 @@ test("a native table dialog uses elevated containment and restores keyboard focu
         "color",
     );
     const count = page.locator(".crm-stage-row strong").first();
-    await expect(count).toHaveCSS("background-color", "rgb(249, 220, 231)");
-    await expect(count).toHaveCSS("color", "rgb(62, 11, 34)");
+    await expect(count).toHaveCSS("background-color", "rgb(234, 221, 255)");
+    await expect(count).toHaveCSS("color", "rgb(33, 0, 93)");
     if (isMobile)
         await page.getByRole("button", { name: "Open navigation" }).click();
     const leadNavigation = page.locator('.crm-sidebar nav a[href="/leads"]');

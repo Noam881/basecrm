@@ -1,11 +1,11 @@
-/* Neutral product palette. Pink is reserved for shared actions, notices and badges. */
+/* Neutral product palette. Purple is reserved for shared actions, notices and badges. */
 :root {
     color-scheme: light;
     --crm-canvas-color: #fafafa;
-    --crm-accent: #9e3f65;
+    --crm-accent: #6750a4;
     --crm-on-accent: #ffffff;
-    --crm-accent-container: #f9dce7;
-    --crm-on-accent-container: #3e0b22;
+    --crm-accent-container: #eaddff;
+    --crm-on-accent-container: #21005d;
     --md-sys-color-primary: #262626;
     --md-sys-color-on-primary: #ffffff;
     --md-sys-color-primary-container: #e8e8e8;
@@ -60,10 +60,10 @@
 .dark {
     color-scheme: dark;
     --crm-canvas-color: var(--md-sys-color-surface);
-    --crm-accent: #f3acc9;
-    --crm-on-accent: #5a1733;
-    --crm-accent-container: #5a1733;
-    --crm-on-accent-container: #ffd9e8;
+    --crm-accent: #d0bcff;
+    --crm-on-accent: #381e72;
+    --crm-accent-container: #4f378b;
+    --crm-on-accent-container: #eaddff;
     --md-sys-color-primary: #e6e6e6;
     --md-sys-color-on-primary: #242424;
     --md-sys-color-primary-container: #404040;

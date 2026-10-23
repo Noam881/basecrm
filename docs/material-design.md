@@ -1,10 +1,12 @@
 # Material Design 3
 
-The CRM follows Material Design 3 component geometry, typography, interaction states, motion and elevation with a neutral product palette. Black, white and greys define the canvas, surfaces, text, navigation, tables and form fields in both light and dark modes. Pink shades are reserved for buttons, notices and count/status bubbles. This user preference supersedes the earlier exact [Material 3 baseline colour](https://m3.material.io/styles/color/static/baseline) palette. All colours come from shared semantic tokens; pages must not introduce their own tints. The light application canvas remains near-white grey `#FAFAFA` through `--crm-canvas-color`. Brand names and logos remain installation-specific.
+The CRM follows Material Design 3 component geometry, typography, interaction states, motion and elevation with a neutral product palette. Black, white and greys define the canvas, surfaces, text, navigation, tables and form fields in both light and dark modes. Purple shades are reserved for buttons, notices and count/status bubbles. This user preference supersedes the earlier pink accent preference and exact [Material 3 baseline colour](https://m3.material.io/styles/color/static/baseline) palette. All colours come from shared semantic tokens; pages must not introduce their own tints. The light application canvas remains near-white grey `#FAFAFA` through `--crm-canvas-color`. Brand names and logos remain installation-specific.
+
+Accent roles are explicit and shared: light mode uses `#6750A4` with white text, and `#EADDFF` containers with `#21005D` text. Dark mode uses `#D0BCFF` with `#381E72` text, and `#4F378B` containers with `#EADDFF` text. These accents do not tint navigation, tables, fields or page surfaces.
 
 ## Shared implementation
 
-- `packages/awove/crm-core/resources/css/tokens.css`: the shared neutral light/dark roles, scoped pink accent roles, shape scale, state opacities, motion and elevation tokens.
+- `packages/awove/crm-core/resources/css/tokens.css`: the shared neutral light/dark roles, scoped purple accent roles, shape scale, state opacities, motion and elevation tokens.
 - `components.css`: reusable controls, outlined fields, cards, forms, menus, tooltips, sheets and dialogs, including portaled host components. Use these primitives for new UI; do not duplicate geometry or colours in a page.
 - `core.css`: shell, page layout, drawer/rail and navigation. `table.css`: table structure, column controls and native table dialogs.
 - `resources/js/lib/material.ts`: semantic field enhancement and interruptible interaction springs, applied after Vue updates and to dynamic portal content. DOM-owned nodes are not reparented.
@@ -23,6 +25,6 @@ Shared shadow tokens map levels 0–5 to **0/1/3/6/8/12dp**. Outlined cards and 
 
 Roboto and Material Symbols are bundled locally. Advanced table search, typed filters, multi-sort, column visibility/order/resize/pinning, saved views and permission boundaries are preserved. Quick-view links expose the current page and use a shared active indicator.
 
-Validation: `npm run check`, `npm run types:check`, `npm run build`, and desktop/mobile Playwright workflows. `tests/e2e/material-design.spec.ts` covers neutral field and surface colours, scoped pink accents, actual field states, button interaction states, reduced motion, dark roles and dialog elevation. Existing contact, table, workflow and email sign-in checks exercise save/reload behavior.
+Validation: `npm run check`, `npm run types:check`, `npm run build`, and desktop/mobile Playwright workflows. `tests/e2e/material-design.spec.ts` covers neutral field and surface colours, scoped purple accents, actual field states, button interaction states, reduced motion, dark roles and dialog elevation. Existing contact, table, workflow and email sign-in checks exercise save/reload behavior.
 
 Primary implementation references: [Standard spring tokens](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StandardMotionTokens.kt), [state tokens](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt), [Material Web elevation geometry](https://github.com/material-components/material-web/blob/main/elevation/internal/_elevation.scss).
