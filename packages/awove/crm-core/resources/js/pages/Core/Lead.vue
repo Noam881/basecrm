@@ -16,6 +16,7 @@ const props = defineProps<{
     statuses: Stage[];
     fields: Record<string, Field>;
     editable: boolean;
+    identityPermissions: { contact: boolean; company: boolean };
     panels: {
         id: string;
         label: string;
@@ -106,7 +107,7 @@ function changeTask(t: Task) {
     </div>
     <div class="crm-profile-grid">
         <div class="crm-stack">
-            <section class="crm-card">
+            <section class="crm-card crm-flow">
                 <h2>Lead details</h2>
                 <p class="crm-muted">
                     Lead #{{ lead.id }} ·
@@ -189,10 +190,11 @@ function changeTask(t: Task) {
                     </div>
                 </form>
             </section>
-            <section class="crm-card">
+            <section class="crm-card crm-flow">
                 <h2>Notes</h2>
                 <form
                     v-if="editable"
+                    class="crm-form"
                     @submit.prevent="
                         note.post(`/leads/${lead.id}/notes`, {
                             preserveScroll: true,
@@ -256,15 +258,33 @@ function changeTask(t: Task) {
             <section class="crm-card">
                 <h2>Customer</h2>
                 <div
-                    v-for="person in [lead.contact, lead.company].filter(
-                        Boolean,
-                    )"
-                    :key="person?.id"
+                    v-for="item in [
+                        {
+                            type: 'contacts',
+                            label: 'contact',
+                            person: lead.contact,
+                            editable: identityPermissions.contact,
+                        },
+                        {
+                            type: 'companies',
+                            label: 'company',
+                            person: lead.company,
+                            editable: identityPermissions.company,
+                        },
+                    ].filter((item) => item.person)"
+                    :key="item.type"
                     class="crm-note"
                 >
-                    <strong>{{ person?.name }}</strong>
-                    <p>{{ person?.email ?? "No email" }}</p>
-                    <p>{{ person?.phone ?? "No phone" }}</p>
+                    <strong>{{ item.person?.name }}</strong>
+                    <p>{{ item.person?.email ?? "No email" }}</p>
+                    <p>{{ item.person?.phone ?? "No phone" }}</p>
+                    <div v-if="item.editable" class="crm-form-action">
+                        <Link
+                            :href="`/people/${item.type}/${item.person?.id}?from_lead=${lead.id}`"
+                            class="crm-secondary"
+                            >Edit {{ item.label }}</Link
+                        >
+                    </div>
                 </div>
             </section>
             <section class="crm-card">
@@ -291,6 +311,7 @@ function changeTask(t: Task) {
                     </div>
                     <form
                         v-if="reschedule === t.id"
+                        class="crm-form"
                         @submit.prevent="changeTask(t)"
                     >
                         <label
@@ -312,7 +333,7 @@ function changeTask(t: Task) {
                 </article>
                 <form
                     v-if="editable"
-                    class="crm-stack"
+                    class="crm-form"
                     @submit.prevent="addTask"
                 >
                     <h3>Schedule a follow-up</h3>

@@ -1,8 +1,9 @@
 export interface Person {
     id: number;
     name: string;
-    email?: string;
-    phone?: string;
+    email?: string | null;
+    phone?: string | null;
+    company_id?: number | null;
 }
 export interface Stage {
     id: string;

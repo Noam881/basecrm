@@ -90,8 +90,8 @@
     color: var(--md-sys-color-on-secondary-container);
     padding: 0 4px;
 }
-.md-table-tools .crm-secondary {
-    padding: 8px 16px;
+.md-table-tools {
+    --crm-button-padding-inline: var(--crm-space-4);
 }
 .md-table-tools .material-symbols-outlined {
     font-size: 20px;
@@ -118,12 +118,6 @@
             var(--md-sys-motion-easing-standard),
         color var(--md-sys-motion-duration-short)
             var(--md-sys-motion-easing-standard);
-}
-.md-icon-button {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    border-radius: 999px;
 }
 .md-icon-button:hover,
 .md-icon-button[aria-pressed="true"] {
@@ -542,38 +536,15 @@
     font-size: 12px;
     color: var(--md-sys-color-on-surface-variant);
 }
-.md-table-dialog .crm-button {
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    border-radius: 999px;
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    padding: 10px 24px;
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 500;
-}
-.md-table-dialog input:not([type="checkbox"]):not([type="range"]),
-.md-table-dialog select {
-    width: 100%;
-    height: 48px;
-    min-width: 0;
-    font: inherit;
-    background-color: transparent;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: 4px;
-    padding: 12px;
-    color: inherit;
+/* Compact dialogs consume the same field primitive as full-size forms. */
+.md-table-dialog {
+    --crm-field-height: 48px;
+    --crm-field-padding: 12px;
+    --crm-field-font-size: 14px;
+    --crm-field-line-height: 20px;
 }
 .md-table-dialog select[multiple] {
     height: 96px;
-}
-.md-table-dialog label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 14px;
 }
 .md-table-dialog input[type="checkbox"] {
     width: 20px;

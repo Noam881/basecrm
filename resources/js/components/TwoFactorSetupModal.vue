@@ -184,7 +184,7 @@ watch(
                             </div>
                         </div>
 
-                        <div class="flex w-full items-center space-x-5">
+                        <div class="crm-form-action">
                             <Button class="w-full" @click="handleModalNextStep">
                                 {{ modalConfig.buttonText }}
                             </Button>
@@ -218,7 +218,7 @@ watch(
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
+                                        class="crm-input"
                                     />
                                     <button
                                         @click="copy(manualSetupKey || '')"
@@ -238,6 +238,7 @@ watch(
 
                 <template v-else>
                     <Form
+                        class="crm-form"
                         v-bind="confirm.form()"
                         error-bag="confirmTwoFactorAuthentication"
                         reset-on-error
@@ -246,10 +247,7 @@ watch(
                         v-slot="{ errors, processing }"
                     >
                         <input type="hidden" name="code" :value="code" />
-                        <div
-                            ref="pinInputContainerRef"
-                            class="relative w-full space-y-3"
-                        >
+                        <div ref="pinInputContainerRef" class="crm-form">
                             <div
                                 class="flex w-full flex-col items-center justify-center space-y-3 py-2"
                             >
@@ -271,7 +269,7 @@ watch(
                                 <InputError :message="errors?.code" />
                             </div>
 
-                            <div class="flex w-full items-center space-x-5">
+                            <div class="crm-form-action">
                                 <Button
                                     type="button"
                                     variant="outline"

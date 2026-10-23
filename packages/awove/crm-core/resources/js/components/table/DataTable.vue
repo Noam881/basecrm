@@ -207,6 +207,10 @@ function format(value: Value | undefined, c: TableColumn) {
     );
 }
 function link(row: TableRow) {
+    if (!props.rowLink) return "";
+    if (["contacts", "companies"].includes(props.payload.id)) {
+        return `/people/${props.payload.id}/${row.id}`;
+    }
     return props.payload.id === "leads"
         ? `/leads/${row.id}`
         : props.payload.id === "tasks"
@@ -840,7 +844,9 @@ onBeforeUnmount(() => {
                                 ><Link
                                     v-if="
                                         link(row.original) &&
-                                        ['title', 'lead'].includes(column.id)
+                                        ['title', 'lead', 'name'].includes(
+                                            column.id,
+                                        )
                                     "
                                     :href="link(row.original)"
                                     class="md-table-record"

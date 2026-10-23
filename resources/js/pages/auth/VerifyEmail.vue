@@ -32,13 +32,15 @@ defineProps<{
 
     <Form
         v-bind="send.form()"
-        class="space-y-6 text-center"
+        class="crm-form text-center"
         v-slot="{ processing }"
     >
-        <Button :disabled="processing" variant="secondary">
-            <Spinner v-if="processing" />
-            Resend verification email
-        </Button>
+        <div class="crm-form-action">
+            <Button :disabled="processing" variant="secondary">
+                <Spinner v-if="processing" />
+                Resend verification email
+            </Button>
+        </div>
 
         <TextLink :href="logout()" as="button" class="mx-auto block text-sm">
             Log out

@@ -31,9 +31,13 @@ defineProps<{
         {{ status }}
     </div>
 
-    <div class="space-y-6">
-        <Form v-bind="email.form()" v-slot="{ errors, processing }">
-            <div class="grid gap-2">
+    <div class="crm-stack">
+        <Form
+            class="crm-form"
+            v-bind="email.form()"
+            v-slot="{ errors, processing }"
+        >
+            <div class="crm-field">
                 <Label for="email">Email address</Label>
                 <Input
                     id="email"
@@ -46,7 +50,7 @@ defineProps<{
                 <InputError :message="errors.email" />
             </div>
 
-            <div class="my-6 flex items-center justify-start">
+            <div class="crm-form-action">
                 <Button
                     class="w-full"
                     :disabled="processing"

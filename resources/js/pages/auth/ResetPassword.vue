@@ -29,56 +29,54 @@ const inputEmail = ref(props.email);
     <Head title="Reset password" />
 
     <Form
+        class="crm-form"
         v-bind="update.form()"
         :transform="(data) => ({ ...data, token, email })"
         :reset-on-success="['password', 'password_confirmation']"
         v-slot="{ errors, processing }"
     >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">Email</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    v-model="inputEmail"
-                    class="mt-1 block w-full"
-                    readonly
-                />
-                <InputError :message="errors.email" class="mt-2" />
-            </div>
+        <div class="crm-field">
+            <Label for="email">Email</Label>
+            <Input
+                id="email"
+                type="email"
+                name="email"
+                autocomplete="email"
+                v-model="inputEmail"
+                readonly
+            />
+            <InputError :message="errors.email" />
+        </div>
 
-            <div class="grid gap-2">
-                <Label for="password">Password</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    autofocus
-                    placeholder="Password"
-                    :passwordrules="passwordRules"
-                />
-                <InputError :message="errors.password" />
-            </div>
+        <div class="crm-field">
+            <Label for="password">Password</Label>
+            <PasswordInput
+                id="password"
+                name="password"
+                autocomplete="new-password"
+                autofocus
+                placeholder="Password"
+                :passwordrules="passwordRules"
+            />
+            <InputError :message="errors.password" />
+        </div>
 
-            <div class="grid gap-2">
-                <Label for="password_confirmation"> Confirm password </Label>
-                <PasswordInput
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    placeholder="Confirm password"
-                    :passwordrules="passwordRules"
-                />
-                <InputError :message="errors.password_confirmation" />
-            </div>
+        <div class="crm-field">
+            <Label for="password_confirmation"> Confirm password </Label>
+            <PasswordInput
+                id="password_confirmation"
+                name="password_confirmation"
+                autocomplete="new-password"
+                placeholder="Confirm password"
+                :passwordrules="passwordRules"
+            />
+            <InputError :message="errors.password_confirmation" />
+        </div>
 
+        <div class="crm-form-action">
             <Button
                 type="submit"
-                class="mt-4 w-full"
+                class="w-full"
                 :disabled="processing"
                 data-test="reset-password-button"
             >

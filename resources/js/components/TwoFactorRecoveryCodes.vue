@@ -63,6 +63,7 @@ onMounted(async () => {
                 </Button>
 
                 <Form
+                    class="crm-form"
                     v-if="isRecoveryCodesVisible && recoveryCodesList.length"
                     v-bind="regenerateRecoveryCodes.form()"
                     method="post"
@@ -70,13 +71,15 @@ onMounted(async () => {
                     @success="fetchRecoveryCodes"
                     #default="{ processing }"
                 >
-                    <Button
-                        variant="secondary"
-                        type="submit"
-                        :disabled="processing"
-                    >
-                        <RefreshCw /> Regenerate codes
-                    </Button>
+                    <div class="crm-form-action">
+                        <Button
+                            variant="secondary"
+                            type="submit"
+                            :disabled="processing"
+                        >
+                            <RefreshCw /> Regenerate codes
+                        </Button>
+                    </div>
                 </Form>
             </div>
             <div

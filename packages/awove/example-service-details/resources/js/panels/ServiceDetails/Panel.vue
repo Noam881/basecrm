@@ -58,7 +58,7 @@ async function save() {
 </script>
 <template>
     <p v-if="loading">Loading service details…</p>
-    <form v-else class="crm-stack" @submit.prevent="save">
+    <form v-else class="crm-form" @submit.prevent="save">
         <label
             ><span class="crm-field-label">Service reference</span
             ><input

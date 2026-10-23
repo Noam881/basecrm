@@ -50,11 +50,11 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
 <template>
     <Head title="Two-factor authentication" />
 
-    <div class="space-y-6">
+    <div class="crm-stack">
         <template v-if="!showRecoveryInput">
             <Form
                 v-bind="store.form()"
-                class="space-y-4"
+                class="crm-form"
                 reset-on-error
                 @error="code = ''"
                 #default="{ errors, processing, clearErrors }"
@@ -82,9 +82,11 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                     </div>
                     <InputError :message="errors.code" />
                 </div>
-                <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
-                >
+                <div class="crm-form-action">
+                    <Button type="submit" class="w-full" :disabled="processing"
+                        >Continue</Button
+                    >
+                </div>
                 <div class="text-center text-sm text-muted-foreground">
                     <span>or you can </span>
                     <button
@@ -101,21 +103,25 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
         <template v-else>
             <Form
                 v-bind="store.form()"
-                class="space-y-4"
+                class="crm-form"
                 reset-on-error
                 #default="{ errors, processing, clearErrors }"
             >
-                <Input
-                    name="recovery_code"
-                    type="text"
-                    placeholder="Enter recovery code"
-                    v-focus
-                    required
-                />
-                <InputError :message="errors.recovery_code" />
-                <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
-                >
+                <div class="crm-field">
+                    <Input
+                        name="recovery_code"
+                        type="text"
+                        placeholder="Enter recovery code"
+                        v-focus
+                        required
+                    />
+                    <InputError :message="errors.recovery_code" />
+                </div>
+                <div class="crm-form-action">
+                    <Button type="submit" class="w-full" :disabled="processing"
+                        >Continue</Button
+                    >
+                </div>
 
                 <div class="text-center text-sm text-muted-foreground">
                     <span>or you can </span>

@@ -28,17 +28,14 @@ onUnmounted(() => clearTwoFactorAuthData());
 </script>
 
 <template>
-    <div v-if="canManageTwoFactor" class="space-y-6">
+    <div v-if="canManageTwoFactor" class="crm-stack">
         <Heading
             variant="small"
             title="Two-factor authentication"
             description="Manage your two-factor authentication settings"
         />
 
-        <div
-            v-if="!twoFactorEnabled"
-            class="flex flex-col items-start justify-start space-y-4"
-        >
+        <div v-if="!twoFactorEnabled" class="crm-stack">
             <p class="text-sm text-muted-foreground">
                 When you enable two-factor authentication, you will be prompted
                 for a secure pin during login. This pin can be retrieved from a
@@ -50,19 +47,22 @@ onUnmounted(() => clearTwoFactorAuthData());
                     <ShieldCheck />Continue setup
                 </Button>
                 <Form
+                    class="crm-form"
                     v-else
                     v-bind="enable.form()"
                     @success="showSetupModal = true"
                     #default="{ processing }"
                 >
-                    <Button type="submit" :disabled="processing">
-                        Enable 2FA
-                    </Button>
+                    <div class="crm-form-action">
+                        <Button type="submit" :disabled="processing">
+                            Enable 2FA
+                        </Button>
+                    </div>
                 </Form>
             </div>
         </div>
 
-        <div v-else class="flex flex-col items-start justify-start space-y-4">
+        <div v-else class="crm-stack">
             <p class="text-sm text-muted-foreground">
                 You will be prompted for a secure, random pin during login,
                 which you can retrieve from the TOTP-supported application on
@@ -70,14 +70,20 @@ onUnmounted(() => clearTwoFactorAuthData());
             </p>
 
             <div class="relative inline">
-                <Form v-bind="disable.form()" #default="{ processing }">
-                    <Button
-                        variant="destructive"
-                        type="submit"
-                        :disabled="processing"
-                    >
-                        Disable 2FA
-                    </Button>
+                <Form
+                    class="crm-form"
+                    v-bind="disable.form()"
+                    #default="{ processing }"
+                >
+                    <div class="crm-form-action">
+                        <Button
+                            variant="destructive"
+                            type="submit"
+                            :disabled="processing"
+                        >
+                            Disable 2FA
+                        </Button>
+                    </div>
                 </Form>
             </div>
 

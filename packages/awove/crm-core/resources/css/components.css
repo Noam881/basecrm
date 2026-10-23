@@ -1,0 +1,433 @@
+/* Shared primitives for the host, core, modules and dialogs. Contexts override tokens, not geometry. */
+:root {
+    --crm-space-2: 8px;
+    --crm-space-3: 12px;
+    --crm-space-4: 16px;
+    --crm-space-6: 24px;
+    --crm-control-height: 40px;
+    --crm-field-height: 56px;
+    --crm-field-padding: 16px;
+}
+.crm-control,
+.crm-button,
+.crm-secondary,
+.crm-tonal,
+.crm-ghost,
+.crm-text {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--crm-space-2);
+    min-height: var(--crm-control-height);
+    max-width: 100%;
+    padding: 0 var(--crm-button-padding-inline, var(--crm-space-6));
+    border: 1px solid transparent;
+    border-radius: var(--md-sys-shape-corner-full);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background-color var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard),
+        color var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard),
+        box-shadow var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard);
+}
+.crm-button {
+    color: var(--md-sys-color-on-primary);
+    background: var(--md-sys-color-primary);
+}
+.crm-secondary {
+    color: var(--md-sys-color-primary);
+    background: transparent;
+    border-color: var(--md-sys-color-outline);
+}
+.crm-tonal {
+    color: var(--md-sys-color-on-secondary-container);
+    background: var(--md-sys-color-secondary-container);
+}
+.crm-ghost,
+.crm-text {
+    color: var(--md-sys-color-primary);
+    background: transparent;
+    padding-inline: var(--crm-space-3);
+}
+.crm-text {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.crm-control-start {
+    justify-content: flex-start;
+}
+.crm-control-sm {
+    --crm-button-padding-inline: var(--crm-space-3);
+}
+.crm-control-lg {
+    min-height: 48px;
+}
+.crm-control-icon,
+.crm-control-icon-sm,
+.crm-control-icon-lg {
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+}
+.crm-control-icon-sm {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+}
+.crm-control :is(svg) {
+    pointer-events: none;
+    flex-shrink: 0;
+}
+.crm-control svg:not([class*="size-"]) {
+    width: 16px;
+    height: 16px;
+}
+@media (hover: hover) {
+    .crm-button:hover:not(:disabled) {
+        box-shadow: var(--md-sys-elevation-level1);
+    }
+    .crm-tonal:hover:not(:disabled),
+    .crm-ghost:hover:not(:disabled) {
+        background: var(--md-sys-color-surface-container-high);
+    }
+}
+:is(
+    .crm-control,
+    .crm-button,
+    .crm-secondary,
+    .crm-tonal,
+    .crm-ghost,
+    .crm-text
+):disabled,
+:is(
+    .crm-control,
+    .crm-button,
+    .crm-secondary,
+    .crm-tonal,
+    .crm-ghost,
+    .crm-text
+)[aria-disabled="true"] {
+    color: #777;
+    background: var(--md-sys-color-surface-container-highest);
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+}
+:where(.crm-icon-control, .md-icon-button) {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--crm-control-height);
+    height: var(--crm-control-height);
+    min-width: var(--crm-control-height);
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    color: var(--md-sys-color-on-surface-variant);
+    background: transparent;
+    cursor: pointer;
+}
+.crm-card {
+    background: var(--md-sys-color-surface-container-lowest);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-corner-medium);
+    padding: var(--crm-space-6);
+    min-width: 0;
+}
+.crm-form,
+.crm-form-grid {
+    display: grid;
+    gap: var(--crm-space-6);
+    min-width: 0;
+}
+.crm-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 28px;
+    padding-block-start: var(--crm-space-2);
+}
+.crm-form-action {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--crm-space-3);
+}
+:is(.crm-form, .crm-form-grid) > :is(button, .crm-button, .crm-secondary) {
+    justify-self: start;
+    align-self: start;
+}
+.crm-field,
+.crm-flow {
+    display: grid;
+    min-width: 0;
+    gap: var(--crm-space-2);
+}
+.crm-flow {
+    gap: var(--crm-space-6);
+}
+.crm-flow > :is(h2, h3, p) {
+    margin: 0;
+}
+.crm label,
+.md-table-dialog label,
+.crm-label {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--crm-space-2);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--md-sys-color-on-surface-variant);
+}
+.crm-label {
+    user-select: none;
+}
+.crm-label[data-disabled],
+.group[data-disabled="true"] .crm-label,
+.peer:disabled ~ .crm-label {
+    opacity: 0.5;
+}
+.crm .crm-field-label {
+    position: absolute;
+    z-index: 1;
+    inset-inline-start: 12px;
+    top: -8px;
+    padding: 0 4px;
+    background: var(--md-sys-color-surface-container-lowest);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    letter-spacing: 0.4px;
+    max-width: calc(100% - 24px);
+}
+.crm label:focus-within,
+.crm-field:focus-within > .crm-label {
+    color: var(--md-sys-color-primary);
+}
+.crm-input,
+:where(.crm, .md-table-dialog)
+    :where(
+        input:not([type="checkbox"]):not([type="radio"]):not(
+                [type="color"]
+            ):not([type="range"]):not([type="hidden"]):not(
+                [autocomplete="one-time-code"]
+            )
+    ),
+:where(.crm, .md-table-dialog) select,
+:where(.crm, .md-table-dialog) textarea {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--crm-field-height);
+    max-width: 100%;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background-color: transparent;
+    padding: calc(
+            (
+                    var(--crm-field-height) -
+                        var(--crm-field-line-height, 24px) - 2px
+                ) /
+                2
+        )
+        var(--crm-field-padding);
+    font-family: inherit;
+    font-size: var(--crm-field-font-size, 16px);
+    font-weight: 400;
+    line-height: var(--crm-field-line-height, 24px);
+    letter-spacing: 0.5px;
+    color: var(--md-sys-color-on-surface);
+    transition:
+        border-color var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard),
+        background-color var(--md-sys-motion-duration-short)
+            var(--md-sys-motion-easing-standard);
+}
+.crm-input-password {
+    padding-inline-end: 56px;
+}
+.crm-input::placeholder {
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.65;
+}
+.crm-input::selection {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+}
+.crm-input::file-selector-button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    margin-inline-end: var(--crm-space-3);
+}
+:is(.crm-input, .crm input, .crm select, .crm textarea):disabled {
+    background-color: var(--md-sys-color-surface-container-low);
+    color: #777;
+    border-color: var(--md-sys-color-outline-variant);
+    cursor: default;
+}
+.crm input[type="color"] {
+    height: var(--crm-field-height);
+    width: 100%;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    padding: var(--crm-space-3);
+}
+.crm input[type="checkbox"] {
+    accent-color: var(--md-sys-color-primary);
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.crm label:has(input[type="checkbox"]) {
+    flex-direction: row;
+    align-items: center;
+    min-height: 48px;
+}
+.crm label:has(input[type="checkbox"]) .crm-field-label {
+    position: static;
+    padding: 0;
+    background: transparent;
+    font-size: 14px;
+}
+.crm textarea {
+    resize: vertical;
+}
+:is(.crm-input, .crm input, .crm select, .crm textarea):focus {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: -2px;
+}
+:is(
+    .crm-control,
+    .crm-button,
+    .crm-secondary,
+    .crm-tonal,
+    .crm-ghost,
+    .crm-text,
+    .crm-input
+)[aria-invalid="true"] {
+    outline: 2px solid var(--md-sys-color-error);
+    outline-offset: 2px;
+}
+.crm button:focus-visible,
+.crm a:focus-visible,
+.crm summary:focus-visible,
+.crm-auth button:focus-visible,
+.crm-auth a:focus-visible,
+.crm-control:focus-visible {
+    outline: 3px solid var(--md-sys-color-primary);
+    outline-offset: 3px;
+}
+/* The select remains semantic/native; reserve space for its inset chevron. */
+.crm select:not([multiple]):not([size]),
+.md-table-dialog select:not([multiple]):not([size]) {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23494949' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 24px 24px;
+    background-position: right 12px center;
+}
+[dir="rtl"] .crm select:not([multiple]):not([size]),
+[dir="rtl"] .md-table-dialog select:not([multiple]):not([size]) {
+    background-position: left 12px center;
+}
+@media (max-width: 839px) {
+    .crm-card {
+        padding: 20px;
+    }
+}
+@media (max-width: 599px) {
+    :root {
+        --crm-control-height: 48px;
+    }
+    .crm-card {
+        padding: 20px 16px;
+    }
+    .crm-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .crm-control,
+    .crm-input,
+    .crm-icon-control,
+    .md-icon-button,
+    .crm-button,
+    .crm-secondary {
+        transition-duration: 0ms !important;
+    }
+}
+@media (forced-colors: active) {
+    .crm select:not([multiple]):not([size]),
+    .md-table-dialog select:not([multiple]):not([size]) {
+        appearance: auto;
+        -webkit-appearance: auto;
+        background-image: none;
+    }
+}
+
+.crm-flow > .crm-note:first-of-type {
+    margin-block-start: 0;
+}
+.crm input[type="email"],
+.crm input[type="tel"],
+.crm-input[type="email"],
+.crm-input[type="tel"] {
+    direction: ltr;
+    text-align: start;
+}
+
+/* Password and checkbox composition retain the same shared field/control geometry. */
+.crm-password {
+    position: relative;
+    min-width: 0;
+}
+.crm-password .crm-password-toggle {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    padding: var(--crm-space-3);
+    border: 0;
+    border-start-end-radius: var(--md-sys-shape-corner-extra-small);
+    border-end-end-radius: var(--md-sys-shape-corner-extra-small);
+    color: var(--md-sys-color-on-surface-variant);
+    background: transparent;
+    cursor: pointer;
+}
+.crm-label.crm-checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--crm-space-3);
+    min-height: 48px;
+}
+.crm-ghost[aria-current="page"] {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+    font-weight: 500;
+}

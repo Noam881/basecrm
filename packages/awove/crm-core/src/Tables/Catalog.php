@@ -86,10 +86,10 @@ class Catalog
             abort(404);
         }
         foreach (['created_at' => 'Created', 'updated_at' => 'Last updated'] as $id => $label) {
-            $add($id,$label,"$t.$id",'datetime','Activity',width: 220);
+            $add($id, $label, "$t.$id", 'datetime', 'Activity', width: 220);
         }
         if ($table === 'leads') {
-            $add('archived_at','Archived',"$t.archived_at",'datetime','Activity',width: 220);
+            $add('archived_at', 'Archived', "$t.archived_at", 'datetime', 'Activity', width: 220);
         }
 
         return $c;

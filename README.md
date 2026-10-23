@@ -14,7 +14,7 @@ Checkpoint 1: shared host + versioned core + deployment-installed extensions + i
 - Beta: http://127.0.0.1:8092 — grey brand, Enquiries terminology, different pipeline labels, custom field, optional service-details panel.
 - Development mail: http://127.0.0.1:8028 — Mailpit only; no real messages are sent.
 
-Run `php scripts/seed-local.php` and `php scripts/seed-local.php beta` for fictional review records. Private, randomly generated review credentials are saved in `.local-fixtures.json` (ignored, mode 0600). These are employee accounts, not an administrative bypass. Do not use synthetic fixtures in production.
+Run `php scripts/seed-local.php` and `php scripts/seed-local.php beta` for fictional review records. The shared catalog uses Hebrew/Jewish names, emails on `example.test`, and fictional `+1 202-555-01xx` phone numbers. Run `php scripts/localize-fixtures.php alpha` and `php scripts/localize-fixtures.php beta` to update existing synthetic examples in place without replacing login credentials, relationships or history. Private, randomly generated review credentials are saved in `.local-fixtures.json` (ignored, mode 0600). These are employee accounts, not an administrative bypass. Do not use synthetic fixtures in production.
 
 ## Selected stack
 
@@ -63,8 +63,8 @@ APP_ENV=beta php artisan schedule:work
 ## First administrator
 
 ```sh
-php artisan crm:bootstrap-admin owner@alpha.example.test --name="Alpha Owner"
-php artisan --env=beta crm:bootstrap-admin owner@beta.example.test --name="Beta Owner"
+php artisan crm:bootstrap-admin owner@alpha.example.test --name="אברהם לוי"
+php artisan --env=beta crm:bootstrap-admin owner@beta.example.test --name="שרה כהן"
 ```
 
 These commands create only the first administrator, using an unknown random password. Open the reset/onboarding link in local Mailpit within 60 minutes, set a password, sign in, confirm your password on Account security, and enroll/confirm MFA before using the CRM. Public registration and account deletion are unavailable. Administrator invitations use the same expiring reset mechanism. Recovery uses Fortify recovery codes, stored privately by the account holder; see the [operations runbook](docs/installations-and-upgrades.md).
@@ -87,6 +87,12 @@ Run migrations and `crm:install` through deployment commands before opening a fr
 ## Material tables
 
 Leads, contacts, companies and follow-ups share an advanced neutral Material table with selectable/reorderable/resizable/pinnable columns, typed server-side filters, multi-sort, full-result search, per-user layouts and named views. Configured custom fields and authorized module fields are available in the column chooser. See [table controls and query contracts](docs/advanced-tables.md).
+
+## Customer details and shared controls
+
+Open a name in Contacts & companies, or use Edit contact / Edit company in a lead's Customer card, to update name, email, phone and the contact's company. Missing details can be added and existing details cleared. Saving from a lead returns to that lead. Editing follows the existing creator and identity-management permissions.
+
+Buttons, fields, cards and form spacing share `packages/awove/crm-core/resources/css/components.css`, including host account screens and extensions. Stacked forms use a 24px field-to-action gap. Follow the shared UI conventions in `AGENTS.md` for future changes.
 
 ## Verification
 

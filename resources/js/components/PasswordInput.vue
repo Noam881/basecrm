@@ -22,22 +22,18 @@ defineExpose({
 </script>
 
 <template>
-    <div class="relative">
+    <div class="crm-password">
         <Input
             v-focus="props.autofocus"
             ref="inputRef"
             :type="showPassword ? 'text' : 'password'"
-            :class="cn('pr-10', props.class)"
+            :class="cn('crm-input-password', props.class)"
             v-bind="$attrs"
         />
         <button
             type="button"
             @click="showPassword = !showPassword"
-            :class="
-                cn(
-                    'absolute inset-y-0 right-0 flex items-center rounded-r-md px-3 text-muted-foreground hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:outline-none',
-                )
-            "
+            class="crm-password-toggle"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
             :tabindex="-1"
         >

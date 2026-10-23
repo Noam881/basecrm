@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from "@inertiajs/vue3";
+import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
 import type { Person, Page } from "../../types";
 import DataTable from "../../components/table/DataTable.vue";
@@ -11,7 +11,8 @@ const props = defineProps<{
     companies: Page<Person>;
     q: string;
 }>();
-const type = ref("contacts");
+const capabilities = usePage().props.capabilities as string[];
+const type = ref(props.table.id);
 const form = useForm({
     name: "",
     email: "",
@@ -19,20 +20,20 @@ const form = useForm({
     company_id: null as number | null,
     accept_duplicate: false,
 });
+function createCustomer() {
+    form.transform(({ company_id, ...data }) =>
+        type.value === "contacts" ? { ...data, company_id } : data,
+    ).post(`/people/${type.value}`, { onSuccess: () => form.reset() });
+}
 </script>
 <template>
     <Head title="Contacts & companies" />
     <div class="crm-heading">
         <h1>Contacts & companies</h1>
     </div>
-    <section class="crm-card">
+    <section v-if="capabilities.includes('leads.create')" class="crm-card">
         <h2>Add a customer</h2>
-        <form
-            class="crm-form-grid"
-            @submit.prevent="
-                form.post(`/people/${type}`, { onSuccess: () => form.reset() })
-            "
-        >
+        <form class="crm-form-grid" @submit.prevent="createCustomer">
             <label
                 ><span class="crm-field-label">Record type</span
                 ><select v-model="type">
