@@ -22,6 +22,7 @@ class CoreServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/proposals.php');
         Gate::policy(Lead::class, LeadPolicy::class);
         Gate::policy(Contact::class, IdentityPolicy::class);
         Gate::policy(Company::class, IdentityPolicy::class);

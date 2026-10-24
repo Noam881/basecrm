@@ -952,3 +952,38 @@
     overflow-wrap: anywhere;
     white-space: pre-line;
 }
+
+/* Status bubbles share the button and menu primitives on records and tables. */
+.crm-stage-control {
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+.crm-stage-bubble {
+    --crm-button-padding-inline: var(--crm-space-3);
+    border-radius: var(--md-sys-shape-corner-full);
+}
+.crm-stage-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.crm-stage-control small {
+    max-width: 100%;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: normal;
+}
+
+.crm-form-disclosure > summary {
+    padding: var(--crm-space-3);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    cursor: pointer;
+}
+.crm-form-disclosure[open] > summary {
+    margin-block-end: var(--crm-space-6);
+}

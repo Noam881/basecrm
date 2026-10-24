@@ -2,19 +2,29 @@
   {
     "installation": "alpha",
     "fixture": "explicit first-build pre-update schema (not a historical release)",
-    "additive_migration": "2026_10_22_000200_add_lead_external_reference",
+    "additive_migrations": [
+      "2026_10_22_000200_add_lead_external_reference",
+      "2026_10_23_000300_add_contact_details",
+      "2026_10_24_000400_create_proposals",
+      "2026_10_24_000410_add_lead_attribution"
+    ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "08193ad95b2dc387904cd0cc51808c286fffd60189a3be3d4b6ea26e0e1fa63d"
+    "fingerprint": "dbd403c7e14914dbdc218b7dd53b5ee6107bcad5b270be3ec07412cf023ecd4a"
   },
   {
     "installation": "beta",
     "fixture": "explicit first-build pre-update schema (not a historical release)",
-    "additive_migration": "2026_10_22_000200_add_lead_external_reference",
+    "additive_migrations": [
+      "2026_10_22_000200_add_lead_external_reference",
+      "2026_10_23_000300_add_contact_details",
+      "2026_10_24_000400_create_proposals",
+      "2026_10_24_000410_add_lead_attribution"
+    ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "cee7cb222d851ff4a1860f0952cd9aff932af3c8c739d668f12c2cb737c3c293"
+    "fingerprint": "a0ee2dc999ce21e4c499ae76ed87cdf15a5fd91e9b428b21223fd7d65669411f"
   }
 ]

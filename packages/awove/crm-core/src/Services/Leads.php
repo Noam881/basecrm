@@ -6,6 +6,7 @@ use Awove\Core\Access;
 use Awove\Core\CustomFields;
 use Awove\Core\Events\LeadCreated;
 use Awove\Core\Events\LeadStatusChanged;
+use Awove\Core\LeadAttribution;
 use Awove\Core\Models\Activity;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
@@ -22,6 +23,7 @@ class Leads
 
         return DB::transaction(function () use ($user, $data) {
             $data = $this->withOptionalTitle($user, $data);
+            $data = LeadAttribution::validate($data);
             $data['custom_fields'] = CustomFields::validate($data['custom_fields'] ?? []);
             $lead = Lead::create([...$data, 'created_by' => $user->id]);
             $this->log($lead, $user, 'lead.created', []);
@@ -38,10 +40,12 @@ class Leads
             Gate::forUser($user)->authorize('update', $lead);
             abort_unless((int) $data['version'] === $lead->version, 409, 'This lead changed. Reload before saving.');
             unset($data['version']);
+            $data = LeadAttribution::validate($data);
             if (array_key_exists('owner_id', $data) && $data['owner_id'] != $lead->owner_id) {
                 Gate::forUser($user)->authorize('leads.assign');
             }
             $before = $lead->only(['owner_id', 'status_id']);
+            $attributionBefore = $lead->attribution;
             if (isset($data['custom_fields'])) {
                 $data['custom_fields'] = CustomFields::validate($data['custom_fields']);
             }
@@ -55,6 +59,9 @@ class Leads
                         event(new LeadStatusChanged($lead->id, $old, $lead->status_id, $user->id));
                     }
                 }
+            }
+            if ($attributionBefore !== $lead->attribution) {
+                $this->log($lead, $user, 'lead.attribution_updated', ['fields' => array_keys($data['attribution'] ?? [])]);
             }
             // An assignment never grants record access; cancel work that is no longer accessible.
             foreach ($lead->tasks()->where('status', 'open')->with('assignee', 'lead')->get() as $task) {
