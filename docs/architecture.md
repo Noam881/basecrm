@@ -10,6 +10,16 @@ Core and host release 1.0.0 are tracked together. Composer path repositories pro
 
 Domains are represented by explicit models/services rather than separate packages: identity/access (Fortify, Spatie, policies, Users service), contacts/companies, leads/statuses (Leads service), notes/activity, follow-ups (Tasks service), persistent reminders (queue job), configuration and display preferences. HTTP handlers parse requests and compose scoped responses; consequential lead/task/user rules reside in services. There is no generic repository or plugin execution framework.
 
+## Business module ownership
+
+Classify new work by its business domain before implementing it. Tell the user **Marketing module** whenever a request includes marketing, and label its marketing scope clearly in specifications and PRs. Mixed requests can span modules; flagging ownership does not add an approval gate.
+
+The optional Marketing module owns acquisition and referral attribution, campaign/ad/landing-page/UTM details, advertising budgets and spend, marketing performance dashboards, qualification/nurture sequences and marketing AI drafts. Implement it through the [extension contract](extensions.md), using its own storage, routes, permissions, guarded jobs, panels and table contributions. Reuse core lead/contact services, access policies, events and the global design system. Marketing-specific behavior must not accumulate in core.
+
+Core retains generic contact/company records, lead ownership and stages, creation timestamps, notes, follow-up tasks and private proposal storage. Communication adapters can be shared, while the owning module controls purpose and orchestration. Promotional/nurture WhatsApp belongs to Marketing; requested appointments, contract/signature/payment processing and onboarding are transactional sales operations.
+
+The attribution fields added before this ownership decision currently remain in core. Treat them as legacy storage awaiting a reviewed, data-preserving extraction into Marketing before further marketing extensions. This policy does not represent an already completed extraction. Preserve existing records, permissions and saved views during that future migration.
+
 ## Configuration precedence
 
 1. Core defaults from core package config.

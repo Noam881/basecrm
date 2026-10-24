@@ -2,6 +2,14 @@
 
 This records the requested business flow and the boundaries between the CRM changes in this release and the integrations still to connect. Credentials, business telephone numbers, customer documents and installation settings stay in private deployment storage.
 
+## Module ownership
+
+**Marketing module:** acquisition/referral and campaign/ad/page attribution, advertising budgets/spend, both marketing dashboards, qualification/nurture WhatsApp, and marketing AI drafts. Clearly flag these requests as Marketing module work before starting. Reuse generic core records and shared integrations through module contracts.
+
+**CRM core:** contact/company records, lead ownership/stage/creation date, notes, follow-up tasks and private proposal files. **Transactional sales operations:** meeting/calendar reminders, proposal responses, contracts/signatures, payment approval, bank confirmation, receipts and onboarding. A WhatsApp message is classified by its purpose rather than its transport.
+
+The currently shipped attribution fields are still stored in core. Their extraction into Marketing is a pending, data-preserving migration and must precede further marketing extensions; the current release has not already performed that extraction.
+
 ## Available in this release
 
 - Change a lead's stage directly from its table bubble or profile. Changes enforce current permissions and optimistic versions and retain stage history.
