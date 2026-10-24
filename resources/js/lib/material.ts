@@ -77,7 +77,9 @@ let queued = false;
 function enhanceControl(control: HTMLElement) {
     if (
         control.closest("[inert]") ||
-        control.matches(".crm-material-select-trigger, .crm-checkbox")
+        control.matches(
+            ".crm-material-select-trigger, .crm-checkbox, a.md-table-record",
+        )
     )
         return;
     control.classList.add("crm-interactive");
