@@ -5,6 +5,7 @@ namespace Awove\Core\Tables;
 use Awove\Core\ContactDetails;
 use Awove\Core\Contracts\LeadTableContributor;
 use Awove\Core\Installation;
+use Awove\Core\LeadAttribution;
 use Awove\Core\Models\Status;
 use Awove\Core\Modules;
 
@@ -60,6 +61,11 @@ class Catalog
             $add('outcome', 'Stage outcome', "(SELECT kind FROM crm_statuses WHERE id=$t.status_id)", 'select', 'Pipeline', array_map(fn ($s) => ['value' => $s, 'label' => ucfirst($s)], ['active', 'won', 'lost']));
             $add('priority', 'Priority', "$t.priority", 'select', 'Pipeline', $priorities, 140);
             $add('source', 'Source', "$t.source", group: 'Pipeline');
+            foreach (LeadAttribution::LABELS as $field => $label) {
+                $add('attribution:'.$field, $label, "$t.attribution->>'$field'", group: 'Attribution', width: $field === 'landing_page_url' ? 300 : 220);
+            }
+            $add('proposal', 'Proposal file', "(SELECT original_name FROM crm_proposals WHERE lead_id=$t.id ORDER BY version DESC LIMIT 1)", group: 'Proposals', width: 260);
+            $add('proposal_count', 'Proposal versions', "(SELECT COUNT(*) FROM crm_proposals WHERE lead_id=$t.id)", 'number', 'Proposals');
             $add('next_action_at', 'Next follow-up', "(SELECT MIN(due_at) FROM crm_tasks WHERE lead_id=$t.id AND status='open')", 'datetime', 'Follow-ups', width: 220);
             $add('open_tasks', 'Open follow-ups', "(SELECT COUNT(*) FROM crm_tasks WHERE lead_id=$t.id AND status='open')", 'number', 'Follow-ups');
             $add('overdue_tasks', 'Overdue follow-ups', "(SELECT COUNT(*) FROM crm_tasks WHERE lead_id=$t.id AND status='open' AND due_at<CURRENT_TIMESTAMP)", 'number', 'Follow-ups');
@@ -125,7 +131,7 @@ class Catalog
     public function defaults(string $table): array
     {
         return match ($table) {
-            'leads' => ['contact', 'company', 'status', 'owner', 'contact_phone', 'contact_email', 'priority', 'next_action_at'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
+            'leads' => ['contact', 'company', 'status', 'owner', 'contact_phone', 'contact_email', 'priority', 'next_action_at', 'created_at', 'proposal'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
         };
     }
 }

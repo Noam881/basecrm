@@ -14,7 +14,7 @@ class Lead extends Model
 
     protected function casts(): array
     {
-        return ['custom_fields' => 'array', 'archived_at' => 'datetime'];
+        return ['custom_fields' => 'array', 'attribution' => 'array', 'archived_at' => 'datetime'];
     }
 
     public function contact(): BelongsTo

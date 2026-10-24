@@ -951,3 +951,8 @@
         grid-template-columns: 1fr;
     }
 }
+
+.crm-form-disclosure {
+    grid-column: 1 / -1;
+    min-width: 0;
+}

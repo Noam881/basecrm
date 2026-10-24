@@ -5,6 +5,7 @@ namespace Awove\Core\Http;
 use Awove\Core\Access;
 use Awove\Core\ContactDetails;
 use Awove\Core\Installation;
+use Awove\Core\LeadAttribution;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
@@ -14,6 +15,7 @@ use Awove\Core\Models\Task;
 use Awove\Core\Modules;
 use Awove\Core\Services\Identities;
 use Awove\Core\Services\Leads;
+use Awove\Core\Services\Proposals;
 use Awove\Core\Services\Tasks;
 use Awove\Core\Services\Users;
 use Awove\Core\Tables\Preferences;
@@ -61,13 +63,14 @@ class CrmController
         }
 
         $table = app(Query::class)->run($q, 'leads', $r);
+        $table['page']->getCollection()->each(fn (Lead $lead) => $lead->setAttribute('editable', Gate::forUser($r->user())->allows('update', $lead)));
 
         return Inertia::render('Core/Leads', [...$this->options($r->user()), 'table' => $table, 'leads' => $table['page'], 'filters' => $r->only('owner', 'status', 'source', 'priority', 'view'), 'preferences' => $r->user()->display_preferences ?? []]);
     }
 
     private function leadData(Request $r, bool $update = false): array
     {
-        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited']);
+        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited', ...LeadAttribution::rules()]);
         foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $key => $model) {
             if (! empty($data[$key])) {
                 abort_unless(Access::identities($r->user(), $model)->whereKey($data[$key])->exists(), 403);
@@ -98,7 +101,7 @@ class CrmController
     {
         Gate::authorize('view', $lead);
 
-        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'panels' => app(Modules::class)->panels($r->user())]);
+        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
     }
 
     public function update(Request $r, Lead $lead, Leads $service)

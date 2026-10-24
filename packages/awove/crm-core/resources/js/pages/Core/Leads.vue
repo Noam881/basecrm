@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
-import type { Lead, Page, Person, Stage, Field } from "../../types";
+import type {
+    Lead,
+    Page,
+    Person,
+    Stage,
+    Field,
+    LeadAttribution,
+} from "../../types";
 import DataTable from "../../components/table/DataTable.vue";
+import StageControl from "../../components/StageControl.vue";
+import LeadAttributionFields from "../../components/LeadAttributionFields.vue";
 import type { TablePayload } from "../../components/table/types";
 const props = defineProps<{
     table: TablePayload;
@@ -25,6 +34,7 @@ const form = useForm({
     owner_id: props.owners[0]?.id ?? null,
     status_id: props.statuses[0]?.id ?? "new",
     source: "Direct",
+    attribution: {} as LeadAttribution,
     priority: "normal",
     custom_fields: {} as Record<string, string | number | boolean>,
 });
@@ -121,6 +131,10 @@ const form = useForm({
                     v-model="form.custom_fields[key]"
                     :type="field.type"
             /></label>
+            <details class="crm-form-disclosure">
+                <summary>Source details</summary>
+                <LeadAttributionFields v-model="form.attribution" />
+            </details>
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">
                     Create lead
@@ -151,5 +165,34 @@ const form = useForm({
         endpoint="/leads"
         :title="brand.lead_label"
         :base-query="filters"
-    />
+    >
+        <template #cell-proposal="{ row }">
+            <Link
+                v-if="row.cells.proposal"
+                :href="`/leads/${row.id}#proposals`"
+                class="md-table-record"
+                >{{ row.cells.proposal }}</Link
+            >
+            <span v-else>—</span>
+        </template>
+        <template #cell-status="{ row }">
+            <StageControl
+                v-if="row.status_id && typeof row.version === 'number'"
+                :lead-id="row.id"
+                :record-name="
+                    String(
+                        row.cells.contact ??
+                            row.cells.company ??
+                            row.title ??
+                            `Lead ${row.id}`,
+                    )
+                "
+                :status-id="row.status_id"
+                :version="row.version"
+                :statuses="statuses"
+                :editable="row.editable === true"
+            />
+            <span v-else class="md-cell-chip">{{ row.cells.status }}</span>
+        </template>
+    </DataTable>
 </template>

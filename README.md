@@ -98,6 +98,10 @@ Use Add new contact from Leads to open the contact/company intake form. The inta
 
 Buttons, fields, cards and form spacing share `packages/awove/crm-core/resources/css/components.css`, including host account screens and extensions. Stacked forms use a 24px field-to-action gap. Follow the shared UI conventions in `AGENTS.md` for future changes.
 
+## Lead workflow and proposals
+
+Lead stages can be changed directly from the table or profile bubble, with permission and version checks. Profiles display creation time, and the Created and Proposal file columns are included in new default layouts. Existing saved layouts remain intact. PDF/DOC/DOCX proposals up to 10 MB are stored privately as immutable versions on each lead. Production PHP must allow at least 10 MB uploads and a larger total POST body. Source details capture platform, campaign/ad IDs and names, originating page, referral and UTMs. See [the requested sales workflow, integration readiness and report definitions](docs/niva-sales-workflow.md).
+
 ## Browser fixture cleanup
 
 Browser tests clean their dedicated project accounts before and after each workflow/contact test, including failed tests. A later run also clears leftovers from an interrupted process. Names stay natural; only fictional email addresses carry unique run markers. See the [clean review demo](docs/screenshots/clean-review-demo.png).

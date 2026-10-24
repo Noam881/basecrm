@@ -858,7 +858,11 @@ onBeforeUnmount(() => {
                                     :aria-label="`Select ${recordName(row.original)}`"
                                     :checked="row.getIsSelected()"
                                     @change="row.toggleSelected()" /></label
-                            ><template v-else
+                            ><slot
+                                v-else
+                                :name="`cell-${column.id}`"
+                                :row="row.original"
+                                :column="catalog.get(column.id)!"
                                 ><Link
                                     v-if="
                                         link(row.original) &&
@@ -899,7 +903,7 @@ onBeforeUnmount(() => {
                                             catalog.get(column.id)!,
                                         )
                                     }}</span
-                                ></template
+                                ></slot
                             >
                         </td>
                     </tr>
