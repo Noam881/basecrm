@@ -24,10 +24,14 @@ final class BrowserFixtures
         }
         $cleanNames = $kind === 'companies'
             ? ['Oren Solutions', 'Levi Solutions', 'אורן פתרונות', 'לוי פתרונות']
-            : ['Uri Ben David', 'Shira Levi', 'אורי בן דוד', 'שירה לוי'];
+            : ['Uri Ben David', 'Shira Levi', 'Tamar Ben Ami', 'אורי בן דוד', 'שירה לוי'];
         $emailMarkers = $kind === 'companies'
             ? ['company-' => '@example.test', 'office.' => '@demo.example.test']
             : ['contact-' => '@example.test', 'changed-contact-' => '@example.test', 'uri.' => '@demo.example.test'];
+        if ($kind === 'contacts' && $name === 'Tamar Ben Ami') {
+            return preg_match('/^tamar\.stage\.(?<project>desktop|mobile)-[0-9]{13}@demo\.example\.test$/D', strtolower($email ?? ''), $match) === 1
+                && ($project === null || $match['project'] === $project);
+        }
         if (in_array($name, $cleanNames, true)) {
             foreach ($emailMarkers as $prefix => $domain) {
                 $emailPattern = '/^'.preg_quote($prefix, '/').'(?<project>desktop|mobile)-[0-9]{13}'.preg_quote($domain, '/').'$/D';
@@ -86,6 +90,13 @@ final class BrowserFixtures
         $plan = ['crm_reminders' => DB::table('crm_reminders')->whereIn('task_id', $taskIds)->orderBy('id')->pluck('id')->all()];
         if (Schema::hasTable('service_details_leads')) {
             $plan['service_details_leads'] = DB::table('service_details_leads')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();
+        }
+        if (Schema::hasTable('crm_proposals')) {
+            $proposals = DB::table('crm_proposals')->whereIn('lead_id', $leadIds);
+            if ((clone $proposals)->whereNotIn('uploaded_by', $userIds)->exists()) {
+                throw new RuntimeException('A protected proposal references a browser fixture. No cleanup is permitted.');
+            }
+            $plan['crm_proposals'] = $proposals->orderBy('id')->pluck('id')->all();
         }
         $plan['crm_notes'] = DB::table('crm_notes')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();
         $plan['crm_activity'] = DB::table('crm_activity')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();

@@ -145,9 +145,14 @@ test("persisted workflow, reminders, dashboard and responsive layout", async ({
         page.getByLabel("Enquiry title (optional)", { exact: true }),
     ).toHaveValue(enquiryTitle);
     await page
-        .getByRole("combobox", { name: "Status", exact: true })
-        .selectOption("contacted");
-    await page.getByRole("button", { name: "Save changes" }).click();
+        .getByRole("button", {
+            name: `Change stage for ${contactName}; current stage: New`,
+            exact: true,
+        })
+        .click();
+    await page
+        .getByRole("menuitemradio", { name: "Contacted", exact: true })
+        .click();
     await expect(
         page.getByText("lead status changed", { exact: true }),
     ).toBeVisible();
