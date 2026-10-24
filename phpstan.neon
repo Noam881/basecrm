@@ -12,6 +12,8 @@ parameters:
         - packages/awove/crm-core/src/
         - packages/awove/example-service-details/src/
         - packages/awove/customer-service/src/
+        - packages/awove/executive/src/
+        - packages/awove/operations/src/
 
     level: 5
     databaseMigrationsPath:
@@ -19,3 +21,5 @@ parameters:
         - packages/awove/crm-core/database/migrations
         - packages/awove/example-service-details/database/migrations
         - packages/awove/customer-service/database/migrations
+        - packages/awove/executive/database/migrations
+        - packages/awove/operations/database/migrations

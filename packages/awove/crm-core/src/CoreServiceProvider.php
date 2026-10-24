@@ -16,6 +16,7 @@ class CoreServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(Modules::class);
+        $this->app->singleton(Services\WorkTypes::class);
         $this->mergeConfigFrom(__DIR__.'/../config/core.php', 'core');
     }
 
@@ -34,7 +35,10 @@ class CoreServiceProvider extends ServiceProvider
         Gate::policy(Lead::class, LeadPolicy::class);
         Gate::policy(Contact::class, IdentityPolicy::class);
         Gate::policy(Company::class, IdentityPolicy::class);
-        $this->app->booted(fn () => app(Modules::class)->validate());
+        $this->app->booted(function () {
+            app(Modules::class)->validate();
+            app(Services\WorkTypes::class)->validate();
+        });
         if ($this->app->runningInConsole()) {
             $this->commands([Console\Install::class, Console\Remind::class, Console\Diagnose::class, Console\BootstrapAdmin::class, Console\Permissions::class]);
         }

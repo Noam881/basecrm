@@ -17,13 +17,19 @@ class Access
         return $user->can('leads.view.all') ? $q : $q->where('owner_id', $user->id)->when(! $user->can('leads.view.own'), fn ($q) => $q->whereRaw('1=0'));
     }
 
+    /**
+     * @template TIdentity of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  class-string<TIdentity>  $model
+     * @return Builder<TIdentity>
+     */
     public static function identities($user, string $model): Builder
     {
         $q = $model::query();
         if (! $user->active) {
             return $q->whereRaw('1=0');
         }
-        if ($user->can('identities.manage')) {
+        if ($user->can('identities.manage') || $user->can('identities.view.all')) {
             return $q;
         }
 

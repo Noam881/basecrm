@@ -1,5 +1,11 @@
 {
   "optional_package_absent": true,
+  "removed_packages": [
+    "awove/example-service-details",
+    "awove/customer-service",
+    "awove/executive",
+    "awove/operations"
+  ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",
   "frontend_production_build": "passed",

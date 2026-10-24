@@ -36,8 +36,8 @@ results = []
 created_databases = []
 run_id = secrets.token_hex(6)
 additive_migrations = [
-    path.stem for path in sorted((root / 'packages/awove/crm-core/database/migrations').glob('*.php'))
-    if path.name != '2026_10_22_000100_create_core.php'
+    path.stem for path in sorted((root / 'packages/awove').glob('*/database/migrations/*.php'))
+    if path.name not in ['2026_10_22_000100_create_core.php', '2026_10_22_000150_create_service_details.php']
 ]
 try:
     with tempfile.TemporaryDirectory(prefix='base-crm-rehearsal-') as tmp:

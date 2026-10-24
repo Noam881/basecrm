@@ -1,0 +1,6 @@
+{
+  "name": "awove/operations", "version": "1.0.0", "type": "library",
+  "require": {"php":"^8.5", "illuminate/support":"^13.0", "awove/crm-core":"^1.1"},
+  "autoload":{"psr-4":{"Awove\\Operations\\":"src/"}},
+  "extra":{"laravel":{"providers":["Awove\\Operations\\OperationsProvider"]}}
+}

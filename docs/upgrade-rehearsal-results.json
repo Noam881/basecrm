@@ -10,12 +10,17 @@
       "2026_10_24_000450_create_work_reminders",
       "2026_10_24_000470_create_identity_history",
       "2026_10_24_000480_create_company_notes",
-      "2026_10_24_000500_complete_sales"
+      "2026_10_24_000500_complete_sales",
+      "2026_10_24_000620_create_identity_relationships",
+      "2026_10_24_000650_create_shared_work",
+      "2026_10_24_000600_create_customer_service",
+      "2026_10_24_000700_create_executive",
+      "2026_10_24_000750_create_operations"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "32be33cc31ba5a0414515e92cfc9b9301828ad6f8b54d2de343aa07718e47530"
+    "fingerprint": "d2a75d933c20e773fdadc758b7249ec72322ebb357532bce2e483b5e06a82848"
   },
   {
     "installation": "beta",
@@ -28,11 +33,16 @@
       "2026_10_24_000450_create_work_reminders",
       "2026_10_24_000470_create_identity_history",
       "2026_10_24_000480_create_company_notes",
-      "2026_10_24_000500_complete_sales"
+      "2026_10_24_000500_complete_sales",
+      "2026_10_24_000620_create_identity_relationships",
+      "2026_10_24_000650_create_shared_work",
+      "2026_10_24_000600_create_customer_service",
+      "2026_10_24_000700_create_executive",
+      "2026_10_24_000750_create_operations"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "f6fb383a0c93a1a5940226b645cbfe7a353063cce9663866186af604526880f0"
+    "fingerprint": "92b90762ae69f726f7c0e217a46c3de1802eebe5677ceb67fa0aa6cde5f12c59"
   }
 ]

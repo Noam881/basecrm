@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8a77c5c51f5cf379dcdbab4195f58664",
+    "content-hash": "879826f537f4e11078f883e2c46a3b15",
     "packages": [
         {
             "name": "awove/crm-core",
@@ -94,6 +94,66 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\ServiceDetails\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/executive",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/executive",
+                "reference": "4ac3d0c09b34f610a302260b70f53c090f2d92c7"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Executive\\ExecutiveProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Executive\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/operations",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/operations",
+                "reference": "44666b5c5e56e8481a3be4e2980cfdc9580bf563"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Operations\\OperationsProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Operations\\": "src/"
                 }
             },
             "transport-options": {

@@ -18,7 +18,7 @@ class Install extends Command
     public function handle(): int
     {
         $corePermissions = ['leads.view.own', 'leads.view.all', 'leads.edit.own', 'leads.edit.all', 'leads.create', 'leads.assign', 'users.manage', 'settings.manage', 'identities.manage', 'records.archive', 'imports.manage', 'exports.view'];
-        $permissions = $corePermissions;
+        $permissions = [...$corePermissions, 'identities.view.all', 'identities.classifications.view', 'identities.classifications.manage', 'identities.classifications.assign'];
         foreach (app(Modules::class)->installed() as $module) {
             $permissions = array_merge($permissions, $module->permissions());
         }

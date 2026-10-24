@@ -75,3 +75,14 @@ docker-compose --profile full config --quiet
 ```
 
 Backend tests reject any database except isolated PostgreSQL `base_test`. Browser flows use dedicated fictional accounts and guarded cleanup. Never import real customer CSV in verification. Diagnostics omit credentials and sensitive previews. Current actual outcomes, limitations and next actions are in [module-status.md](module-status.md); functional coverage is in [requirements-matrix.md](requirements-matrix.md).
+
+
+## Executive and Operations profiles (Checkpoint 2)
+
+The optional packages `awove/executive` and `awove/operations` use core 1.1 and contract 1. Select `executive` or `operations` in a private manifest's `modules` list; neither requires Customer Service or Finance. Sales may be explicitly disabled in a pure administrative profile. All registered migrations still run through controlled console commands; disabled tables are retained.
+
+Grant only the required `executive.*` or `operations.*` own/all/create/edit/assign/archive/export permissions to approved staff. A shared task/routine owner must already be active and have view access to its module; assigning ownership does not provision that access. An unchanged inactive owner remains a historical reference. Concurrent important edits reject a stale version and require reload.
+
+Operations directory use also requires explicit shared `identities.classifications.view` or `identities.classifications.manage`, plus the independent underlying identity scope. Grant `identities.view.all` only where broad directory reading is intended; it does not grant editing. `identities.classifications.assign` controls assigning another responsible person. Classification responsibility never opens unrelated Sales, Service, HR or financial records. New contacts/companies continue through the shared Add new contact flow, with the existing duplicate warning and identity-create permission.
+
+Routine completions are dated and retained; schedule the next date manually in the completion form or a later edit. Leaving it empty stops the next reminder until a new date is supplied. Reminder read status does not complete a task or occurrence. Cancelled requests stop reminders without a completion date. Supplier order receipts track deliveries only and never create expenses, payments or stock transactions.

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Shared request fields; business modules own statuses, dates, access and persistence.
+import WorkBaseFields from "./WorkBaseFields.vue";
+// Modules retain their own lifecycle and persistence around the shared controls.
 export interface RequestDraft {
     subject: string;
     description: string;
@@ -16,63 +17,30 @@ defineProps<{
 }>();
 </script>
 <template>
-    <label class="crm-field crm-form-span"
-        ><span class="crm-field-label">Subject</span
-        ><input
-            v-model="model.subject"
-            required
-            maxlength="180"
-            :aria-invalid="!!errors.subject"
-        /><small v-if="errors.subject" data-slot="input-error" role="alert">{{
-            errors.subject
-        }}</small></label
-    >
-    <label class="crm-field crm-form-span"
-        ><span class="crm-field-label">Description</span
-        ><textarea
-            v-model="model.description"
-            required
-            rows="4"
-            maxlength="20000"
-            :aria-invalid="!!errors.description"
-        /><small
-            v-if="errors.description"
-            data-slot="input-error"
-            role="alert"
-            >{{ errors.description }}</small
-        ></label
-    >
-    <label class="crm-field"
-        ><span class="crm-field-label">Owner</span
-        ><select v-model="model.owner_id" :disabled="!canAssign">
-            <option :value="null">Unassigned</option>
-            <option v-for="owner in owners" :key="owner.id" :value="owner.id">
-                {{ owner.name }}
-            </option></select
-        ><small v-if="errors.owner_id" data-slot="input-error" role="alert">{{
-            errors.owner_id
-        }}</small></label
-    >
-    <label class="crm-field"
-        ><span class="crm-field-label">Priority</span
-        ><select v-model="model.priority">
-            <option value="low">Low</option>
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-        </select></label
-    >
-    <label class="crm-field crm-form-span"
-        ><span class="crm-field-label">Next action</span
-        ><textarea v-model="model.next_action" rows="2" maxlength="10000" />
+    <WorkBaseFields
+        v-model:title="model.subject"
+        v-model:description="model.description"
+        v-model:owner-id="model.owner_id"
+        v-model:priority="model.priority"
+        v-model:due-on="model.due_on"
+        :owners="owners"
+        :errors="errors"
+        :can-assign="canAssign"
+        title-label="Subject"
+        title-error-key="subject"
+        :description-required="true"
+        :due-required="false"
+    />
+    <label class="crm-field crm-form-span">
+        <span class="crm-field-label">Next action</span>
+        <textarea
+            v-model="model.next_action"
+            rows="2"
+            maxlength="10000"
+            :aria-invalid="!!errors.next_action"
+        />
+        <small v-if="errors.next_action" data-slot="input-error" role="alert">{{
+            errors.next_action
+        }}</small>
     </label>
-    <label class="crm-field"
-        ><span class="crm-field-label">Due date</span
-        ><input
-            v-model="model.due_on"
-            type="date"
-            :aria-invalid="!!errors.due_on"
-        /><small v-if="errors.due_on" data-slot="input-error" role="alert">{{
-            errors.due_on
-        }}</small></label
-    >
 </template>

@@ -155,80 +155,7 @@ class Spreadsheet
     /** @return list<array{line: int, data: array}> */
     private function parse(UploadedFile $file, string $type): array
     {
-        $contents = file_get_contents($file->getRealPath());
-        if ($contents === false || strlen($contents) > self::MAX_BYTES || ! mb_check_encoding($contents, 'UTF-8') || str_contains($contents, "\0")) {
-            throw ValidationException::withMessages(['file' => 'Use a UTF-8 CSV file up to 1 MB without null bytes.']);
-        }
-        $contents = preg_replace('/^\xEF\xBB\xBF/', '', $contents);
-        $this->validateCsvQuotes($contents);
-        $stream = fopen('php://temp', 'w+');
-        fwrite($stream, $contents);
-        rewind($stream);
-        try {
-            $header = fgetcsv($stream, null, ',', '"', '');
-            $header = $header === false ? [] : array_map(fn ($value) => trim($value ?? ''), $header);
-            if ($header === [] || in_array('', $header, true) || count($header) !== count(array_unique($header)) || array_diff($header, self::COLUMNS[$type]) !== []) {
-                throw ValidationException::withMessages(['file' => 'Use unique, supported column names from the CSV template. Read-only IDs and unknown columns cannot be imported.']);
-            }
-            $required = $type === 'leads' ? ['status_id'] : ['name'];
-            if (array_diff($required, $header) !== []) {
-                throw ValidationException::withMessages(['file' => 'Missing required columns: '.implode(', ', $required).'.']);
-            }
-            $rows = [];
-            $line = 1;
-            while (($values = fgetcsv($stream, null, ',', '"', '')) !== false) {
-                $line++;
-                if (count(array_filter($values, fn ($value) => trim($value ?? '') !== '')) === 0) {
-                    continue;
-                }
-                if (count($values) !== count($header)) {
-                    throw ValidationException::withMessages(['file' => "CSV record $line has a different number of columns than its header."]);
-                }
-                if (count($rows) >= self::MAX_ROWS) {
-                    throw ValidationException::withMessages(['file' => 'Import at most 500 records at a time.']);
-                }
-                $rows[] = ['line' => $line, 'data' => array_combine($header, array_map(fn ($value) => filled(trim($value ?? '')) ? trim($value) : null, $values))];
-            }
-            if ($rows === []) {
-                throw ValidationException::withMessages(['file' => 'Add at least one data record below the CSV header.']);
-            }
-
-            return $rows;
-        } finally {
-            fclose($stream);
-        }
-    }
-
-    /** Reject malformed quoting rather than silently accepting a damaged spreadsheet. */
-    private function validateCsvQuotes(string $contents): void
-    {
-        $state = 'start';
-        for ($i = 0, $length = strlen($contents); $i < $length; $i++) {
-            $char = $contents[$i];
-            if ($state === 'quoted') {
-                if ($char === '"') {
-                    if (($contents[$i + 1] ?? null) === '"') {
-                        $i++;
-                    } else {
-                        $state = 'closed';
-                    }
-                }
-
-                continue;
-            }
-            if (in_array($char, [',', "\r", "\n"], true)) {
-                $state = 'start';
-            } elseif ($char === '"' && $state === 'start') {
-                $state = 'quoted';
-            } elseif ($char === '"' || $state === 'closed') {
-                throw ValidationException::withMessages(['file' => 'CSV quotes are malformed. Save the file as standard comma-separated CSV.']);
-            } else {
-                $state = 'plain';
-            }
-        }
-        if ($state === 'quoted') {
-            throw ValidationException::withMessages(['file' => 'A quoted CSV field is not closed.']);
-        }
+        return app(Csv::class)->parse($file, self::COLUMNS[$type], $type === 'leads' ? ['status_id'] : ['name']);
     }
 
     /** Validation never writes records or dispatches domain events. */
@@ -343,18 +270,11 @@ class Spreadsheet
 
     private function csv(string $name, array $header, iterable $rows): StreamedResponse
     {
-        return response()->streamDownload(function () use ($header, $rows) {
-            $output = fopen('php://output', 'w');
-            fputcsv($output, $header, ',', '"', '', "\r\n");
-            foreach ($rows as $row) {
-                fputcsv($output, array_map(fn ($value) => self::safeCell((string) $value), $row), ',', '"', '', "\r\n");
-            }
-            fclose($output);
-        }, $name, ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+        return app(Csv::class)->download($name, $header, $rows);
     }
 
     public static function safeCell(string $value): string
     {
-        return preg_match('/^[\t\r\n]|^[\p{Z}\x{FEFF}\x00-\x20]*[=+\-@]/u', $value) ? "'".$value : $value;
+        return Csv::safeCell($value);
     }
 }

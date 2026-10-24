@@ -20,6 +20,7 @@ import type {
     Value,
 } from "./types";
 import { clipboardCell } from "./clipboard";
+import { exactDecimal } from "./decimal";
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 const props = withDefaults(
     defineProps<{
@@ -188,10 +189,7 @@ function format(value: Value | undefined, c: TableColumn) {
     if (value === null || value === undefined || value === "") return "—";
     if (c.type === "boolean")
         return ["true", "1"].includes(String(value)) ? "Yes" : "No";
-    if (c.type === "number")
-        return new Intl.NumberFormat("en", { maximumFractionDigits: 6 }).format(
-            Number(value),
-        );
+    if (c.type === "number") return exactDecimal(value);
     if (["date", "datetime"].includes(c.type)) {
         const d = new Date(String(value));
         if (Number.isNaN(d.valueOf())) return String(value);

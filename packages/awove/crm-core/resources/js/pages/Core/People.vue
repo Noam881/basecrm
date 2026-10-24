@@ -5,6 +5,7 @@ import { contactFormData, type Person, type ContactOptions } from "../../types";
 import ContactFields from "../../components/ContactFields.vue";
 const props = defineProps<{
     recordType: "contacts" | "companies";
+    returnTo: string;
     companyOptions: Person[];
     contactOptions: ContactOptions;
 }>();
@@ -35,7 +36,9 @@ function createCustomer() {
 </script>
 <template>
     <Head :title="title" />
-    <Link href="/leads" class="crm-back">← Back to leads</Link>
+    <Link :href="returnTo" class="crm-back">{{
+        returnTo === "/leads" ? "← Back to leads" : "← Back to overview"
+    }}</Link>
     <div class="crm-heading">
         <h1>{{ title }}</h1>
     </div>
@@ -139,7 +142,7 @@ function createCustomer() {
                             : "Create company"
                     }}
                 </button>
-                <Link href="/leads" class="crm-secondary">Cancel</Link>
+                <Link :href="returnTo" class="crm-secondary">Cancel</Link>
             </div>
         </form>
     </section>

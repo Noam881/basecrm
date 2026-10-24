@@ -232,6 +232,7 @@ class CrmController
 
         return Inertia::render('Core/People', [
             'recordType' => $type,
+            'returnTo' => app(Modules::class)->enabled('sales') ? '/leads' : '/dashboard',
             'companyOptions' => Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']),
             'contactOptions' => ContactDetails::options(),
         ]);
@@ -253,15 +254,12 @@ class CrmController
             return '/leads/'.$r->integer('from_lead');
         }
 
-        return '/leads';
+        return app(Modules::class)->enabled('sales') ? '/leads' : '/dashboard';
     }
 
     public function showIdentity(Request $r, string $type, int $id, Identities $service)
     {
         $identity = Access::identities($r->user(), $service->model($type))->findOrFail($id);
-        if (! $identity instanceof Contact && ! $identity instanceof Company) {
-            abort(404);
-        }
         Gate::authorize('view', $identity);
         $companies = Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']);
         if ($type === 'contacts' && $identity->getAttribute('company_id') && ! $companies->contains('id', $identity->getAttribute('company_id'))) {

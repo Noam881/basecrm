@@ -20,7 +20,9 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "awove/crm-core": "1.1.0",
         "awove/example-service-details": "1.0.0",
-        "awove/customer-service": "1.0.0"
+        "awove/customer-service": "1.0.0",
+        "awove/executive": "1.0.0",
+        "awove/operations": "1.0.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

@@ -6,6 +6,7 @@ use Awove\Core\Contracts\CapabilityProvider;
 use Awove\Core\Contracts\DashboardContributor;
 use Awove\Core\Contracts\Module;
 use Awove\Core\Contracts\ReminderContributor;
+use Awove\Core\Contracts\WorkContributor;
 
 class Modules
 {
@@ -168,8 +169,12 @@ class Modules
     {
         $sources = [];
         foreach ($this->installed as $id => $module) {
-            if ($this->enabled($id) && $module instanceof ReminderContributor) {
-                foreach ($module->reminderSources() as $source) {
+            if ($this->enabled($id)) {
+                $contributions = $module instanceof ReminderContributor ? $module->reminderSources() : [];
+                if ($module instanceof WorkContributor) {
+                    $contributions = [...$contributions, ...app(Services\WorkTypes::class)->reminderSources($id)];
+                }
+                foreach ($contributions as $source) {
                     if ($source->module() !== $id) {
                         throw new \RuntimeException('Reminder source must belong to its declaring module.');
                     }

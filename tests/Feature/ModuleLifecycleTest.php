@@ -111,6 +111,8 @@ it('denies disabled Sales data direct requests and contributions without deletin
     $this->patch('/leads/'.$lead->id, ['version' => 1, 'title' => 'Hidden'])->assertNotFound();
     $this->get('/leads/'.$lead->id.'/proposals')->assertNotFound();
     $this->get('/tasks')->assertNotFound();
+    $this->get('/people')->assertInertia(fn (Assert $p) => $p->component('Core/People')->where('returnTo', '/dashboard'));
+    $this->get('/people/contacts/'.$c->id)->assertInertia(fn (Assert $p) => $p->component('Core/Person')->where('returnTo', '/dashboard'));
     $this->artisan('crm:remind')->assertSuccessful();
     Queue::assertNotPushed(DeliverReminder::class);
     $this->get('/dashboard')->assertInertia(fn (Assert $p) => $p->component('Core/Workspace')->missing('metrics')->where('salesAvailable', false));
