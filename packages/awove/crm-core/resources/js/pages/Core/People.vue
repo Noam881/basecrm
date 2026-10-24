@@ -27,6 +27,7 @@ function createCustomer() {
                   name: data.name,
                   email: data.email,
                   phone: data.phone,
+                  notes: data.notes,
                   accept_duplicate: data.accept_duplicate,
               },
     ).post(`/people/${type.value}`, { onSuccess: () => form.reset() });
@@ -59,7 +60,6 @@ function createCustomer() {
                 :options="contactOptions"
                 :companies="companyOptions"
                 :errors="form.errors"
-                initial-notes
             />
             <template v-else>
                 <label class="crm-field">
@@ -111,6 +111,22 @@ function createCustomer() {
                     >
                 </label>
             </template>
+            <label class="crm-field crm-form-span">
+                <span class="crm-field-label">Notes</span>
+                <textarea
+                    v-model="form.notes"
+                    rows="3"
+                    maxlength="10000"
+                    placeholder="Add background or the first conversation…"
+                    :aria-invalid="!!form.errors.notes"
+                />
+                <small
+                    v-if="form.errors.notes"
+                    data-slot="input-error"
+                    role="alert"
+                    >{{ form.errors.notes }}</small
+                >
+            </label>
             <label class="crm-checkbox crm-form-span">
                 <input v-model="form.accept_duplicate" type="checkbox" />
                 Keep a separate record if a duplicate is found

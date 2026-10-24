@@ -21,6 +21,22 @@ class Installation
         if (! in_array($result['timezone'], timezone_identifiers_list()) || $result['locale'] !== 'en') {
             throw new \RuntimeException('Invalid installation branding, timezone or locale.');
         }
+        if (! is_array($result['modules']) || ! array_is_list($result['modules']) || count(array_unique($result['modules'], SORT_REGULAR)) !== count($result['modules'])) {
+            throw new \RuntimeException('Modules must be a unique list of stable identifiers.');
+        }
+        foreach ($result['modules'] as $module) {
+            if (! is_string($module) || ! preg_match('/^[a-z][a-z0-9-]*$/', $module)) {
+                throw new \RuntimeException('Invalid module identifier in installation manifest.');
+            }
+        }
+        if (! is_array($result['capabilities']) || ! is_array($result['module_labels']) || ! preg_match('/^[A-Z]{3}$/', $result['currency'])) {
+            throw new \RuntimeException('Invalid capabilities, module labels or installation currency.');
+        }
+        foreach ($result['capabilities'] as $key => $enabled) {
+            if (! is_string($key) || ! is_bool($enabled)) {
+                throw new \RuntimeException('Capabilities must map stable identifiers to booleans.');
+            }
+        }
         foreach (['logo', 'favicon'] as $key) {
             if (! preg_match('~^/[a-zA-Z0-9/_\-.]+$~', $result[$key])) {
                 throw new \RuntimeException('Brand assets must be local public paths.');

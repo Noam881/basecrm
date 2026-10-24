@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router } from "@inertiajs/vue3";
 import type { Task, Page } from "../../types";
+import WorkReminders, {
+    type WorkReminder,
+} from "../../components/WorkReminders.vue";
 import Pagination from "../../components/Pagination.vue";
 defineProps<{
+    workReminders?: WorkReminder[];
     reminders: Page<{ id: number; task: Task; read_at: string | null }>;
 }>();
 </script>
@@ -11,8 +15,12 @@ defineProps<{
     <div class="crm-heading">
         <h1>Reminders</h1>
     </div>
+    <WorkReminders :reminders="workReminders ?? []" />
     <section class="crm-card">
-        <div v-if="!reminders.data.length" class="crm-empty">
+        <div
+            v-if="!reminders.data.length && !workReminders?.length"
+            class="crm-empty"
+        >
             <span class="crm-empty-icon">✓</span>
             <h3>No due reminders</h3>
             <p>Reminders for your scheduled follow-ups appear here.</p>

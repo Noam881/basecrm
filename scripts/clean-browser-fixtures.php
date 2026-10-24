@@ -27,7 +27,7 @@ foreach (array_slice($argv, 2) as $argument) {
 $app->loadEnvironmentFrom('.env.'.$installation);
 $app->make(Kernel::class)->bootstrap();
 FictionalCrmFixtures::assertLocalExample($installation);
-$tables = ['crm_contact_notes', 'crm_reminders', 'service_details_leads', 'crm_proposals', 'crm_notes', 'crm_activity', 'crm_tasks', 'crm_leads', 'crm_contacts', 'crm_companies'];
+$tables = ['crm_company_notes', 'crm_identity_activity', 'sales_communications', 'sales_quotations', 'crm_contact_notes', 'crm_reminders', 'service_details_leads', 'crm_proposals', 'crm_notes', 'crm_activity', 'crm_tasks', 'crm_leads', 'crm_contacts', 'crm_companies'];
 $tables = array_values(array_filter($tables, fn ($table) => Schema::hasTable($table)));
 $directory = storage_path('app/private/browser-fixture-recovery');
 

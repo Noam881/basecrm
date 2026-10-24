@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Awove\Core\Models\Company;
+use Awove\Core\Models\CompanyNote;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\ContactNote;
 use Awove\Core\Services\Leads;
@@ -172,7 +173,6 @@ it('rejects contact-only details on companies while retaining ordinary company e
     $company = Company::sole();
     $contactOnly = contactDetailsPayload();
     unset($contactOnly['name'], $contactOnly['email'], $contactOnly['phone']);
-    $contactOnly['notes'] = 'A contact-only initial note.';
     foreach ($contactOnly as $field => $value) {
         $this->post('/people/companies', ['name' => 'Cohen Studio', $field => $value])->assertSessionHasErrors($field);
         $this->patch('/people/companies/'.$company->id, [$field => $value])->assertSessionHasErrors($field);
@@ -180,7 +180,8 @@ it('rejects contact-only details on companies while retaining ordinary company e
     expect(Company::count())->toBe(1)->and(ContactNote::count())->toBe(0);
     $this->patch('/people/companies/'.$company->id, ['phone' => '+1 202-555-0172'])->assertRedirect();
     expect($company->fresh()->phone)->toBe('+1 202-555-0172');
-    $this->post('/people/companies/'.$company->id.'/notes', ['body' => 'No company note endpoint'])->assertNotFound();
+    $this->post('/people/companies/'.$company->id.'/notes', ['body' => 'Ordinary company conversation.'])->assertRedirect();
+    expect(CompanyNote::sole()->body)->toBe('Ordinary company conversation.');
 });
 
 it('warns about normalized phone duplicates across both contact phone slots without making shared numbers unique', function (string $existingSlot, string $newSlot) {

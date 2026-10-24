@@ -2,7 +2,7 @@
 
 An independent, newly created CRM foundation. Nothing is imported from, connected to, or migrated from any existing CRM. This repository root is the standalone application root.
 
-Checkpoint 1: shared host + versioned core + deployment-installed extensions + independent installation configuration. This is a local development checkpoint, not a production-readiness certification.
+The shared host/core and independent installations are retained. Local generic business-module implementation and checkpoint evidence are tracked in [module status](docs/module-status.md); the complete ten-module target remains in progress.
 
 ## Canonical source
 
@@ -138,3 +138,7 @@ python3 scripts/check-reminder-concurrency.py
 ```
 
 The command uses the dedicated Alpha desktop table account created by `seed-table-e2e.php`, records a diagnostic result, and completes and archives its fictional probe record. It never writes to the human reviewer account or another CRM database.
+
+## Generic business modules
+
+The local modular implementation is tracked in [module status](docs/module-status.md), [requirements matrix](docs/requirements-matrix.md), [modular architecture](docs/modular-architecture.md), and [module operations](docs/module-operations.md). These distinguish verified functionality from remaining checkpoints and source-deferred features.

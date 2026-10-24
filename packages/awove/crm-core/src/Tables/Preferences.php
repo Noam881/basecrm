@@ -11,8 +11,8 @@ class Preferences
     public function save(Request $r): void
     {
         $table = $r->input('table', 'leads');
-        validator(['table' => $table], ['table' => ['required', Rule::in(['leads', 'contacts', 'companies', 'tasks'])]])->validate();
         $catalog = app(Catalog::class);
+        validator(['table' => $table], ['table' => ['required', Rule::in($catalog->tableIds())]])->validate();
         $columns = $catalog->columns($table, $r->user());
         $keys = array_keys($columns);
         $data = $r->validate(['columns' => 'required|array|min:1|max:100', 'columns.*' => ['required', 'distinct', Rule::in($keys)], 'widths' => 'sometimes|array|max:100', 'widths.*' => 'integer|min:100|max:600', 'pinned' => 'sometimes|array|max:100', 'pinned.*' => ['required', 'distinct', Rule::in($keys)], 'density' => ['sometimes', Rule::in(['comfortable', 'compact'])], 'wrap' => 'sometimes|boolean', 'views' => 'sometimes|array|max:20', 'views.*.id' => 'required|string|max:80', 'views.*.name' => 'required|string|max:60', 'views.*.columns' => 'required|array|min:1|max:100', 'views.*.columns.*' => ['required', 'distinct', Rule::in($keys)], 'views.*.state' => 'required|array', 'timezone' => 'sometimes|timezone']);

@@ -4,6 +4,7 @@ namespace Awove\Core\Tables;
 
 use Awove\Core\ContactDetails;
 use Awove\Core\Contracts\LeadTableContributor;
+use Awove\Core\Contracts\RecordTableContributor;
 use Awove\Core\Installation;
 use Awove\Core\LeadAttribution;
 use Awove\Core\Models\Status;
@@ -14,6 +15,26 @@ class Catalog
     /** @return array<string,Column> */
     public function columns(string $table, $user): array
     {
+        abort_unless($user && $user->active, 403);
+        if (in_array($table, ['leads', 'tasks'], true)) {
+            abort_unless(app(Modules::class)->enabled('sales'), 404);
+            abort_unless($user->can('leads.view.own') || $user->can('leads.view.all'), 403);
+        }
+        if (! in_array($table, ['leads', 'contacts', 'companies', 'tasks'], true)) {
+            $contributor = $this->contributors()[$table] ?? null;
+            abort_unless($contributor !== null, 404);
+            $columns = $contributor->tableColumns($table, $user);
+            abort_if($columns === [], 403);
+            $catalog = [];
+            foreach ($columns as $column) {
+                if (! preg_match('/^[a-zA-Z][a-zA-Z0-9_:.-]{0,99}$/D', $column->id) || isset($catalog[$column->id])) {
+                    throw new \RuntimeException('Module table fields must have unique, stable identifiers.');
+                }
+                $catalog[$column->id] = $column;
+            }
+
+            return $catalog;
+        }
         $c = [];
         $add = function (string $id, string $label, string $sql, string $type = 'text', string $group = 'Record', array $options = [], int $width = 180) use (&$c) {
             $c[$id] = new Column($id, $label, $sql, $type, $group, $options, $width);
@@ -61,6 +82,11 @@ class Catalog
             $add('outcome', 'Stage outcome', "(SELECT kind FROM crm_statuses WHERE id=$t.status_id)", 'select', 'Pipeline', array_map(fn ($s) => ['value' => $s, 'label' => ucfirst($s)], ['active', 'won', 'lost']));
             $add('priority', 'Priority', "$t.priority", 'select', 'Pipeline', $priorities, 140);
             $add('source', 'Source', "$t.source", group: 'Pipeline');
+            $add('needs', 'Needs', "$t.needs", group: 'Sales', width: 280);
+            $add('estimated_value', 'Estimated value', "$t.estimated_value", 'number', 'Sales');
+            $add('closing_date', 'Closing date', "$t.closing_date", 'date', 'Sales');
+            $add('final_value', 'Final deal value', "$t.final_value", 'number', 'Sales');
+            $add('loss_reason', 'Loss reason', "$t.loss_reason", group: 'Sales', width: 280);
             foreach (LeadAttribution::LABELS as $field => $label) {
                 $add('attribution:'.$field, $label, "$t.attribution->>'$field'", group: 'Attribution', width: $field === 'landing_page_url' ? 300 : 220);
             }
@@ -104,7 +130,7 @@ class Catalog
                 $add('company', 'Company', "(SELECT name FROM crm_companies WHERE id=$t.company_id)", 'text', 'Customer', width: 220);
                 $contactColumns($t);
             }
-        } elseif ($table === 'tasks') {
+        } else {
             $t = 'crm_tasks';
             $add('id', 'Follow-up ID', "$t.id", 'number');
             $add('title', 'Follow-up', "$t.title", width: 280);
@@ -115,8 +141,6 @@ class Catalog
             $add('due_at', 'Deadline', "$t.due_at", 'datetime', 'Schedule', width: 220);
             $add('remind_at', 'Reminder', "$t.remind_at", 'datetime', 'Schedule', width: 220);
             $add('version', 'Record version', "$t.version", 'number', 'Activity');
-        } else {
-            abort(404);
         }
         foreach (['created_at' => 'Created', 'updated_at' => 'Last updated'] as $id => $label) {
             $add($id, $label, "$t.$id", 'datetime', 'Activity', width: 220);
@@ -128,10 +152,44 @@ class Catalog
         return $c;
     }
 
+    /** @return list<string> Only installed and enabled module table IDs are accepted by preferences. */
+    public function tableIds(): array
+    {
+        $core = app(Modules::class)->enabled('sales') ? ['leads', 'contacts', 'companies', 'tasks'] : ['contacts', 'companies'];
+
+        return [...$core, ...array_keys($this->contributors())];
+    }
+
+    /** @return array<string,RecordTableContributor> */
+    private function contributors(): array
+    {
+        $tables = [];
+        foreach (app(Modules::class)->installed() as $id => $module) {
+            if (! app(Modules::class)->enabled($id) || ! $module instanceof RecordTableContributor) {
+                continue;
+            }
+            foreach ($module->tableIds() as $table) {
+                if (! preg_match('/^'.preg_quote($id, '/').'\\.[a-z][a-z0-9-]{0,63}$/D', $table) || isset($tables[$table])) {
+                    throw new \RuntimeException('Module table IDs must be unique and use the owning module namespace.');
+                }
+                $tables[$table] = $module;
+            }
+        }
+
+        return $tables;
+    }
+
     public function defaults(string $table): array
     {
+        if (! in_array($table, ['leads', 'contacts', 'companies', 'tasks'], true)) {
+            $contributor = $this->contributors()[$table] ?? null;
+            abort_unless($contributor !== null, 404);
+
+            return $contributor->tableDefaults($table);
+        }
+
         return match ($table) {
-            'leads' => ['contact', 'company', 'status', 'owner', 'contact_phone', 'contact_email', 'priority', 'next_action_at', 'created_at', 'proposal'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],'tasks' => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status'],default => []
+            'leads' => ['contact', 'company', 'status', 'owner', 'contact_phone', 'contact_email', 'priority', 'next_action_at', 'created_at', 'proposal'],'contacts' => ['name', 'email', 'phone', 'company'],'companies' => ['name', 'email', 'phone'],default => ['title', 'lead', 'assignee', 'due_at', 'priority', 'status']
         };
     }
 }

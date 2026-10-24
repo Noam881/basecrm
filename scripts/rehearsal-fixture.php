@@ -43,7 +43,7 @@ foreach (['users', 'roles', 'permissions', 'model_has_roles', 'model_has_permiss
         // Normalize missing additive columns to their exact migration defaults.
         // A non-default value after upgrade still changes the fingerprint.
         if ($table === 'crm_leads') {
-            $array += ['external_reference' => null, 'attribution' => null];
+            $array += ['external_reference' => null, 'attribution' => null, 'needs' => null, 'estimated_value' => null, 'closing_date' => null, 'final_value' => null, 'loss_reason' => null];
         }
         if ($table === 'crm_contacts') {
             $array += ['secondary_phone' => null, 'secondary_phone_label' => null, 'preferred_contact_method' => null, 'preferred_contact_times' => '[]', 'preferred_contact_days' => '[]', 'address' => null, 'city' => null, 'country' => null, 'source' => null];

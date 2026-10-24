@@ -114,6 +114,11 @@ export interface Lead {
     archived_at: string | null;
     created_at: string;
     custom_fields: Record<string, string | number | boolean | null>;
+    needs?: string | null;
+    estimated_value?: string | null;
+    closing_date?: string | null;
+    final_value?: string | null;
+    loss_reason?: string | null;
     next_action_at?: string;
     notes?: { id: number; body: string; author: Person; created_at: string }[];
     tasks?: Task[];

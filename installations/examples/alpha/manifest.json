@@ -8,5 +8,6 @@
   "timezone": "Asia/Nicosia",
   "lead_label": "Leads",
   "modules": [],
-  "custom_fields": {}
+  "custom_fields": {},
+  "legacy_sales_stages": true
 }

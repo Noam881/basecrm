@@ -23,12 +23,16 @@ void createInertiaApp({
     resolve: async (name) => {
         let loader: (() => Promise<{ default: DefineComponent }>) | undefined =
             host[`./pages/${name}.vue`];
-        if (!loader)
-            loader = Object.entries(installed).find(
-                ([path]) =>
-                    path.endsWith(`/pages/${name}.vue`) ||
-                    path.endsWith(`/${name}.vue`),
-            )?.[1];
+        if (!loader) {
+            const matches = Object.entries(installed).filter(([path]) =>
+                path.endsWith(`/pages/${name}.vue`),
+            );
+            if (matches.length > 1)
+                throw new Error(
+                    `Page ${name} is declared by multiple installed packages.`,
+                );
+            loader = matches[0]?.[1];
+        }
         if (!loader) throw new Error(`Page ${name} is not installed.`);
         return (await loader()).default;
     },

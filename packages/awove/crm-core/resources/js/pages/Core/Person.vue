@@ -10,6 +10,13 @@ import {
 import ContactFields from "../../components/ContactFields.vue";
 const props = defineProps<{
     identity: Person;
+    identityHistory: {
+        id: number;
+        event: string;
+        changed_fields: string[];
+        actor: { id: number; name: string } | null;
+        created_at: string;
+    }[];
     type: "contacts" | "companies";
     editable: boolean;
     companyOptions: Person[];
@@ -302,11 +309,10 @@ function addNote() {
             </form>
         </section>
         <section
-            v-if="type === 'contacts'"
             class="crm-card crm-flow"
-            aria-labelledby="contact-notes-title"
+            aria-labelledby="identity-notes-title"
         >
-            <h2 id="contact-notes-title">Notes</h2>
+            <h2 id="identity-notes-title">Notes</h2>
             <form
                 v-if="editable && noteUrl"
                 class="crm-form"
@@ -357,6 +363,42 @@ function addNote() {
                 </article>
             </div>
             <p v-else class="crm-muted">No notes yet.</p>
+        </section>
+        <section
+            class="crm-card crm-flow crm-form-span"
+            aria-labelledby="identity-history-title"
+        >
+            <h2 id="identity-history-title">Change history</h2>
+            <p v-if="!identityHistory.length" class="crm-muted">
+                No changes recorded yet.
+            </p>
+            <article
+                v-for="entry in identityHistory"
+                :key="entry.id"
+                class="crm-note"
+            >
+                <strong>{{
+                    entry.event === "identity.created"
+                        ? "Record created"
+                        : "Record updated"
+                }}</strong>
+                <p>
+                    {{
+                        entry.changed_fields
+                            .map((field) =>
+                                field === "company_id"
+                                    ? "Company"
+                                    : field.charAt(0).toUpperCase() +
+                                      field.slice(1).replaceAll("_", " "),
+                            )
+                            .join(", ")
+                    }}
+                </p>
+                <small
+                    >{{ entry.actor?.name ?? "Former team member" }} ·
+                    {{ date(entry.created_at, zone) }}</small
+                >
+            </article>
         </section>
     </div>
 </template>

@@ -42,6 +42,7 @@ class HandleInertiaRequests extends Middleware
             'name' => Installation::settings()['name'],
             'brand' => Installation::settings(),
             'capabilities' => $request->user()?->getAllPermissions()->pluck('name') ?? [],
+            'salesAvailable' => app(Modules::class)->enabled('sales'),
             'moduleNavigation' => $request->user() ? app(Modules::class)->navigation($request->user()) : [],
             'auth' => [
                 'user' => $request->user(),

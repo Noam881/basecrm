@@ -24,7 +24,7 @@ const props = defineProps<{
     filters: Record<string, string>;
     preferences: { columns?: string[] };
 }>();
-const brand = usePage().props.brand as { lead_label: string };
+const brand = usePage().props.brand as { lead_label: string; currency: string };
 const capabilities = usePage().props.capabilities as string[];
 const showCreate = ref(false);
 const form = useForm({
@@ -34,6 +34,8 @@ const form = useForm({
     owner_id: props.owners[0]?.id ?? null,
     status_id: props.statuses[0]?.id ?? "new",
     source: "Direct",
+    needs: "",
+    estimated_value: "",
     attribution: {} as LeadAttribution,
     priority: "normal",
     custom_fields: {} as Record<string, string | number | boolean>,
@@ -85,6 +87,20 @@ const form = useForm({
                 ><span class="crm-field-label">Enquiry title (optional)</span
                 ><input v-model="form.title" maxlength="160" /></label
             ><label
+                ><span class="crm-field-label">Needs</span
+                ><textarea v-model="form.needs" maxlength="10000" rows="3" />
+            </label>
+            <label
+                ><span class="crm-field-label"
+                    >Estimated value ({{ brand.currency }})</span
+                ><input
+                    v-model="form.estimated_value"
+                    type="text"
+                    inputmode="decimal"
+                    pattern="[0-9]+([.][0-9]{1,2})?"
+                    maxlength="15"
+            /></label>
+            <label
                 ><span class="crm-field-label">Owner</span
                 ><select v-model="form.owner_id">
                     <option

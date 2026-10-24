@@ -6,12 +6,16 @@
       "2026_10_22_000200_add_lead_external_reference",
       "2026_10_23_000300_add_contact_details",
       "2026_10_24_000400_create_proposals",
-      "2026_10_24_000410_add_lead_attribution"
+      "2026_10_24_000410_add_lead_attribution",
+      "2026_10_24_000450_create_work_reminders",
+      "2026_10_24_000470_create_identity_history",
+      "2026_10_24_000480_create_company_notes",
+      "2026_10_24_000500_complete_sales"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "dbd403c7e14914dbdc218b7dd53b5ee6107bcad5b270be3ec07412cf023ecd4a"
+    "fingerprint": "32be33cc31ba5a0414515e92cfc9b9301828ad6f8b54d2de343aa07718e47530"
   },
   {
     "installation": "beta",
@@ -20,11 +24,15 @@
       "2026_10_22_000200_add_lead_external_reference",
       "2026_10_23_000300_add_contact_details",
       "2026_10_24_000400_create_proposals",
-      "2026_10_24_000410_add_lead_attribution"
+      "2026_10_24_000410_add_lead_attribution",
+      "2026_10_24_000450_create_work_reminders",
+      "2026_10_24_000470_create_identity_history",
+      "2026_10_24_000480_create_company_notes",
+      "2026_10_24_000500_complete_sales"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "a0ee2dc999ce21e4c499ae76ed87cdf15a5fd91e9b428b21223fd7d65669411f"
+    "fingerprint": "f6fb383a0c93a1a5940226b645cbfe7a353063cce9663866186af604526880f0"
   }
 ]

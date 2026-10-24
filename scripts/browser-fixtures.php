@@ -91,6 +91,15 @@ final class BrowserFixtures
         if (Schema::hasTable('service_details_leads')) {
             $plan['service_details_leads'] = DB::table('service_details_leads')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();
         }
+        foreach (['sales_communications' => 'staff_id', 'sales_quotations' => 'created_by'] as $table => $ownerColumn) {
+            if (Schema::hasTable($table)) {
+                $records = DB::table($table)->whereIn('lead_id', $leadIds);
+                if ((clone $records)->whereNotIn($ownerColumn, $userIds)->exists()) {
+                    throw new RuntimeException('A protected Sales history record references a browser fixture. No cleanup is permitted.');
+                }
+                $plan[$table] = $records->orderBy('id')->pluck('id')->all();
+            }
+        }
         if (Schema::hasTable('crm_proposals')) {
             $proposals = DB::table('crm_proposals')->whereIn('lead_id', $leadIds);
             if ((clone $proposals)->whereNotIn('uploaded_by', $userIds)->exists()) {
@@ -108,6 +117,20 @@ final class BrowserFixtures
                 throw new RuntimeException('A protected contact note references a browser fixture. No cleanup is permitted.');
             }
             $plan['crm_contact_notes'] = $notes->orderBy('id')->pluck('id')->all();
+        }
+        if (Schema::hasTable('crm_identity_activity')) {
+            $history = DB::table('crm_identity_activity')->where(fn ($query) => $query->whereIn('contact_id', $identityIds['contacts'])->orWhereIn('company_id', $identityIds['companies']));
+            if ((clone $history)->whereNotIn('actor_id', $userIds)->exists()) {
+                throw new RuntimeException('A protected identity history record references a browser fixture. No cleanup is permitted.');
+            }
+            $plan['crm_identity_activity'] = $history->orderBy('id')->pluck('id')->all();
+        }
+        if (Schema::hasTable('crm_company_notes')) {
+            $notes = DB::table('crm_company_notes')->whereIn('company_id', $identityIds['companies']);
+            if ((clone $notes)->whereNotIn('author_id', $userIds)->exists()) {
+                throw new RuntimeException('A protected company note references a browser fixture. No cleanup is permitted.');
+            }
+            $plan['crm_company_notes'] = $notes->orderBy('id')->pluck('id')->all();
         }
         $plan['crm_contacts'] = $identityIds['contacts'];
         $plan['crm_companies'] = $identityIds['companies'];

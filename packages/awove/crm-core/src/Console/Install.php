@@ -17,7 +17,8 @@ class Install extends Command
 
     public function handle(): int
     {
-        $permissions = ['leads.view.own', 'leads.view.all', 'leads.edit.own', 'leads.edit.all', 'leads.create', 'leads.assign', 'users.manage', 'settings.manage', 'identities.manage', 'records.archive'];
+        $corePermissions = ['leads.view.own', 'leads.view.all', 'leads.edit.own', 'leads.edit.all', 'leads.create', 'leads.assign', 'users.manage', 'settings.manage', 'identities.manage', 'records.archive', 'imports.manage', 'exports.view'];
+        $permissions = $corePermissions;
         foreach (app(Modules::class)->installed() as $module) {
             $permissions = array_merge($permissions, $module->permissions());
         }
@@ -30,7 +31,7 @@ class Install extends Command
         }
         $admin = Role::firstOrCreate(['name' => 'Administrator', 'guard_name' => 'web']);
         $employee = Role::firstOrCreate(['name' => 'Employee', 'guard_name' => 'web']);
-        foreach ($permissions as $p) {
+        foreach ($corePermissions as $p) {
             if (($admin->wasRecentlyCreated || in_array($p, $newPermissions)) && ! $admin->hasPermissionTo($p)) {
                 $admin->givePermissionTo($p);
             }
@@ -40,9 +41,15 @@ class Install extends Command
                 $employee->givePermissionTo($p);
             }
         }
-        $labels = Installation::manifest()['statuses'] ?? [];
-        foreach (['new' => 'New', 'contacted' => 'Contacted', 'qualified' => 'Qualified', 'proposal' => 'Proposal sent', 'won' => 'Won', 'lost' => 'Lost'] as $id => $name) {
-            Status::firstOrCreate(['id' => $id], ['name' => $labels[$id] ?? $name, 'position' => array_search($id, ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost']), 'kind' => in_array($id, ['won', 'lost']) ? $id : 'active']);
+        $manifest = Installation::manifest();
+        $labels = $manifest['statuses'] ?? [];
+        $defaults = ['new' => 'New', 'discussion' => 'In discussion', 'proposal' => 'Proposal sent', 'won' => 'Won', 'lost' => 'Lost'];
+        // Fictional legacy fixtures keep their extra stages; existing client rows are never removed.
+        if ($manifest['legacy_sales_stages'] ?? false) {
+            $defaults += ['contacted' => 'Contacted', 'qualified' => 'Qualified'];
+        }
+        foreach ($defaults as $id => $name) {
+            Status::firstOrCreate(['id' => $id], ['name' => $labels[$id] ?? $name, 'position' => array_search($id, array_keys($defaults)), 'kind' => in_array($id, ['won', 'lost']) ? $id : 'active']);
         }
         $this->info('Missing defaults installed. Existing configuration retained.');
 

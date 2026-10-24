@@ -17,9 +17,28 @@ const user = computed(
 const capabilities = computed(() => page.props.capabilities as string[]);
 const navigation = computed(() => [
     { label: "Overview", href: "/dashboard", icon: "space_dashboard" },
-    { label: brand.value.lead_label, href: "/leads", icon: "view_list" },
-    { label: "Follow-ups", href: "/tasks", icon: "task_alt" },
+    ...(page.props.salesAvailable !== false
+        ? [
+              {
+                  label: brand.value.lead_label,
+                  href: "/leads",
+                  icon: "view_list",
+              },
+              { label: "Follow-ups", href: "/tasks", icon: "task_alt" },
+          ]
+        : []),
     { label: "Reminders", href: "/reminders", icon: "notifications" },
+    ...(capabilities.value.some((permission) =>
+        ["imports.manage", "exports.view"].includes(permission),
+    )
+        ? [
+              {
+                  label: "Import / export",
+                  href: "/spreadsheets",
+                  icon: "import_export",
+              },
+          ]
+        : []),
     ...(page.props.moduleNavigation as { label: string; href: string }[]).map(
         (item) => ({ ...item, icon: "extension" }),
     ),

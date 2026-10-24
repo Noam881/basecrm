@@ -11,9 +11,11 @@ parameters:
         - routes/
         - packages/awove/crm-core/src/
         - packages/awove/example-service-details/src/
+        - packages/awove/customer-service/src/
 
     level: 5
     databaseMigrationsPath:
         - database/migrations
         - packages/awove/crm-core/database/migrations
         - packages/awove/example-service-details/database/migrations
+        - packages/awove/customer-service/database/migrations

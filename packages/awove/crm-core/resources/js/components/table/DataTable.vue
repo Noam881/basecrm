@@ -19,6 +19,7 @@ import type {
     SavedView,
     Value,
 } from "./types";
+import { clipboardCell } from "./clipboard";
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 const props = withDefaults(
     defineProps<{
@@ -208,6 +209,13 @@ function format(value: Value | undefined, c: TableColumn) {
 }
 function link(row: TableRow) {
     if (!props.rowLink) return "";
+    if (row.record_url !== undefined) {
+        // Module-provided links stay inside this installation and never become script or external URLs.
+        return typeof row.record_url === "string" &&
+            /^\/(?![\\/])[^\s\\]*$/.test(row.record_url)
+            ? row.record_url
+            : "";
+    }
     if (["contacts", "companies"].includes(props.payload.id)) {
         return `/people/${props.payload.id}/${row.id}`;
     }
@@ -218,6 +226,8 @@ function link(row: TableRow) {
           : "";
 }
 function isRecordColumn(row: TableRow, column: string) {
+    if (row.record_link_column !== undefined)
+        return row.record_link_column === column && catalog.value.has(column);
     return (
         ["title", "lead", "name"].includes(column) ||
         (props.payload.id === "leads" &&
@@ -226,6 +236,8 @@ function isRecordColumn(row: TableRow, column: string) {
     );
 }
 function recordName(row: TableRow) {
+    if (row.record_link_column && row.cells[row.record_link_column])
+        return row.cells[row.record_link_column];
     return props.payload.id === "leads"
         ? (row.cells.contact ?? row.cells.company ?? row.title ?? row.id)
         : (row.title ?? row.name ?? row.id);
@@ -451,13 +463,18 @@ function removeView() {
 async function copyRows() {
     const columns = displayed.value.filter((c) => c.id !== "__select");
     const text = [
-        columns.map((c) => catalog.value.get(c.id)!.label).join("\t"),
+        columns
+            .map((c) => clipboardCell(catalog.value.get(c.id)!.label))
+            .join("\t"),
         ...selectedRows.value.map((row) =>
             columns
                 .map((c) =>
-                    format(row.original.cells[c.id], catalog.value.get(c.id)!)
-                        .replaceAll("\t", " ")
-                        .replaceAll("\n", " "),
+                    clipboardCell(
+                        format(
+                            row.original.cells[c.id],
+                            catalog.value.get(c.id)!,
+                        ),
+                    ),
                 )
                 .join("\t"),
         ),

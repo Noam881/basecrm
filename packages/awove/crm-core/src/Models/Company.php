@@ -16,6 +16,12 @@ class Company extends Model
         return [];
     }
 
+    /** @return HasMany<CompanyNote, $this> */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(CompanyNote::class, 'company_id');
+    }
+
     /** @return HasMany<Lead, $this> */
     public function leads(): HasMany
     {

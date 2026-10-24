@@ -26,5 +26,6 @@
     "contacted": "In discussion",
     "qualified": "Assessed",
     "proposal": "Estimate sent"
-  }
+  },
+  "legacy_sales_stages": true
 }

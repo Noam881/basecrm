@@ -53,11 +53,31 @@ test("creates a complete contact profile, appends notes and edits details from i
     await page
         .getByLabel("Email", { exact: true })
         .fill(`company-${runId}@example.test`);
+    const companyNote = "Requested a fictional company consultation.";
+    await page.getByLabel("Notes", { exact: true }).fill(companyNote);
     await page
         .getByRole("button", { name: "Create company", exact: true })
         .click();
     await expect(page).toHaveURL(/\/people\/companies\/\d+$/);
     const companyUrl = page.url();
+    const companyNotes = page.getByRole("region", {
+        name: "Notes",
+        exact: true,
+    });
+    await expect(
+        companyNotes.getByText(companyNote, { exact: true }),
+    ).toBeVisible();
+    await companyNotes
+        .getByLabel("Add a note", { exact: true })
+        .fill("Confirmed the company contact person.");
+    await companyNotes
+        .getByRole("button", { name: "Add note", exact: true })
+        .click();
+    await expect(
+        companyNotes.getByText("Confirmed the company contact person.", {
+            exact: true,
+        }),
+    ).toBeVisible();
     await expect(
         page.getByRole("heading", { name: "Company details", exact: true }),
     ).toBeVisible();
@@ -76,6 +96,10 @@ test("creates a complete contact profile, appends notes and edits details from i
     await expect(page.getByLabel("Phone", { exact: true })).toHaveValue(
         officePhone,
     );
+    await expect(
+        companyNotes.getByText(companyNote, { exact: true }),
+    ).toBeVisible();
+    await expect(companyNotes.locator("article")).toHaveCount(2);
     await page.goto("/leads");
     await page
         .getByRole("link", { name: "Add new contact", exact: true })
@@ -307,6 +331,20 @@ test("creates a complete contact profile, appends notes and edits details from i
             () => document.documentElement.scrollWidth <= innerWidth,
         ),
     ).toBeTruthy();
+    const history = page.getByRole("region", {
+        name: "Change history",
+        exact: true,
+    });
+    await expect(history.locator("article")).toHaveCount(3);
+    await expect(history.locator("article").first()).toContainText(
+        "Record updated",
+    );
+    await expect(history.locator("article").first()).toContainText(
+        "Email, Phone",
+    );
+    await expect(history).not.toContainText(finalPhone);
+    await expect(history).not.toContainText(`changed-${email}`);
+    await expect(history).not.toContainText(nextNote);
     await page.screenshot({
         path: `docs/screenshots/${info.project.name}-contact-details.png`,
         fullPage: true,

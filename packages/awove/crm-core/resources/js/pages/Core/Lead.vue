@@ -13,6 +13,10 @@ import ExtensionPanel from "../../components/ExtensionPanel.vue";
 import StageControl from "../../components/StageControl.vue";
 import LeadAttributionFields from "../../components/LeadAttributionFields.vue";
 import LeadProposals from "../../components/LeadProposals.vue";
+import SalesHistory, {
+    type Communication,
+    type Quotation,
+} from "../../components/SalesHistory.vue";
 const props = defineProps<{
     lead: Lead;
     owners: Person[];
@@ -29,6 +33,7 @@ const props = defineProps<{
         uploaded_by: { id: number; name: string } | null;
         download_url: string;
     }[];
+    sales: { communications: Communication[]; quotations: Quotation[] };
     identityPermissions: { contact: boolean; company: boolean };
     panels: {
         id: string;
@@ -40,6 +45,7 @@ const props = defineProps<{
 }>();
 const page = usePage();
 const zone = (page.props.brand as { timezone: string }).timezone;
+const currency = (page.props.brand as { currency: string }).currency;
 const capabilities = page.props.capabilities as string[];
 const customerName = computed(
     () =>
@@ -53,6 +59,11 @@ function leadDetails(lead: Lead) {
         owner_id: lead.owner_id,
         priority: lead.priority,
         source: lead.source,
+        needs: lead.needs ?? "",
+        estimated_value: lead.estimated_value ?? "",
+        closing_date: lead.closing_date ?? "",
+        final_value: lead.final_value ?? "",
+        loss_reason: lead.loss_reason ?? "",
         attribution: JSON.parse(
             JSON.stringify(lead.attribution ?? {}),
         ) as NonNullable<Lead["attribution"]>,
@@ -304,7 +315,59 @@ function changeTask(t: Task) {
                             <option>normal</option>
                             <option>high</option>
                         </select></label
-                    ><label v-for="(field, key) in fields" :key="key"
+                    ><label
+                        ><span class="crm-field-label">Needs</span
+                        ><textarea
+                            v-model="form.needs"
+                            :disabled="detailsDisabled"
+                            maxlength="10000"
+                            rows="3"
+                        />
+                    </label>
+                    <label
+                        ><span class="crm-field-label"
+                            >Estimated value ({{ currency }})</span
+                        ><input
+                            v-model="form.estimated_value"
+                            :disabled="detailsDisabled"
+                            type="text"
+                            inputmode="decimal"
+                            pattern="[0-9]+([.][0-9]{1,2})?"
+                            maxlength="15"
+                    /></label>
+                    <label
+                        ><span class="crm-field-label">Closing date</span
+                        ><input
+                            v-model="form.closing_date"
+                            :disabled="detailsDisabled"
+                            type="date"
+                    /></label>
+                    <label
+                        ><span class="crm-field-label"
+                            >Final deal value ({{ currency }})</span
+                        ><input
+                            v-model="form.final_value"
+                            :disabled="detailsDisabled"
+                            type="text"
+                            inputmode="decimal"
+                            pattern="[0-9]+([.][0-9]{1,2})?"
+                            maxlength="15"
+                    /></label>
+                    <label
+                        ><span class="crm-field-label">Loss reason</span
+                        ><textarea
+                            v-model="form.loss_reason"
+                            :disabled="detailsDisabled"
+                            maxlength="10000"
+                            rows="2"
+                        />
+                    </label>
+                    <p class="crm-muted">
+                        Record the closing date and final value for won deals,
+                        or the reason when a deal is lost. Amounts use the
+                        installation currency.
+                    </p>
+                    <label v-for="(field, key) in fields" :key="key"
                         ><span class="crm-field-label">{{ field.label }}</span
                         ><select
                             v-if="field.type === 'select'"
@@ -331,6 +394,15 @@ function changeTask(t: Task) {
                             :disabled="detailsDisabled"
                         />
                     </details>
+                    <div
+                        v-if="Object.keys(form.errors).length"
+                        class="crm-form-action crm-error"
+                        role="alert"
+                    >
+                        <p v-for="(error, field) in form.errors" :key="field">
+                            {{ error }}
+                        </p>
+                    </div>
                     <div v-if="detailsWarning" class="crm-form-action">
                         <div class="crm-notice-panel crm-flow" role="alert">
                             <p>{{ detailsWarning }}</p>
@@ -368,6 +440,14 @@ function changeTask(t: Task) {
                 :editable="editable"
                 :proposals="proposals"
                 :timezone="zone"
+            />
+            <SalesHistory
+                :lead-id="lead.id"
+                :editable="editable"
+                :timezone="zone"
+                :communications="sales.communications"
+                :quotations="sales.quotations"
+                :proposals="proposals"
             />
             <section class="crm-card crm-flow">
                 <h2>Notes</h2>

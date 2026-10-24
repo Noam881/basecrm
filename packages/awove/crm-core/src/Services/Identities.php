@@ -5,6 +5,7 @@ namespace Awove\Core\Services;
 use Awove\Core\Access;
 use Awove\Core\ContactDetails;
 use Awove\Core\Models\Company;
+use Awove\Core\Models\CompanyNote;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\ContactNote;
 use Illuminate\Support\Facades\DB;
@@ -35,9 +36,11 @@ class Identities
             $notes = $data['notes'] ?? null;
             unset($data['notes']);
             $identity = $model::create([...$data, 'created_by' => $user->id]);
-            if ($identity instanceof Contact && filled($notes)) {
+            if (filled($notes)) {
                 $identity->notes()->create(['body' => trim($notes), 'author_id' => $user->id]);
             }
+
+            app(IdentityHistory::class)->record($user, $identity, 'identity.created', array_keys($identity->getAttributes()));
 
             return $identity;
         });
@@ -50,6 +53,7 @@ class Identities
             $identity = $model::lockForUpdate()->findOrFail($id);
             Gate::forUser($user)->authorize('update', $identity);
             $identity->fill($this->data($user, $type, $input, $identity))->save();
+            app(IdentityHistory::class)->record($user, $identity, 'identity.updated', array_keys($identity->getChanges()));
 
             return $identity;
         });
@@ -57,21 +61,39 @@ class Identities
 
     public function note($user, int $id, array $input): ContactNote
     {
-        return DB::transaction(function () use ($user, $id, $input) {
-            $contact = Contact::lockForUpdate()->findOrFail($id);
-            Gate::forUser($user)->authorize('update', $contact);
+        return $this->appendNote($user, Contact::class, $id, $input);
+    }
+
+    public function companyNote($user, int $id, array $input): CompanyNote
+    {
+        return $this->appendNote($user, Company::class, $id, $input);
+    }
+
+    /** @template T of Contact|Company
+     * @param  class-string<T>  $model
+     * @return ($model is class-string<Contact> ? ContactNote : CompanyNote)
+     */
+    private function appendNote($user, string $model, int $id, array $input): ContactNote|CompanyNote
+    {
+        return DB::transaction(function () use ($user, $model, $id, $input) {
+            $identity = $model::lockForUpdate()->findOrFail($id);
+            Gate::forUser($user)->authorize('update', $identity);
             $data = validator($input, ['body' => 'required|string|max:10000'])->validate();
             $body = trim($data['body']);
             if ($body === '') {
                 throw ValidationException::withMessages(['body' => 'Enter a note.']);
             }
 
-            return $contact->notes()->create(['body' => $body, 'author_id' => $user->id]);
+            return $identity->notes()->create(['body' => $body, 'author_id' => $user->id]);
         });
     }
 
     private function data($user, string $type, array $input, Contact|Company|null $identity = null): array
     {
+        if ($type === 'companies' && array_key_exists('notes', $input) && blank($input['notes'])) {
+            // Preserve legacy company payloads that send empty contact-only fields.
+            unset($input['notes']);
+        }
         $rules = [
             'name' => ($identity ? 'sometimes|required' : 'required').'|string|max:120',
             'email' => 'nullable|email|max:160',
@@ -99,7 +121,7 @@ class Identities
             foreach (array_diff(ContactDetails::ATTRIBUTES, ['name', 'email', 'phone', 'company_id']) as $field) {
                 $rules[$field] = 'prohibited';
             }
-            $rules['notes'] = 'prohibited';
+            $rules['notes'] = $identity ? 'prohibited' : 'nullable|string|max:10000';
         }
         $data = validator($input, $rules)->validate();
         if (in_array('anytime', $data['preferred_contact_times'] ?? [], true) && count($data['preferred_contact_times']) > 1) {
@@ -108,8 +130,9 @@ class Identities
         $acceptDuplicate = $data['accept_duplicate'] ?? false;
         unset($data['accept_duplicate']);
         if ($type === 'companies') {
-            $data = array_intersect_key($data, array_flip(['name', 'email', 'phone']));
-        } elseif ($identity) {
+            $data = array_intersect_key($data, array_flip(['name', 'email', 'phone', 'notes']));
+        }
+        if ($identity) {
             unset($data['notes']);
         }
         $data = [...($identity?->only($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone']) ?? []), ...$data];
@@ -118,7 +141,7 @@ class Identities
             throw ValidationException::withMessages(['name' => 'Enter a name.']);
         }
         $data['email'] = ! empty($data['email']) ? mb_strtolower(trim($data['email'])) : null;
-        foreach ($type === 'contacts' ? ['phone', 'secondary_phone', 'address', 'city', 'country', 'notes'] : ['phone'] as $field) {
+        foreach ($type === 'contacts' ? ['phone', 'secondary_phone', 'address', 'city', 'country', 'notes'] : ['phone', 'notes'] as $field) {
             if (array_key_exists($field, $data)) {
                 $data[$field] = filled($data[$field]) ? trim($data[$field]) : null;
             }

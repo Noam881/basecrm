@@ -3,12 +3,13 @@
 namespace Awove\Core\Policies;
 
 use Awove\Core\Models\Lead;
+use Awove\Core\Modules;
 
 class LeadPolicy
 {
     public function view($u, Lead $lead): bool
     {
-        return $u->active && ($u->can('leads.view.all') || ($u->can('leads.view.own') && $lead->owner_id === $u->id));
+        return app(Modules::class)->enabled('sales') && $u->active && ($u->can('leads.view.all') || ($u->can('leads.view.own') && $lead->owner_id === $u->id));
     }
 
     public function update($u, Lead $lead): bool

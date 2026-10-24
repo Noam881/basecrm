@@ -18,6 +18,9 @@ $credentials = json_decode(file_get_contents($file), true);
 foreach (['desktop', 'mobile'] as $size) {
     $key = 'tables_'.$installation.'_'.$size;
     $credentials[$key] ??= ['email' => 'table-'.$size.'@'.$installation.'.example.test', 'password' => bin2hex(random_bytes(18))];
+    if ($credentials[$key]['email'] !== 'table-'.$size.'@'.$installation.'.example.test') {
+        throw new RuntimeException('Browser tooling permissions require the exact reserved table account.');
+    }
     $user = User::firstOrNew(['email' => $credentials[$key]['email']]);
     if (! $user->exists) {
         $user->forceFill(['name' => FictionalCrmFixtures::tableReviewerName($size), 'password' => $credentials[$key]['password'], 'email_verified_at' => now(), 'active' => true])->save();
@@ -26,6 +29,8 @@ foreach (['desktop', 'mobile'] as $size) {
             $user->givePermissionTo(['service-details.view', 'service-details.edit']);
         }
     }
+    // Explicit synthetic-account access only; ordinary Employee roles retain their existing grants.
+    $user->givePermissionTo(['imports.manage', 'exports.view']);
     // This command resets only the dedicated browser accounts' table layouts.
     FictionalCrmFixtures::enrich($user, ['name' => FictionalCrmFixtures::tableReviewerName($size), 'display_preferences' => null]);
     FictionalCrmFixtures::sync($user, $installation, true, true);

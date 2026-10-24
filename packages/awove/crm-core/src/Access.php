@@ -10,7 +10,7 @@ class Access
     public static function leads($user): Builder
     {
         $q = Lead::query();
-        if (! $user->active) {
+        if (! $user->active || ! app(Modules::class)->enabled('sales')) {
             return $q->whereRaw('1=0');
         }
 

@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "537c9443fd528598579552597fb598b3",
+    "content-hash": "8a77c5c51f5cf379dcdbab4195f58664",
     "packages": [
         {
             "name": "awove/crm-core",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "dist": {
                 "type": "path",
                 "url": "packages/awove/crm-core",
-                "reference": "83b9a8a290727a6a1382f9714f02c3d2e9ea5bd2"
+                "reference": "fb38ce5ebdaebe3871d0547c0444dd3bff7afcf8"
             },
             "require": {
                 "illuminate/auth": "^13.0",
@@ -34,6 +34,36 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\Core\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/customer-service",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/customer-service",
+                "reference": "21d48ef27a1d8f0a1aa1cf128c3970b11a0fe09f"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\CustomerService\\CustomerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\CustomerService\\": "src/"
                 }
             },
             "transport-options": {

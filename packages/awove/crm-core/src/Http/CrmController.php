@@ -14,10 +14,13 @@ use Awove\Core\Models\Status;
 use Awove\Core\Models\Task;
 use Awove\Core\Modules;
 use Awove\Core\Services\Identities;
+use Awove\Core\Services\IdentityHistory;
 use Awove\Core\Services\Leads;
 use Awove\Core\Services\Proposals;
+use Awove\Core\Services\Sales;
 use Awove\Core\Services\Tasks;
 use Awove\Core\Services\Users;
+use Awove\Core\Services\WorkReminders;
 use Awove\Core\Tables\Preferences;
 use Awove\Core\Tables\Query;
 use Carbon\CarbonImmutable;
@@ -37,11 +40,55 @@ class CrmController
 
     public function dashboard(Request $r)
     {
+        if (! app(Modules::class)->enabled('sales')) {
+            return Inertia::render('Core/Workspace', ['moduleNavigation' => app(Modules::class)->navigation($r->user()), 'moduleWidgets' => app(Modules::class)->dashboardWidgets($r->user())]);
+        }
+        $filters = $r->validate(['owner' => 'nullable|integer', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d'.($r->filled('from') ? '|after_or_equal:from' : '')]);
         $q = Access::leads($r->user())->whereNull('archived_at');
-        $tasks = Access::tasks($r->user())->where('status', 'open');
-        $day = now(Installation::display($r->user())['timezone']);
+        if ($r->filled('owner')) {
+            $q->where('owner_id', $r->integer('owner'));
+        }
+        $won = (clone $q)->whereHas('status', fn ($q) => $q->where('kind', 'won'));
+        // Undated won records cannot be assigned to a closing period; report their presence independently.
+        $wonMissingClosingDate = (clone $won)->whereNull('closing_date')->count();
+        // Pipeline dates describe opportunity creation; won dates describe the actual closing date.
+        $zone = Installation::display($r->user())['timezone'];
+        if ($r->filled('from')) {
+            $q->where('created_at', '>=', CarbonImmutable::parse($r->input('from'), $zone)->startOfDay()->utc());
+            $won->where('closing_date', '>=', $r->input('from'));
+        }
+        if ($r->filled('to')) {
+            $q->where('created_at', '<=', CarbonImmutable::parse($r->input('to'), $zone)->endOfDay()->utc());
+            $won->where('closing_date', '<=', $r->input('to'));
+        }
+        $tasks = Access::tasks($r->user())->where('status', 'open')->whereIn('lead_id', (clone $q)->select('id'));
+        $day = now($zone);
+        $pipeline = (clone $q)->whereHas('status', fn ($q) => $q->where('kind', 'active'));
+        $pipelineValue = (clone $pipeline)->selectRaw('SUM(estimated_value)::text AS total')->value('total');
+        $wonValue = (clone $won)->selectRaw('SUM(final_value)::text AS total')->value('total');
 
-        return Inertia::render('Core/Dashboard', ['metrics' => ['active' => (clone $q)->whereHas('status', fn ($q) => $q->where('kind', 'active'))->count(), 'new' => (clone $q)->where('status_id', 'new')->count(), 'missing' => (clone $q)->doesntHave('tasks', 'and', fn ($q) => $q->where('status', 'open'))->count(), 'unassigned' => $r->user()->can('leads.view.all') ? (clone $q)->whereNull('owner_id')->count() : null, 'due' => (clone $tasks)->whereBetween('due_at', [$day->copy()->startOfDay()->utc(), $day->copy()->endOfDay()->utc()])->count(), 'overdue' => (clone $tasks)->where('due_at', '<', now())->count()], 'stages' => Status::orderBy('position')->get()->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'count' => (clone $q)->where('status_id', $s->id)->count()]), 'tasks' => $tasks->with('lead:id,title')->orderBy('due_at')->limit(8)->get()]);
+        return Inertia::render('Core/Dashboard', [
+            'moduleWidgets' => app(Modules::class)->dashboardWidgets($r->user()),
+            'filters' => $filters,
+            'owners' => $this->options($r->user())['owners'],
+            'salesOverview' => [
+                'estimated_pipeline' => $pipelineValue,
+                'won_count' => (clone $won)->count(),
+                'won_value' => $wonValue,
+                'won_missing_value' => (clone $won)->whereNull('final_value')->count(),
+                'won_missing_closing_date' => $wonMissingClosingDate,
+            ],
+            'metrics' => [
+                'active' => (clone $pipeline)->count(),
+                'new' => (clone $q)->where('status_id', 'new')->count(),
+                'missing' => (clone $pipeline)->doesntHave('tasks', 'and', fn ($q) => $q->where('status', 'open'))->count(),
+                'unassigned' => $r->user()->can('leads.view.all') ? (clone $q)->whereNull('owner_id')->count() : null,
+                'due' => (clone $tasks)->whereBetween('due_at', [$day->copy()->startOfDay()->utc(), $day->copy()->endOfDay()->utc()])->count(),
+                'overdue' => (clone $tasks)->where('due_at', '<', now())->count(),
+            ],
+            'stages' => Status::orderBy('position')->get()->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'kind' => $s->kind, 'count' => (clone $q)->where('status_id', $s->id)->count()]),
+            'tasks' => $tasks->with('lead:id,title')->orderBy('due_at')->limit(8)->get(),
+        ]);
     }
 
     public function index(Request $r)
@@ -70,7 +117,7 @@ class CrmController
 
     private function leadData(Request $r, bool $update = false): array
     {
-        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited', ...LeadAttribution::rules()]);
+        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited', ...LeadAttribution::rules(), ...Sales::opportunityRules()]);
         foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $key => $model) {
             if (! empty($data[$key])) {
                 abort_unless(Access::identities($r->user(), $model)->whereKey($data[$key])->exists(), 403);
@@ -101,7 +148,7 @@ class CrmController
     {
         Gate::authorize('view', $lead);
 
-        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
+        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'sales' => app(Sales::class)->details($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
     }
 
     public function update(Request $r, Lead $lead, Leads $service)
@@ -212,6 +259,9 @@ class CrmController
     public function showIdentity(Request $r, string $type, int $id, Identities $service)
     {
         $identity = Access::identities($r->user(), $service->model($type))->findOrFail($id);
+        if (! $identity instanceof Contact && ! $identity instanceof Company) {
+            abort(404);
+        }
         Gate::authorize('view', $identity);
         $companies = Access::identities($r->user(), Company::class)->orderBy('name')->limit(200)->get(['id', 'name']);
         if ($type === 'contacts' && $identity->getAttribute('company_id') && ! $companies->contains('id', $identity->getAttribute('company_id'))) {
@@ -224,23 +274,24 @@ class CrmController
         $details = $identity->only(['id', ...($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone'])]);
         if ($identity instanceof Contact) {
             $details['company'] = $companies->firstWhere('id', $identity->getAttribute('company_id'))?->only(['id', 'name']);
-            $details['notes'] = $identity->notes()->with('author:id,name')->latest('created_at')->orderByDesc('id')->get()->map(fn ($note) => [
-                'id' => $note->id,
-                'body' => $note->body,
-                'created_at' => $note->created_at,
-                'author' => $note->author?->only(['id', 'name']),
-            ]);
         }
+        $details['notes'] = $identity->notes()->with('author:id,name')->latest('created_at')->orderByDesc('id')->get()->map(fn ($note) => [
+            'id' => $note->id,
+            'body' => $note->body,
+            'created_at' => $note->created_at,
+            'author' => $note->author?->only(['id', 'name']),
+        ]);
 
         return Inertia::render('Core/Person', [
             'identity' => $details,
+            'identityHistory' => app(IdentityHistory::class)->forIdentity($r->user(), $identity),
             'type' => $type,
             'editable' => Gate::allows('update', $identity),
             'companyOptions' => $companies,
             'contactOptions' => ContactDetails::options(),
             'returnTo' => $returnTo,
             'saveUrl' => '/people/'.$type.'/'.$id.$context,
-            'noteUrl' => $type === 'contacts' ? '/people/contacts/'.$id.'/notes'.$context : null,
+            'noteUrl' => '/people/'.$type.'/'.$id.'/notes'.$context,
         ]);
     }
 
@@ -254,11 +305,21 @@ class CrmController
 
     public function contactNote(Request $r, int $id, Identities $service)
     {
+        return $this->identityNote($r, 'contacts', $id, $service);
+    }
+
+    public function companyNote(Request $r, int $id, Identities $service)
+    {
+        return $this->identityNote($r, 'companies', $id, $service);
+    }
+
+    private function identityNote(Request $r, string $type, int $id, Identities $service)
+    {
         $this->identityReturnTo($r);
-        $service->note($r->user(), $id, $r->all());
+        $type === 'contacts' ? $service->note($r->user(), $id, $r->all()) : $service->companyNote($r->user(), $id, $r->all());
         $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
 
-        return redirect('/people/contacts/'.$id.$context);
+        return redirect('/people/'.$type.'/'.$id.$context);
     }
 
     private function reminderQuery($u)
@@ -268,7 +329,7 @@ class CrmController
 
     public function reminders(Request $r)
     {
-        return Inertia::render('Core/Reminders', ['reminders' => $this->reminderQuery($r->user())->with('task.lead:id,title')->latest()->paginate(30)]);
+        return Inertia::render('Core/Reminders', ['reminders' => $this->reminderQuery($r->user())->with('task.lead:id,title')->latest()->paginate(30), 'workReminders' => app(WorkReminders::class)->forUser($r->user())]);
     }
 
     public function read(Request $r, Reminder $reminder)
