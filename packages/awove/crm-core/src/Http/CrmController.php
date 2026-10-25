@@ -112,7 +112,7 @@ class CrmController
         $table = app(Query::class)->run($q, 'leads', $r);
         $table['page']->getCollection()->each(fn (Lead $lead) => $lead->setAttribute('editable', Gate::forUser($r->user())->allows('update', $lead)));
 
-        return Inertia::render('Core/Leads', [...$this->options($r->user()), 'table' => $table, 'leads' => $table['page'], 'filters' => $r->only('owner', 'status', 'source', 'priority', 'view'), 'preferences' => $r->user()->display_preferences ?? []]);
+        return Inertia::render('Core/Leads', [...$this->options($r->user()), 'table' => $table, 'leads' => $table['page'], 'filters' => $r->only('owner', 'status', 'source', 'priority', 'view'), 'preferences' => $table['preferences']]);
     }
 
     private function leadData(Request $r, bool $update = false): array

@@ -136,3 +136,97 @@ it('rejects contributions that try to take another module table namespace', func
     file_put_contents($this->recordTableManifest, json_encode($manifest));
     expect(fn () => app(Catalog::class)->tableIds())->toThrow(RuntimeException::class, 'Module table IDs must be unique and use the owning module namespace.');
 });
+
+it('retains stored sensitive preferences on allowed edits without accepting hidden changes or leaking their values', function () {
+    $user = recordTableUser(true);
+    $this->actingAs($user)->postJson('/preferences', [
+        'table' => 'fixture-records.contacts', 'columns' => ['email'], 'widths' => ['email' => 320], 'pinned' => ['email'],
+        'density' => 'compact', 'wrap' => true,
+        'views' => [['id' => 'private', 'name' => 'Saved field', 'columns' => ['email'], 'state' => ['sorts' => [['id' => 'email', 'direction' => 'desc']], 'filters' => [['id' => 'email', 'op' => 'contains', 'value' => 'private-filter@example.test']]]]],
+    ])->assertOk();
+    $initial = $user->fresh()->display_preferences['tables']['fixture-records.contacts'];
+    $user->revokePermissionTo('fixture-records.sensitive');
+    $projected = $this->getJson('/record-table-fixture')->assertOk()->json('preferences');
+    $this->postJson('/preferences', ['table' => 'fixture-records.contacts', ...$projected, 'density' => 'comfortable'])->assertOk()->assertExactJson(['saved' => true]);
+    $stored = $user->fresh()->display_preferences['tables']['fixture-records.contacts'];
+    expect($stored['columns'])->toBe(['email'])
+        ->and($stored['widths'])->toBe($initial['widths'])
+        ->and($stored['pinned'])->toBe(['email'])
+        ->and($stored['views'])->toBe($initial['views'])
+        ->and($stored['density'])->toBe('comfortable');
+    $response = $this->getJson('/record-table-fixture')->assertOk();
+    expect($response->json('preferences.columns'))->toBe(['name'])
+        ->and($response->json('preferences.views.0.columns'))->toBe(['name'])
+        ->and($response->json('preferences.views.0.state.sorts'))->toBe([])
+        ->and($response->json('preferences.views.0.state.filters'))->toBe([])
+        ->and($response->getContent())->not->toContain('private-filter@example.test');
+    foreach ([
+        ['columns' => ['email']],
+        ['views' => [['id' => 'private', 'name' => 'Duplicate', 'columns' => ['name', 'name'], 'state' => ['q' => '']]]],
+        ['pinned' => ['email']],
+        ['widths' => ['email' => 500]],
+        ['widths' => ['unknown' => 500]],
+        ['views' => [['id' => 'private', 'name' => 'Changed', 'columns' => ['email'], 'state' => []]]],
+        ['views' => [['id' => 'private', 'name' => 'Changed', 'columns' => ['name'], 'state' => ['sorts' => [['id' => 'email', 'direction' => 'asc']]]]]],
+        ['views' => [['id' => 'private', 'name' => 'Changed', 'columns' => ['name'], 'state' => ['filters' => [['id' => 'email', 'op' => 'contains', 'value' => 'replacement']]]]]],
+    ] as $changes) {
+        $this->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['name'], ...$changes])->assertUnprocessable();
+        expect($user->fresh()->display_preferences['tables']['fixture-records.contacts'])->toBe($stored);
+    }
+    // Partial writes retain views and other omitted preferences. A new view does not
+    // inherit dormant fragments belonging to a different stable view identifier.
+    $this->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['name']])->assertOk();
+    expect($user->fresh()->display_preferences['tables']['fixture-records.contacts']['views'])->toBe($stored['views']);
+    $visible = ['id' => 'visible', 'name' => 'Names', 'columns' => ['name'], 'state' => ['sorts' => [['id' => 'name', 'direction' => 'asc']]]];
+    $this->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['name'], 'views' => [...$projected['views'], $visible]])->assertOk();
+    $views = $user->fresh()->display_preferences['tables']['fixture-records.contacts']['views'];
+    expect($views[0])->toBe($initial['views'][0])
+        ->and($views[1]['columns'])->toBe(['name'])
+        ->and($views[1]['state']['filters'])->toBe([]);
+    $user->givePermissionTo('fixture-records.sensitive');
+    $response = $this->getJson('/record-table-fixture')->assertOk();
+    expect($response->json('preferences.columns'))->toBe(['email'])
+        ->and($response->json('preferences.widths.email'))->toBe(320)
+        ->and($response->json('preferences.views.0'))->toBe($initial['views'][0]);
+    $user->revokePermissionTo('fixture-records.sensitive');
+    $this->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['name'], 'views' => [$visible]])->assertOk();
+    expect(array_column($user->fresh()->display_preferences['tables']['fixture-records.contacts']['views'], 'id'))->toBe(['visible']);
+    $this->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['name'], 'views' => []])->assertOk();
+    expect($user->fresh()->display_preferences['tables']['fixture-records.contacts']['views'])->toBe([]);
+});
+
+it('uses locked current preferences and field grants instead of a cached user snapshot', function () {
+    $user = recordTableUser(true);
+    $this->actingAs($user)->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['email', 'name']])->assertOk();
+    $cached = $user->fresh();
+    expect($cached->can('fixture-records.sensitive'))->toBeTrue();
+    $user->revokePermissionTo('fixture-records.sensitive');
+    $this->actingAs($cached)->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['email']])->assertUnprocessable();
+    $this->postJson('/preferences', ['table' => 'fixture-records.contacts', 'columns' => ['name'], 'density' => 'compact'])->assertOk();
+    expect($user->fresh()->display_preferences['tables']['fixture-records.contacts']['columns'])->toBe(['email', 'name']);
+});
+
+it('keeps dormant private layouts out of every shared Inertia response while retaining their stored values', function () {
+    $user = recordTableUser(true);
+    $marker = 'PRIVATE-LAYOUT-FILTER@example.test';
+    $view = 'restricted-private-layout';
+    $this->actingAs($user)->postJson('/preferences', [
+        'table' => 'fixture-records.contacts', 'columns' => ['email'],
+        'views' => [['id' => $view, 'name' => 'Saved field', 'columns' => ['email'], 'state' => ['filters' => [['id' => 'email', 'op' => 'contains', 'value' => $marker]]]]],
+    ])->assertOk();
+    $stored = $user->fresh()->display_preferences;
+    $user->revokePermissionTo('fixture-records.sensitive');
+    $this->getJson('/record-table-fixture')->assertOk()->assertJsonPath('preferences.views.0.state.filters', []);
+    foreach ([true, false] as $enabled) {
+        recordTableEnable($this->recordTableManifest, $enabled);
+        foreach (['/leads', '/dashboard'] as $url) {
+            $response = $this->get($url)->assertOk();
+            expect($response->inertiaProps('auth.user'))->not->toHaveKey('display_preferences')
+                ->and($response->getContent())->not->toContain($marker, $view, 'fixture-records.contacts');
+            if ($url === '/leads') {
+                expect($response->inertiaProps('preferences'))->toBe($response->inertiaProps('table.preferences'));
+            }
+        }
+        expect($user->fresh()->display_preferences)->toBe($stored);
+    }
+});

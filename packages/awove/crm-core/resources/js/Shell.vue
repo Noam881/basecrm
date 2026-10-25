@@ -82,7 +82,9 @@ function selected(href: string) {
     const current = page.url.split("?")[0];
     if (
         href === "/leads" &&
-        (current === "/people" || current.startsWith("/people/"))
+        (current === "/people" || current.startsWith("/people/")) &&
+        current !== "/people/employees" &&
+        !current.startsWith("/people/employees/")
     )
         return true;
     return current === href || current.startsWith(`${href}/`);

@@ -1,8 +1,8 @@
 # Modular CRM delivery status
 
-Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
+Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
 
-The complete seven-checkpoint build is **incomplete**. Current checkpoint: **1 and 2 complete; Checkpoint 3 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
+The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–3 complete; Checkpoint 4 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
 
 ## Baseline, before edits
 
@@ -52,6 +52,27 @@ Checkpoint 2 integrated verification:
 - Additive Alpha/Beta first-build database/private-file restore rehearsal: passed. This remains a synthetic first-build rehearsal, not a historical release upgrade.
 - Final container build/startup and Compose configuration: passed; /up and /login returned 200, correct Alpha brand, Core/Service/Executive/Operations are mirrored package copies. Temporary smoke container removed.
 
+## Checkpoint 3 working changes
+
+Minimal shared employee references persist separately from HR and logins, with stable IDs, name/active-only projections and explicit authorized contact/login links. References do not merge by name or create accounts. The contextual employee utility supports search, versioned edit/deactivate/reactivate, history and matching CSV. Payroll accepts retained inactive employees without recruitment or login accounts.
+
+Optional HR owns private employment/roles/managers/responsibilities, vacancies/candidates/CVs, and manual onboarding/offboarding checklists. Required work must finish; optional work can be explicitly skipped without claiming completion. Completed and abandoned cases retain history. Final-pay information and documents require separate field grants; marking work done does not provision/revoke accounts or transmit payroll.
+
+Finance declares separately enabled/granted collections, expenses and payroll preparation. Charges and expenses retain exact immutable dated payments, retry protection, derived balances/statuses, due-date expectations and payment-date actuals. Payroll snapshots agreed manual input definitions per exact employee/period, enforces required inputs before Ready/Sent, records manual transfer dates and preserves scoped supporting documents/history. No wages are calculated and no payments or messages are sent.
+
+Shared fixes retain dormant optional table columns, widths, pins and view queries under a fresh user lock when visible preferences change. Incoming unauthorized settings remain rejected; merged limits cannot create unusable layouts. Repeated columns in different saved views are valid. Raw private preferences no longer leak through auth.user or legacy Leads props. Displayed timestamps use the existing user timezone/deployment-lock rules. New pages use existing global buttons, spacing, tables and neutral/purple design; employee select labels remain accessible.
+
+Checkpoint 3 integrated verification:
+
+- `php artisan test --compact`: passed, **337 PostgreSQL tests / 5,518 assertions**, 117.6 seconds, including all final shared preference/privacy/timezone fixes.
+- Focused employee references10/129, HR15/280, Finance ledger14/363, Payroll10/127 and exact money2/25 passed. Ledger14/363 also passed after its final single-snapshot read fix. Shared preferences/Inertia boundary suites passed22/566.
+- Eight new persisted desktop/mobile cases passed: employee utility2, HR2 (41.7s), Finance2 (40.8s), Payroll2 (16.2s final). Screenshots visually checked; final Payroll actions use shared 40px desktop/48px mobile targets. Guarded fixture cleanup passed.
+- Existing desktop/mobile regression:42 of44 passed in the full run; two mobile cases could not connect after their long-running local Service/Operations preview sessions expired. After restarting those two local previews, both affected cases passed (32.1s). Thus all44 existing cases passed across these runs; no application failure was hidden.
+- Full PHPStan0 errors, Pint, frontend formatting/types and final native production build passed. Shared clipboard/exact decimal Node tests5 passed. Compose configuration passed.
+- Finance-only copied build with HR and all other optional code physically removed passed discovery/assets and Payroll10/127. HR-only copied build with Finance/other optional code absent passed discovery/assets and HR15/280. Final core-only discovery/assets and Foundation24/310 passed with all six optional packages absent; evidence is in `core-only-build-result.json`.
+- Additive Alpha/Beta first-build database/private-file restore rehearsal passed through migrations800/850/900/910. This is synthetic first-build evidence, not an actual historical-release upgrade.
+- Final container image built and started: `/up`200, `/login`200, correct Alpha brand and mirrored Core/Service/Executive/Operations/HR/Finance package copies. Invocation-owned smoke container removed. No push or remote deployment.
+
 ## Reversible implementation decisions
 
 - Spreadsheet transfer supports bounded UTF-8 CSV, not XLS/XLSX.
@@ -63,10 +84,9 @@ Checkpoint 2 integrated verification:
 
 ## Remaining checkpoints
 
-3. Shared employee references, restricted HR, and separately selectable Finance collections/expenses/payroll preparation.
 4. Knowledge and **Marketing module**, optional cross-module links and no live integrations.
 5. Assets, assignments/returns and maintenance.
 6. Selected Nonprofit capabilities standalone and with Finance/Operations/Assets.
 7. Cross-module/absent-package regression, desktop/mobile workflows, installation isolation and controlled additive update rehearsal.
 
-Next runnable action: implement Checkpoint 3 minimal shared employee references, restricted HR, and separately selectable Finance collections/expenses/payroll preparation. Preserve the completed checkpoints; no push or remote deployment. Preserve legacy lead tasks; no fake lead rows or automatic recurrence.
+Next runnable action: implement Checkpoint 4 Knowledge Management and the clearly marked Marketing module with optional cross-module links and no live integrations. Preserve the completed checkpoints; no push or remote deployment. Preserve legacy lead tasks; no fake lead rows or automatic recurrence.

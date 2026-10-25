@@ -9,7 +9,8 @@
     "illuminate/auth": "^13.0",
     "illuminate/queue": "^13.0",
     "inertiajs/inertia-laravel": "^3.0",
-    "spatie/laravel-permission": "^8.0"
+    "spatie/laravel-permission": "^8.0",
+    "brick/math": "^1.0"
   },
   "autoload": {
     "psr-4": {

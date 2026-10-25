@@ -86,3 +86,24 @@ Grant only the required `executive.*` or `operations.*` own/all/create/edit/assi
 Operations directory use also requires explicit shared `identities.classifications.view` or `identities.classifications.manage`, plus the independent underlying identity scope. Grant `identities.view.all` only where broad directory reading is intended; it does not grant editing. `identities.classifications.assign` controls assigning another responsible person. Classification responsibility never opens unrelated Sales, Service, HR or financial records. New contacts/companies continue through the shared Add new contact flow, with the existing duplicate warning and identity-create permission.
 
 Routine completions are dated and retained; schedule the next date manually in the completion form or a later edit. Leaving it empty stops the next reminder until a new date is supplied. Reminder read status does not complete a task or occurrence. Cancelled requests stop reminders without a completion date. Supplier order receipts track deliveries only and never create expenses, payments or stock transactions.
+
+
+## Employee references, HR and Finance (Checkpoint 3)
+
+Employee references are a shared utility at `/people/employees`, not an eleventh business module. Provision `employees.references.view` and, only for directory managers, `employees.references.manage`. A name creates no login, contact or employee merge. Explicit contact/login links require independent access to that record. Inactive references remain available for final payroll preparation; new asset assignments must choose active references. Private contact details, recruitment and employment information belong to HR, not the reference projection.
+
+Select `hr` and/or `finance` in `modules`. Finance additionally requires explicit `finance:collections`, `finance:expenses` and/or `finance:payroll` capability selections. Enabling one does not expose the others. Each has exact `finance.<capability>.*` grants; payroll view/export is restricted separately from collections and expenses. HR employment/recruitment/case/document/final-pay permissions are separate too. Enabling HR never implies payroll access.
+
+Payroll agreed inputs are configured in the deployment manifest's `payroll_inputs` list with stable `key`, `label`, `type` (decimal, money, text or date), `unit`, `scale` (0–4) and `required` fields. At most 20 definitions are accepted. Each preparation snapshots its definitions, so changed deployment configuration applies to new preparations. Pending input may be incomplete; Ready for review and Sent to payroll enforce required inputs. Sent to payroll is a manual status with a manually recorded date; no transmission occurs. Exact employee/start/end period duplicates are rejected even after archive. Overlapping but different date ranges are not silently defined as duplicates; clients must agree their pay-period convention. Supporting documents use freshly scoped HTTPS redirects. Payroll CSV includes schema snapshots and exact manual values, omits document links, and requires its own export grant.
+
+Choose the installation's one currency before financial entry. Currency mismatch with retained ledger/payroll rows blocks new financial writes and marks overview amounts unavailable. Do not rewrite old transactions or add different currencies to bypass this guard. Refunds, credits, overpayments and cancellation after payment remain unresolved source rules and are rejected; no accounting behavior is fabricated.
+
+
+The copied-package absence verifier can also keep a selected locked package while removing all others, without editing the working app:
+
+```sh
+python3 scripts/core-only-build.py --keep finance --filter PayrollPreparationTest
+python3 scripts/core-only-build.py --keep hr --filter HrTest
+```
+
+These commands use the exclusive `base_test` slot. Do not run backend suites simultaneously. Browser fixtures use separate synthetic Alpha/Beta accounts and guarded cleanup; local preview listeners must remain running for each profile. Never reuse an occupied port belonging to another service (Payroll proof uses8100;8097 was deliberately left untouched).

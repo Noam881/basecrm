@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "879826f537f4e11078f883e2c46a3b15",
+    "content-hash": "14bbb2dae26a7aeb5bfa0fc8445d25c3",
     "packages": [
         {
             "name": "awove/crm-core",
@@ -12,9 +12,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/awove/crm-core",
-                "reference": "fb38ce5ebdaebe3871d0547c0444dd3bff7afcf8"
+                "reference": "472b993f6b4c03293785a8848e6041a472dd2133"
             },
             "require": {
+                "brick/math": "^1.0",
                 "illuminate/auth": "^13.0",
                 "illuminate/database": "^13.0",
                 "illuminate/queue": "^13.0",
@@ -124,6 +125,66 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\Executive\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/finance",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/finance",
+                "reference": "77f48dc5bd91fff61cbcd163c19cd1ec3bf17285"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Finance\\FinanceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Finance\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/hr",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/hr",
+                "reference": "2f2d5d3c3a258d054347f4b5782274b1bf1732d8"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Hr\\HrProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Hr\\": "src/"
                 }
             },
             "transport-options": {

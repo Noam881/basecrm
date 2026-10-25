@@ -1,0 +1,147 @@
+<script setup lang="ts">
+import { Head, Link, router } from "@inertiajs/vue3";
+import { reactive, ref } from "vue";
+import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
+import { queryString } from "../../../../../crm-core/resources/js/components/table/queryString";
+import type { TablePayload } from "../../../../../crm-core/resources/js/components/table/types";
+import RecordForm from "../../components/RecordForm.vue";
+import { sectionLabels, type Options, type Section } from "../../types";
+const props = defineProps<
+    Options & {
+        section: Section;
+        table: TablePayload;
+        metrics: Record<string, number>;
+        filters: Record<string, string>;
+    }
+>();
+const create = ref(false);
+const filters = reactive({
+    owner_id: props.filters.owner_id ?? "",
+    from: props.filters.from ?? "",
+    to: props.filters.to ?? "",
+    view: props.filters.view ?? "",
+    kind: props.filters.kind ?? "",
+});
+function apply() {
+    router.get(
+        "/hr",
+        { ...filters, section: props.section },
+        { preserveState: false },
+    );
+}
+const metricLabels: Record<string, string> = {
+    employees: "Active employees",
+    vacancies: "Open vacancies",
+    candidates: "Active candidates",
+    cases: "Pending onboarding/offboarding",
+};
+</script>
+<template>
+    <Head title="Human resources" />
+    <div class="crm-heading">
+        <h1>Human resources</h1>
+        <div class="crm-form-action">
+            <a
+                v-if="canExport"
+                class="crm-secondary"
+                :href="
+                    '/hr/export?' +
+                    queryString({ ...props.filters, section, ...table.state })
+                "
+                >Export {{ section }} (CSV)</a
+            ><button
+                v-if="canCreate"
+                class="crm-button"
+                @click="create = !create"
+            >
+                {{ create ? "Close form" : "Add record" }}
+            </button>
+        </div>
+    </div>
+    <div class="crm-flow">
+        <nav class="crm-tabs" aria-label="HR sections">
+            <Link
+                v-for="s in sections"
+                :key="s"
+                :href="'/hr?section=' + s"
+                :aria-current="section === s ? 'page' : undefined"
+                >{{ sectionLabels[s] }}</Link
+            >
+        </nav>
+        <div class="crm-metrics">
+            <Link
+                v-for="(value, key) in metrics"
+                :key="key"
+                class="crm-card"
+                :href="'/hr?section=' + key + '&view=open'"
+                ><span>{{ metricLabels[key] }}</span
+                ><strong>{{ value }}</strong></Link
+            >
+        </div>
+        <form class="crm-card crm-form-grid" @submit.prevent="apply">
+            <label class="crm-field"
+                ><span class="crm-field-label">Owner filter</span
+                ><select v-model="filters.owner_id">
+                    <option value="">All accessible owners</option>
+                    <option
+                        v-for="owner in filterOwners"
+                        :key="owner.id"
+                        :value="owner.id"
+                    >
+                        {{ owner.name }}
+                    </option>
+                </select></label
+            ><label class="crm-field"
+                ><span class="crm-field-label">View</span
+                ><select v-model="filters.view">
+                    <option value="">All active records</option>
+                    <option value="open">Open</option>
+                    <option
+                        v-if="section === 'candidates' || section === 'cases'"
+                        value="overdue"
+                    >
+                        Overdue
+                    </option>
+                    <option value="archived">Archived</option>
+                </select></label
+            ><label class="crm-field"
+                ><span class="crm-field-label">From date</span
+                ><input v-model="filters.from" type="date" /></label
+            ><label class="crm-field"
+                ><span class="crm-field-label">To date</span
+                ><input
+                    v-model="filters.to"
+                    type="date"
+                    :min="filters.from || undefined" /></label
+            ><label v-if="section === 'cases'" class="crm-field"
+                ><span class="crm-field-label">Purpose filter</span
+                ><select v-model="filters.kind">
+                    <option value="">Onboarding and offboarding</option>
+                    <option value="onboarding">Onboarding</option>
+                    <option value="offboarding">Offboarding</option>
+                </select></label
+            >
+            <p class="crm-muted">
+                Periods use employment start, vacancy opening, candidate
+                next-action and case due dates. Only records within your
+                permissions are shown.
+            </p>
+            <div class="crm-form-action">
+                <button class="crm-button">Apply filters</button
+                ><Link :href="'/hr?section=' + section" class="crm-secondary"
+                    >Clear filters</Link
+                >
+            </div>
+        </form>
+        <section v-if="create && canCreate" class="crm-card crm-flow">
+            <h2>New {{ sectionLabels[section].toLowerCase() }} record</h2>
+            <RecordForm :section="section" :options="props" />
+        </section>
+        <DataTable
+            :payload="table"
+            endpoint="/hr"
+            :base-query="{ ...props.filters, section }"
+            :title="sectionLabels[section]"
+        />
+    </div>
+</template>

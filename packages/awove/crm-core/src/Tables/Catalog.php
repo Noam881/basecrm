@@ -16,6 +16,9 @@ class Catalog
     public function columns(string $table, $user): array
     {
         abort_unless($user && $user->active, 403);
+        if ($table === 'employees') {
+            return app(Employees::class)->columns($user);
+        }
         if (in_array($table, ['leads', 'tasks'], true)) {
             abort_unless(app(Modules::class)->enabled('sales'), 404);
             abort_unless($user->can('leads.view.own') || $user->can('leads.view.all'), 403);
@@ -157,7 +160,7 @@ class Catalog
     {
         $core = app(Modules::class)->enabled('sales') ? ['leads', 'contacts', 'companies', 'tasks'] : ['contacts', 'companies'];
 
-        return [...$core, ...array_keys($this->contributors())];
+        return [...$core, 'employees', ...array_keys($this->contributors())];
     }
 
     /** @return array<string,RecordTableContributor> */
@@ -181,6 +184,9 @@ class Catalog
 
     public function defaults(string $table): array
     {
+        if ($table === 'employees') {
+            return app(Employees::class)->defaults();
+        }
         if (! in_array($table, ['leads', 'contacts', 'companies', 'tasks'], true)) {
             $contributor = $this->contributors()[$table] ?? null;
             abort_unless($contributor !== null, 404);

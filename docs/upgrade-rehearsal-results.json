@@ -13,14 +13,18 @@
       "2026_10_24_000500_complete_sales",
       "2026_10_24_000620_create_identity_relationships",
       "2026_10_24_000650_create_shared_work",
+      "2026_10_24_000800_create_employee_references",
       "2026_10_24_000600_create_customer_service",
       "2026_10_24_000700_create_executive",
+      "2026_10_24_000900_create_finance_ledger",
+      "2026_10_24_000910_create_finance_payroll_preparations",
+      "2026_10_24_000850_create_hr",
       "2026_10_24_000750_create_operations"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "d2a75d933c20e773fdadc758b7249ec72322ebb357532bce2e483b5e06a82848"
+    "fingerprint": "2e358433519e049af54242a2d77244fc96fe81deea50410ec85cb5cda54ab8d2"
   },
   {
     "installation": "beta",
@@ -36,13 +40,17 @@
       "2026_10_24_000500_complete_sales",
       "2026_10_24_000620_create_identity_relationships",
       "2026_10_24_000650_create_shared_work",
+      "2026_10_24_000800_create_employee_references",
       "2026_10_24_000600_create_customer_service",
       "2026_10_24_000700_create_executive",
+      "2026_10_24_000900_create_finance_ledger",
+      "2026_10_24_000910_create_finance_payroll_preparations",
+      "2026_10_24_000850_create_hr",
       "2026_10_24_000750_create_operations"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "92b90762ae69f726f7c0e217a46c3de1802eebe5677ceb67fa0aa6cde5f12c59"
+    "fingerprint": "e82b84146a8d12d14e51821df194531303cf5f1ca8976e84823c121424275266"
   }
 ]

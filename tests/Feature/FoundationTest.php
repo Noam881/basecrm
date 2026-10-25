@@ -267,8 +267,10 @@ it('keeps deployment locks above administrator and user display preferences', fu
     $u->forceFill(['display_preferences' => ['timezone' => 'Europe/London']])->save();
     Setting::create(['key' => 'timezone', 'value' => 'America/New_York']);
     expect(Installation::display($u)['timezone'])->toBe('Europe/London');
+    $this->actingAs($u)->get('/dashboard')->assertInertia(fn (Assert $p) => $p->where('brand.timezone', 'Europe/London')->missing('auth.user.display_preferences'));
     config(['core.locks' => ['timezone']]);
     expect(Installation::display($u)['timezone'])->toBe('Asia/Nicosia');
+    $this->get('/dashboard')->assertInertia(fn (Assert $p) => $p->where('brand.timezone', 'Asia/Nicosia'));
 });
 
 it('bootstraps one administrator with an expiring single-use onboarding link', function () {

@@ -109,6 +109,62 @@ it('exposes configured and enabled-module fields only when permitted and retains
     $r = $this->get('/leads')->assertOk();
     expect(array_column($r->inertiaProps('table.columns'), 'id'))->not->toContain($field);
 });
+
+it('preserves dormant extension layout and view fragments while active table settings change', function () {
+    config(['core.installation' => 'beta']);
+    $user = tableEmployee('Shira Levi');
+    $user->givePermissionTo('service-details.view');
+    $reference = 'module:service-details:service_reference';
+    $service = 'module:service-details:requested_service';
+    $this->actingAs($user)->postJson('/preferences', [
+        'table' => 'leads',
+        'columns' => ['title', $reference, 'priority', $service, 'contact'],
+        'widths' => [$reference => 400, $service => 360, 'title' => 280],
+        'pinned' => [$reference, 'title', $service],
+        'views' => [
+            ['id' => 'mixed', 'name' => 'Service view', 'columns' => ['title', $reference, 'priority'], 'state' => [
+                'sorts' => [['id' => $reference, 'direction' => 'desc'], ['id' => 'priority', 'direction' => 'asc']],
+                'filters' => [['id' => $reference, 'op' => 'contains', 'value' => 'PRIVATE-REF'], ['id' => 'priority', 'op' => 'eq', 'value' => 'high'], ['id' => $service, 'op' => 'starts', 'value' => 'CONFIDENTIAL']],
+            ]],
+            ['id' => 'dormant', 'name' => 'Saved service', 'columns' => [$service], 'state' => [
+                'sorts' => [['id' => $service, 'direction' => 'asc']],
+                'filters' => [['id' => $service, 'op' => 'contains', 'value' => 'PRIVATE-SERVICE']],
+            ]],
+        ],
+    ])->assertOk();
+    $dormant = $user->fresh()->display_preferences['tables']['leads']['views'][1];
+    config(['core.installation' => 'alpha']);
+    $response = $this->get('/leads')->assertOk();
+    $views = $response->inertiaProps('table.preferences.views');
+    expect($views[1]['columns'])->toBe($response->inertiaProps('table.defaultColumns'))
+        ->and($views[1]['state']['sorts'])->toBe([])
+        ->and($views[1]['state']['filters'])->toBe([]);
+    $views[0]['columns'] = ['contact'];
+    $views[0]['state']['sorts'] = [['id' => 'status', 'direction' => 'desc']];
+    $views[0]['state']['filters'] = [['id' => 'priority', 'op' => 'eq', 'value' => 'low']];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact', 'status'], 'widths' => ['contact' => 300], 'pinned' => ['contact'], 'density' => 'compact', 'wrap' => true, 'views' => $views])->assertOk()->assertExactJson(['saved' => true]);
+    $stored = $user->fresh()->display_preferences['tables']['leads'];
+    expect($stored['columns'])->toBe(['contact', $reference, 'status', $service])
+        ->and($stored['widths'])->toMatchArray([$reference => 400, $service => 360, 'contact' => 300])
+        ->and($stored['widths'])->not->toHaveKey('title')
+        ->and($stored['pinned'])->toBe([$reference, 'contact', $service])
+        ->and($stored['density'])->toBe('compact')
+        ->and($stored['wrap'])->toBeTrue()
+        ->and($stored['views'][0]['columns'])->toBe(['contact', $reference])
+        ->and(array_column($stored['views'][0]['state']['sorts'], 'id'))->toBe([$reference, 'status'])
+        ->and(array_column($stored['views'][0]['state']['filters'], 'id'))->toBe([$reference, 'priority', $service])
+        ->and($stored['views'][0]['state']['filters'][1]['value'])->toBe('low')
+        ->and($stored['views'][1])->toBe($dormant);
+    $response = $this->get('/leads')->assertOk();
+    expect($response->inertiaProps('table.preferences.columns'))->toBe(['contact', 'status'])
+        ->and(json_encode($response->inertiaProps('table')))->not->toContain($reference, $service, 'PRIVATE-REF', 'CONFIDENTIAL', 'PRIVATE-SERVICE');
+    config(['core.installation' => 'beta']);
+    $response = $this->get('/leads')->assertOk();
+    expect($response->inertiaProps('table.preferences.columns'))->toBe($stored['columns'])
+        ->and($response->inertiaProps('table.preferences.views.0.state.filters'))->toBe($stored['views'][0]['state']['filters'])
+        ->and($response->inertiaProps('table.preferences.views.1'))->toBe($dormant);
+});
+
 it('validates all query inputs and rejects secret fields and SQL-shaped identifiers', function () {
     $u = tableEmployee();
     $this->actingAs($u);
@@ -201,4 +257,33 @@ it('retains scoped company catalog queries without exposing a company directory 
         ->and($companyTable['page']->items()[0]->getAttribute('cells')['email'])->toBe('office@levi.example.test')
         ->and(array_column($companyTable['columns'], 'id'))->toContain('name', 'email', 'phone')
         ->and(array_column($companyTable['columns'], 'id'))->not->toContain('secondary_phone', 'preferred_contact_method');
+});
+
+it('rejects merged view overflow atomically while retaining dormant query settings', function () {
+    config(['core.installation' => 'beta']);
+    $user = tableEmployee('Noam Erez');
+    $user->givePermissionTo('service-details.view');
+    $field = 'module:service-details:service_reference';
+    $this->actingAs($user)->postJson('/preferences', ['table' => 'leads', 'columns' => ['title', $field], 'views' => [[
+        'id' => 'service', 'name' => 'Saved service', 'columns' => ['title', $field], 'state' => [
+            'sorts' => [['id' => $field, 'direction' => 'asc']],
+            'filters' => [['id' => $field, 'op' => 'contains', 'value' => 'PRIVATE']],
+        ],
+    ]]])->assertOk();
+    $stored = $user->fresh()->display_preferences;
+    config(['core.installation' => 'alpha']);
+    $sorts = array_map(fn ($id) => ['id' => $id, 'direction' => 'asc'], ['title', 'priority', 'status', 'owner', 'contact']);
+    $view = ['id' => 'service', 'name' => 'Saved service', 'columns' => ['title'], 'state' => ['sorts' => $sorts]];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact'], 'views' => [$view]])->assertUnprocessable()->assertJsonValidationErrors('views.0.state.sorts');
+    expect($user->fresh()->display_preferences)->toBe($stored);
+    $view['state'] = ['sorts' => array_slice($sorts, 0, 4), 'filters' => array_fill(0, 20, ['id' => 'title', 'op' => 'contains', 'value' => 'visible'])];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact'], 'views' => [$view]])->assertUnprocessable()->assertJsonValidationErrors('views.0.state.filters');
+    expect($user->fresh()->display_preferences)->toBe($stored);
+    $view['state'] = ['sorts' => array_slice($sorts, 0, 4)];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact'], 'views' => [$view]])->assertOk();
+    config(['core.installation' => 'beta']);
+    $view = $user->fresh()->display_preferences['tables']['leads']['views'][0];
+    $this->get(tableUrl($view['state']))->assertOk();
+    expect($view['state']['sorts'])->toHaveCount(5)
+        ->and($view['state']['filters'][0]['value'])->toBe('PRIVATE');
 });
