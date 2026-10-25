@@ -2,6 +2,7 @@
 
 namespace Awove\Operations;
 
+use Awove\Core\Currency;
 use Awove\Core\Installation;
 use Awove\Core\Services\Csv;
 use Awove\Core\Services\WorkItems;
@@ -16,7 +17,7 @@ class Context
 {
     public function options($user): array
     {
-        return ['owners' => $user->can('operations.view.all') ? config('auth.providers.users.model')::where('active', true)->get(['id', 'name'])->filter(fn ($owner) => $owner->can('operations.view.own') || $owner->can('operations.view.all'))->values()->all() : app(WorkItems::class)->owners($user, 'operations', 'requests'), 'customers' => Relations::options($user, 'customer'), 'suppliers' => Relations::options($user, 'supplier'), 'statuses' => OperationsModule::requestStatuses(), 'orderStatuses' => OperationsModule::orderStatuses(), 'canCreate' => $user->can('operations.create'), 'canAssign' => $user->can('operations.assign'), 'canArchive' => $user->can('operations.archive'), 'canExport' => $user->can('operations.export'), 'canViewAll' => $user->can('operations.view.all'), 'canClassify' => $user->can('identities.classifications.manage'), 'canViewDirectory' => $user->can('identities.classifications.view') || $user->can('identities.classifications.manage'), 'currency' => Installation::settings()['currency'], 'today' => now(Installation::settings()['timezone'])->toDateString()];
+        return ['owners' => $user->can('operations.view.all') ? config('auth.providers.users.model')::where('active', true)->get(['id', 'name'])->filter(fn ($owner) => $owner->can('operations.view.own') || $owner->can('operations.view.all'))->values()->all() : app(WorkItems::class)->owners($user, 'operations', 'requests'), 'customers' => Relations::options($user, 'customer'), 'suppliers' => Relations::options($user, 'supplier'), 'statuses' => OperationsModule::requestStatuses(), 'orderStatuses' => OperationsModule::orderStatuses(), 'canCreate' => $user->can('operations.create'), 'canAssign' => $user->can('operations.assign'), 'canArchive' => $user->can('operations.archive'), 'canExport' => $user->can('operations.export'), 'canViewAll' => $user->can('operations.view.all'), 'canClassify' => $user->can('identities.classifications.manage'), 'canViewDirectory' => $user->can('identities.classifications.view') || $user->can('identities.classifications.manage'), 'currency' => Currency::current(), 'currencyError' => app(Currency::class)->consistent() ? null : Currency::ERROR, 'today' => now(Installation::settings()['timezone'])->toDateString()];
     }
 
     public function filters(Request $request): array

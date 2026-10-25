@@ -5,6 +5,7 @@ use Awove\Core\Models\Activity;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
 use Awove\Core\Services\Leads;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
@@ -59,31 +60,24 @@ it('exposes stage edit permissions and creation and proposal columns without ove
     expect($this->get('/leads?view=archived')->inertiaProps('table.page.data.0.editable'))->toBeFalse();
 });
 
-it('stores and searches ad page and referral attribution without changing it on a stage-only update', function () {
+it('keeps frozen legacy attribution private and unchanged through shared stage updates', function () {
     $user = workflowEmployee();
     $lead = workflowLead($user);
-    $attribution = ['platform' => 'facebook', 'campaign_id' => 'campaign-12', 'campaign_name' => 'Autumn enquiries', 'ad_id' => 'ad-34', 'ad_name' => 'Office consultation', 'landing_page_url' => 'https://example.test/consultation', 'referrer_name' => 'Tamar Ben Ami', 'utm_source' => 'facebook', 'utm_medium' => 'paid_social', 'utm_campaign' => 'autumn', 'utm_content' => 'office'];
-    $this->actingAs($user)->patch('/leads/'.$lead->id, ['attribution' => $attribution, 'version' => 1])->assertRedirect();
-    expect($lead->fresh()->attribution)->toEqual($attribution);
-    $this->patch('/leads/'.$lead->id, ['status_id' => 'contacted', 'version' => 2])->assertRedirect();
-    expect($lead->fresh()->attribution)->toEqual($attribution);
-    $response = $this->get('/leads?q=Office%20consultation')->assertOk();
-    expect($response->inertiaProps('table.page.total'))->toBe(1)->and($response->inertiaProps('table.page.data.0.cells.attribution:ad_id'))->toBe('ad-34');
-    $this->patch('/leads/'.$lead->id, ['attribution' => null, 'version' => 3])->assertRedirect();
-    expect($lead->fresh()->attribution)->toBeNull();
+    $raw = ['campaign_id' => '00034', 'campaign_name' => 'Original name', 'ad_id' => 44, 'extra' => ['keep' => true]];
+    DB::table('crm_leads')->where('id', $lead->id)->update(['attribution' => json_encode($raw)]);
+    $this->actingAs($user)->patch('/leads/'.$lead->id, ['status_id' => 'contacted', 'version' => 1])->assertRedirect();
+    expect($lead->fresh()->attribution)->toEqual($raw)->and($lead->fresh()->toArray())->not->toHaveKey('attribution');
+    $response = $this->get('/leads')->assertOk();
+    expect($response->inertiaProps('table.page.data.0'))->not->toHaveKey('attribution');
+    $this->get('/leads/'.$lead->id)->assertOk();
 });
-
-it('rejects unknown attribution keys unsafe page schemes and invalid platform values at both boundaries', function () {
+it('rejects all legacy attribution input at both shared mutation boundaries', function () {
     $user = workflowEmployee();
     $lead = workflowLead($user);
-    foreach ([['unexpected' => 'value'], ['landing_page_url' => 'javascript:alert(1)'], ['platform' => 'unregistered'], ['ad_id' => str_repeat('x', 201)]] as $attribution) {
-        $this->actingAs($user)->patch('/leads/'.$lead->id, ['attribution' => $attribution, 'version' => 1])->assertSessionHasErrors();
-        try {
-            app(Leads::class)->update($user, $lead->id, ['attribution' => $attribution, 'version' => 1]);
-            $this->fail('The service must reject invalid attribution.');
-        } catch (ValidationException) {
-            expect($lead->fresh()->version)->toBe(1);
-        }
+    foreach ([null, [], ['ad_id' => 'ad-34']] as $attribution) {
+        $this->actingAs($user)->patch('/leads/'.$lead->id, ['attribution' => $attribution, 'version' => 1])->assertSessionHasErrors('attribution');
+        expect(fn () => app(Leads::class)->update($user, $lead->id, ['attribution' => $attribution, 'version' => 1]))->toThrow(ValidationException::class);
+        expect(fn () => app(Leads::class)->create($user, ['attribution' => $attribution, 'title' => 'Example', 'status_id' => 'new', 'source' => 'Website']))->toThrow(ValidationException::class);
     }
-    expect($lead->fresh()->attribution)->toBeNull();
+    expect($lead->fresh()->version)->toBe(1)->and($lead->fresh()->attribution)->toBeNull();
 });

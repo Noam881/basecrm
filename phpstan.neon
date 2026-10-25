@@ -16,6 +16,8 @@ parameters:
         - packages/awove/operations/src/
         - packages/awove/hr/src/
         - packages/awove/finance/src/
+        - packages/awove/knowledge/src/
+        - packages/awove/marketing/src/
 
     level: 5
     databaseMigrationsPath:
@@ -27,3 +29,5 @@ parameters:
         - packages/awove/operations/database/migrations
         - packages/awove/hr/database/migrations
         - packages/awove/finance/database/migrations
+        - packages/awove/knowledge/database/migrations
+        - packages/awove/marketing/database/migrations

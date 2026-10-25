@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import WorkReferences, {
+    type WorkReference,
+} from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import TaskEditor from "../../components/TaskEditor.vue";
 import HistoryList from "../../components/History.vue";
@@ -8,6 +11,7 @@ const props = defineProps<
         record: Task;
         editable: boolean;
         history: History[];
+        instructionLinks: WorkReference[];
         goalHistory: History[];
     }
 >();
@@ -79,6 +83,7 @@ const props = defineProps<
                 </div>
             </dl>
         </section>
+        <WorkReferences :links="instructionLinks" />
         <HistoryList :history="history" />
         <HistoryList
             v-if="goalHistory.length"

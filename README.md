@@ -100,7 +100,7 @@ Buttons, fields, cards and form spacing share `packages/awove/crm-core/resources
 
 ## Lead workflow and proposals
 
-Lead stages can be changed directly from the table or profile bubble, with permission and version checks. Profiles display creation time, and the Created and Proposal file columns are included in new default layouts. Existing saved layouts remain intact. PDF/DOC/DOCX proposals up to 10 MB are stored privately as immutable versions on each lead. Production PHP must allow at least 10 MB uploads and a larger total POST body. Source details capture platform, campaign/ad IDs and names, originating page, referral and UTMs. See [the requested sales workflow, integration readiness and report definitions](docs/niva-sales-workflow.md).
+Lead stages can be changed directly from the table or profile bubble, with permission and version checks. Profiles display creation time, and the Created and Proposal file columns are included in new default layouts. Existing saved layouts remain intact. PDF/DOC/DOCX proposals up to 10 MB are stored privately as immutable versions on each lead. Production PHP must allow at least 10 MB uploads and a larger total POST body. Generic source remains Core/Sales. Optional Marketing attribution captures/searches platform, campaign/ad IDs and names, originating page, referral and UTMs only with Marketing enabled, its grants and current Lead scope. The local additive extraction retains frozen Core storage and exact snapshots; it is not remotely deployed. See [the requested sales workflow, integration readiness and report definitions](docs/niva-sales-workflow.md).
 
 ## Browser fixture cleanup
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useForm, usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
 import {
     historicalOwner,
     historicalClassification,
@@ -8,11 +9,15 @@ import {
 } from "../types";
 defineOptions({ inheritAttrs: false });
 const props = defineProps<Options & { record?: Order }>();
+const page = usePage();
+const currencyError = computed(
+    () => props.currencyError ?? page.props.errors.currency,
+);
 const form = useForm({
     supplier_relationship_id: props.record?.supplier_relationship_id ?? null,
     owner_id: props.record
         ? props.record.owner_id
-        : (usePage().props.auth as { user: { id: number } }).user.id,
+        : (page.props.auth as { user: { id: number } }).user.id,
     reference: props.record?.reference ?? "",
     description: props.record?.description ?? "",
     quantity: props.record?.quantity ?? "",
@@ -186,8 +191,14 @@ function save() {
                 >{{ form.errors.document_url }}</small
             ></label
         >
+        <p v-if="currencyError" class="crm-form-action crm-notice" role="alert">
+            {{ currencyError }}
+        </p>
         <div class="crm-form-action">
-            <button class="crm-button" :disabled="form.processing">
+            <button
+                class="crm-button"
+                :disabled="form.processing || !!currencyError"
+            >
                 {{
                     form.processing
                         ? "Saving…"

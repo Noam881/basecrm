@@ -11,7 +11,6 @@ import {
 } from "../../types";
 import ExtensionPanel from "../../components/ExtensionPanel.vue";
 import StageControl from "../../components/StageControl.vue";
-import LeadAttributionFields from "../../components/LeadAttributionFields.vue";
 import LeadProposals from "../../components/LeadProposals.vue";
 import SalesHistory, {
     type Communication,
@@ -40,7 +39,6 @@ const props = defineProps<{
         label: string;
         component: string;
         endpoint: string;
-        permission: string;
     }[];
 }>();
 const page = usePage();
@@ -64,9 +62,6 @@ function leadDetails(lead: Lead) {
         closing_date: lead.closing_date ?? "",
         final_value: lead.final_value ?? "",
         loss_reason: lead.loss_reason ?? "",
-        attribution: JSON.parse(
-            JSON.stringify(lead.attribution ?? {}),
-        ) as NonNullable<Lead["attribution"]>,
         custom_fields: JSON.parse(
             JSON.stringify(lead.custom_fields ?? {}),
         ) as Lead["custom_fields"],
@@ -79,7 +74,6 @@ function detailFingerprint(details: ReturnType<typeof leadDetails>) {
         );
     return JSON.stringify({
         ...details,
-        attribution: sorted(details.attribution),
         custom_fields: sorted(details.custom_fields),
     });
 }
@@ -387,13 +381,6 @@ function changeTask(t: Task) {
                             :type="field.type"
                             :disabled="detailsDisabled"
                     /></label>
-                    <details class="crm-form-disclosure">
-                        <summary>Source details</summary>
-                        <LeadAttributionFields
-                            v-model="form.attribution"
-                            :disabled="detailsDisabled"
-                        />
-                    </details>
                     <div
                         v-if="Object.keys(form.errors).length"
                         class="crm-form-action crm-error"

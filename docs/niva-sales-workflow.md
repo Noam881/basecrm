@@ -8,14 +8,14 @@ This records the requested business flow and the boundaries between the CRM chan
 
 **CRM core:** contact/company records, lead ownership/stage/creation date, notes, follow-up tasks and private proposal files. **Transactional sales operations:** meeting/calendar reminders, proposal responses, contracts/signatures, payment approval, bank confirmation, receipts and onboarding. A WhatsApp message is classified by its purpose rather than its transport.
 
-The currently shipped attribution fields are still stored in core. Their extraction into Marketing is a pending, data-preserving migration and must precede further marketing extensions; the current release has not already performed that extraction.
+The local generic Checkpoint 4 now owns attribution in optional Marketing storage. The original Core column is frozen and hidden, with immutable exact snapshots retained by the additive extraction. This work has not been pushed or remotely deployed. The client-specific integrations below remain separate future scope; they are not part of the generic manual-entry build.
 
 ## Available in this release
 
 - Change a lead's stage directly from its table bubble or profile. Changes enforce current permissions and optimistic versions and retain stage history.
 - See the lead's creation date on the profile and in the table. Saved personal table layouts remain intact; add Created and Proposal file through Columns when using an existing layout.
 - Upload private PDF, DOC or DOCX proposal versions up to 10 MB from the lead profile. The latest file is available through the Proposal file table column; earlier versions remain on the profile. Access follows the lead's permissions.
-- Capture and search media/platform, originating website page, campaign and ad IDs/names, named referrer, and UTM source/medium/campaign/content. These are manually entered fields until intake integrations are connected.
+- With Marketing enabled, its attribution grants and current Lead access, capture/search media/platform, originating page, campaign/ad IDs/names, named referrer and UTMs through Marketing contributions. Generic source remains Core/Sales. These are manually entered fields; no intake integration is connected.
 
 These features do not send WhatsApp messages, share proposals publicly, issue financial documents or connect an external account.
 

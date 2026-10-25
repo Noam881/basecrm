@@ -4,6 +4,7 @@ namespace Awove\Operations;
 
 use Awove\Core\Installation;
 use Awove\Core\Services\Routines;
+use Awove\Core\Services\WorkReferences;
 use Awove\Core\Tables\Query;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,7 +31,7 @@ class RoutineController
     {
         $record = $routines->find($request->user(), 'operations', 'routines', $id);
 
-        return Inertia::render('Operations/Routine', [...$context->options($request->user()), 'record' => [...$record->toArray(), 'owner' => $record->owner?->only(['id', 'name']), 'editable' => $routines->editable($request->user(), $record)], 'history' => $routines->history($request->user(), $record), 'completions' => $routines->completions($request->user(), $record)]);
+        return Inertia::render('Operations/Routine', [...$context->options($request->user()), 'record' => [...$record->toArray(), 'owner' => $record->owner?->only(['id', 'name']), 'editable' => $routines->editable($request->user(), $record)], 'history' => $routines->history($request->user(), $record), 'completions' => $routines->completions($request->user(), $record), 'instructionLinks' => app(WorkReferences::class)->for($request->user(), $record)]);
     }
 
     public function update(Request $request, int $id, Routines $routines)

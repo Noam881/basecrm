@@ -6,7 +6,6 @@ use Awove\Core\ContactDetails;
 use Awove\Core\Contracts\LeadTableContributor;
 use Awove\Core\Contracts\RecordTableContributor;
 use Awove\Core\Installation;
-use Awove\Core\LeadAttribution;
 use Awove\Core\Models\Status;
 use Awove\Core\Modules;
 
@@ -90,9 +89,6 @@ class Catalog
             $add('closing_date', 'Closing date', "$t.closing_date", 'date', 'Sales');
             $add('final_value', 'Final deal value', "$t.final_value", 'number', 'Sales');
             $add('loss_reason', 'Loss reason', "$t.loss_reason", group: 'Sales', width: 280);
-            foreach (LeadAttribution::LABELS as $field => $label) {
-                $add('attribution:'.$field, $label, "$t.attribution->>'$field'", group: 'Attribution', width: $field === 'landing_page_url' ? 300 : 220);
-            }
             $add('proposal', 'Proposal file', "(SELECT original_name FROM crm_proposals WHERE lead_id=$t.id ORDER BY version DESC LIMIT 1)", group: 'Proposals', width: 260);
             $add('proposal_count', 'Proposal versions', "(SELECT COUNT(*) FROM crm_proposals WHERE lead_id=$t.id)", 'number', 'Proposals');
             $add('next_action_at', 'Next follow-up', "(SELECT MIN(due_at) FROM crm_tasks WHERE lead_id=$t.id AND status='open')", 'datetime', 'Follow-ups', width: 220);

@@ -2,6 +2,7 @@
 
 namespace Awove\Operations;
 
+use Awove\Core\Currency;
 use Awove\Core\Installation;
 use Awove\Core\Services\DocumentLinks;
 use Awove\Operations\Models\OrderHistory;
@@ -22,7 +23,8 @@ class Orders
         $data = $this->validate($user, $input);
 
         return DB::transaction(function () use ($user, $data) {
-            $order = SupplierOrder::create([...$data, 'created_by' => $user->id, 'currency' => Installation::settings()['currency']]);
+            app(Currency::class)->assertConsistent();
+            $order = SupplierOrder::create([...$data, 'created_by' => $user->id, 'currency' => Currency::current()]);
             $this->recordHistory($order, $user, 'order.created', ['after' => $data]);
 
             return $order;
@@ -36,6 +38,7 @@ class Orders
             $order = SupplierOrder::lockForUpdate()->findOrFail($id);
             Access::edit($user, $order);
             $this->version($order, $input);
+            app(Currency::class)->assertConsistent();
             $data = $this->validate($user, $input, $order);
             $before = $order->only(['supplier_relationship_id', 'owner_id', 'reference', 'description', 'quantity', 'agreed_total', 'status', 'ordered_on', 'expected_on', 'document_url', 'outstanding_items']);
             $order->update([...$data, 'version' => $order->version + 1]);

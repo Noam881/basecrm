@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import WorkReferences, {
+    type WorkReference,
+} from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import ChecklistForm from "../../components/ChecklistForm.vue";
 import HistoryList from "../../components/History.vue";
@@ -10,6 +13,7 @@ const props = defineProps<
         editable: boolean;
         canEditMetadata: boolean;
         history: History[];
+        instructionLinks: WorkReference[];
     }
 >();
 </script>
@@ -56,6 +60,7 @@ const props = defineProps<
                 </div>
             </dl>
         </section>
+        <WorkReferences :links="instructionLinks" />
         <HistoryList :history="history" />
     </div>
 </template>

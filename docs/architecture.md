@@ -8,7 +8,7 @@ This is a new standalone Laravel host. It shares no models, users, credentials, 
 
 Core and host release candidate 1.1.0 are tracked together in the local modular implementation (the prior deployed baseline was 1.0.0). Composer path repositories provide live development package links. Image builds set `COMPOSER_MIRROR_PATH_REPOS=1`, so installed package sources are copied into the image. Frontend page and panel resolution reads `vendor/awove/*` and compiles only installed package assets. No production symlink points outside the build context. Core never imports the optional module.
 
-Domains are represented by explicit models/services rather than separate packages: identity/access (Fortify, Spatie, policies, Users service), contacts/companies, leads/statuses (Leads service), notes/activity, follow-ups (Tasks service), persistent reminders (queue job), configuration and display preferences. HTTP handlers parse requests and compose scoped responses; consequential lead/task/user rules reside in services. There is no generic repository or plugin execution framework.
+Retained shared Core/Sales domains use explicit models/services within Core: identity/access (Fortify, Spatie, policies, Users service), contacts/companies, leads/statuses (Leads service), notes/activity, follow-ups (Tasks service), persistent reminders (queue job), configuration and display preferences. HTTP handlers parse requests and compose scoped responses; consequential lead/task/user rules reside in services. Optional reusable business domains use the packages and typed contracts described in [modular architecture](modular-architecture.md). There is no generic repository or plugin execution framework.
 
 ## Business module ownership
 
@@ -18,7 +18,7 @@ The optional Marketing module owns acquisition and referral attribution, campaig
 
 Core retains generic contact/company records, lead ownership and stages, creation timestamps, notes, follow-up tasks and private proposal storage. Communication adapters can be shared, while the owning module controls purpose and orchestration. Promotional/nurture WhatsApp belongs to Marketing; requested appointments, contract/signature/payment processing and onboarding are transactional sales operations.
 
-The attribution fields added before this ownership decision currently remain in core. Treat them as legacy storage awaiting a reviewed, data-preserving extraction into Marketing before further marketing extensions. This policy does not represent an already completed extraction. Preserve existing records, permissions and saved views during that future migration.
+Checkpoint 4 implements the data-preserving attribution extraction locally. The hidden original Core column is frozen; immutable exact Marketing snapshots retain the original JSON/Lead version/timestamps, and live edits use canonical Marketing storage. A separate CRM campaign relation never converts an external campaign ID. Existing Lead IDs and `attribution:*` layout IDs remain stable. This local implementation has not been pushed or remotely deployed.
 
 ## Configuration precedence
 

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import WorkReferences, {
+    type WorkReference,
+} from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import RoutineEditor from "../../components/RoutineEditor.vue";
@@ -12,6 +15,7 @@ const props = defineProps<
         record: Routine;
         editable: boolean;
         history: History[];
+        instructionLinks: WorkReference[];
         completions: Completion[];
     }
 >();
@@ -141,6 +145,7 @@ function complete() {
                 </p>
             </article>
         </section>
+        <WorkReferences :links="instructionLinks" />
         <HistoryList :history="history" />
     </div>
 </template>

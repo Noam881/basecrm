@@ -6,6 +6,7 @@ use Awove\Core\Installation;
 use Awove\Core\Models\WorkItem;
 use Awove\Core\Services\DocumentLinks;
 use Awove\Core\Services\WorkItems;
+use Awove\Core\Services\WorkReferences;
 use Awove\Core\Tables\Query;
 use Awove\Operations\Models\RequestDetails;
 use Illuminate\Http\Request;
@@ -42,7 +43,7 @@ class RequestController
     {
         $item = app(WorkItems::class)->find($request->user(), 'operations', 'requests', $id);
 
-        return Inertia::render('Operations/Request', [...$context->options($request->user()), 'record' => $this->describe($request->user(), $item), 'history' => app(WorkItems::class)->history($request->user(), $item)]);
+        return Inertia::render('Operations/Request', [...$context->options($request->user()), 'record' => $this->describe($request->user(), $item), 'history' => app(WorkItems::class)->history($request->user(), $item), 'instructionLinks' => app(WorkReferences::class)->for($request->user(), $item)]);
     }
 
     public function update(Request $request, int $id)

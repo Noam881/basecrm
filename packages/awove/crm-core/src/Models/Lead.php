@@ -10,7 +10,10 @@ class Lead extends Model
 {
     protected $table = 'crm_leads';
 
-    protected $guarded = [];
+    // Frozen legacy storage is retained for upgrade recovery and never exposed in shared DTOs.
+    protected $guarded = ['attribution'];
+
+    protected $hidden = ['attribution'];
 
     protected function casts(): array
     {

@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
-import type {
-    Lead,
-    Page,
-    Person,
-    Stage,
-    Field,
-    LeadAttribution,
-} from "../../types";
+import type { Lead, Page, Person, Stage, Field } from "../../types";
 import DataTable from "../../components/table/DataTable.vue";
 import StageControl from "../../components/StageControl.vue";
-import LeadAttributionFields from "../../components/LeadAttributionFields.vue";
 import type { TablePayload } from "../../components/table/types";
 const props = defineProps<{
     table: TablePayload;
@@ -36,7 +28,6 @@ const form = useForm({
     source: "Direct",
     needs: "",
     estimated_value: "",
-    attribution: {} as LeadAttribution,
     priority: "normal",
     custom_fields: {} as Record<string, string | number | boolean>,
 });
@@ -149,7 +140,6 @@ const form = useForm({
             /></label>
             <details class="crm-form-disclosure">
                 <summary>Source details</summary>
-                <LeadAttributionFields v-model="form.attribution" />
             </details>
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">

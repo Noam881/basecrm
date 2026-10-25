@@ -37,6 +37,7 @@ export interface Options {
     canClassify: boolean;
     canViewDirectory: boolean;
     currency: string;
+    currencyError?: string | null;
     today: string;
 }
 export interface Work {

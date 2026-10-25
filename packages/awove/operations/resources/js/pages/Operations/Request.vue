@@ -1,10 +1,19 @@
 <script setup lang="ts">
+import WorkReferences, {
+    type WorkReference,
+} from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import OperationsNav from "../../components/OperationsNav.vue";
 import RequestEditor from "../../components/RequestEditor.vue";
 import HistoryList from "../../components/HistoryList.vue";
 import type { Options, Work, History } from "../../types";
-const props = defineProps<Options & { record: Work; history: History[] }>();
+const props = defineProps<
+    Options & {
+        record: Work;
+        history: History[];
+        instructionLinks: WorkReference[];
+    }
+>();
 function archive() {
     if (confirm("Archive this request and retain its history?"))
         router.post(`/operations/requests/${props.record.id}/archive`, {
@@ -76,6 +85,7 @@ function archive() {
                 </button>
             </div>
         </section>
+        <WorkReferences :links="instructionLinks" />
         <HistoryList :history="history" />
     </div>
 </template>

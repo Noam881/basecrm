@@ -7,6 +7,7 @@ use Awove\Core\Services\Csv;
 use Awove\Core\Services\DocumentLinks;
 use Awove\Core\Services\EmployeeReferences;
 use Awove\Core\Services\WorkItems;
+use Awove\Core\Services\WorkReferences;
 use Awove\Core\Tables\Query;
 use Awove\Hr\Models\EmploymentCase;
 use Awove\Hr\Models\HrDocument;
@@ -250,7 +251,7 @@ class HrController
         $case = Access::query($u, 'cases')->find($link->case_id);
         $state = EmploymentCase::whereKey($link->case_id)->firstOrFail(['completed_on', 'archived_at']);
 
-        return Inertia::render('Hr/Checklist', [...$this->options($u, 'cases'), 'record' => [...$record->toArray(), 'category' => $link->category, 'required' => $link->required], 'parentCase' => $case ? ['id' => $case->id, 'name' => $case->name] : null, 'canEditMetadata' => $case && Access::editable($u, $case), 'editable' => ! $state->completed_on && ! $state->archived_at && $service->editable($u, $record), 'history' => $service->history($u, $record)]);
+        return Inertia::render('Hr/Checklist', [...$this->options($u, 'cases'), 'record' => [...$record->toArray(), 'category' => $link->category, 'required' => $link->required], 'parentCase' => $case ? ['id' => $case->id, 'name' => $case->name] : null, 'canEditMetadata' => $case && Access::editable($u, $case), 'editable' => ! $state->completed_on && ! $state->archived_at && $service->editable($u, $record), 'history' => $service->history($u, $record), 'instructionLinks' => app(WorkReferences::class)->for($u, $record)]);
     }
 
     public function completeCase(Request $r, int $id, Records $service)

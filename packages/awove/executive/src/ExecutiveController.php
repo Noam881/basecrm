@@ -7,6 +7,7 @@ use Awove\Core\Models\WorkItem;
 use Awove\Core\Services\Csv;
 use Awove\Core\Services\Routines;
 use Awove\Core\Services\WorkItems;
+use Awove\Core\Services\WorkReferences;
 use Awove\Core\Tables\Query;
 use Awove\Executive\Models\Goal;
 use Awove\Executive\Models\GoalHistory;
@@ -196,7 +197,7 @@ class ExecutiveController
         $goal = $goalId ? Access::goals($request->user())->find($goalId, ['id', 'name']) : null;
         $links = DB::table('executive_task_goal_history')->where('work_item_id', $id)->orderByDesc('id')->get()->map(fn ($entry) => ['id' => $entry->id, 'event' => 'Goal link updated', 'changed_fields' => ['goal_id'], 'actor' => $this->person($entry->actor_id), 'created_at' => $entry->created_at]);
 
-        return Inertia::render('Executive/Task', [...$this->options($request->user(), $record->owner_id), 'record' => [...$record->toArray(), 'goal_id' => $goal?->id, 'goal' => $goal, 'goal_restricted' => $goalId !== null && $goal === null], 'editable' => $service->editable($request->user(), $record), 'history' => $service->history($request->user(), $record), 'goalHistory' => $links]);
+        return Inertia::render('Executive/Task', [...$this->options($request->user(), $record->owner_id), 'record' => [...$record->toArray(), 'goal_id' => $goal?->id, 'goal' => $goal, 'goal_restricted' => $goalId !== null && $goal === null], 'editable' => $service->editable($request->user(), $record), 'history' => $service->history($request->user(), $record), 'goalHistory' => $links, 'instructionLinks' => app(WorkReferences::class)->for($request->user(), $record)]);
     }
 
     public function archiveTask(Request $request, int $id, WorkItems $service)
@@ -224,7 +225,7 @@ class ExecutiveController
     {
         $record = $service->find($request->user(), 'executive', 'routines', $id);
 
-        return Inertia::render('Executive/Routine', [...$this->options($request->user(), $record->owner_id), 'record' => $record, 'editable' => $service->editable($request->user(), $record), 'history' => $service->history($request->user(), $record), 'completions' => $service->completions($request->user(), $record)]);
+        return Inertia::render('Executive/Routine', [...$this->options($request->user(), $record->owner_id), 'record' => $record, 'editable' => $service->editable($request->user(), $record), 'history' => $service->history($request->user(), $record), 'completions' => $service->completions($request->user(), $record), 'instructionLinks' => app(WorkReferences::class)->for($request->user(), $record)]);
     }
 
     public function completeRoutine(Request $request, int $id, Routines $service)

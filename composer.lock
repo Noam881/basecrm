@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "14bbb2dae26a7aeb5bfa0fc8445d25c3",
+    "content-hash": "7f319eb25648c7da9487619bf825ecec",
     "packages": [
         {
             "name": "awove/crm-core",
@@ -185,6 +185,67 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\Hr\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/knowledge",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/knowledge",
+                "reference": "e1d718fcc6aec53aa04d7f18f264ad3a701a7617"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Knowledge\\KnowledgeProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Knowledge\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/marketing",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/marketing",
+                "reference": "f863475825b15e338d973beb8b2b2f970f10094f"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "brick/math": "^1.0",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Marketing\\MarketingProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Marketing\\": "src/"
                 }
             },
             "transport-options": {

@@ -90,20 +90,41 @@ class Modules
         }
     }
 
+    /** Lead access remains the caller's responsibility; each endpoint rechecks its parent policy. */
     public function panels($user): array
     {
+        $user = $user?->fresh();
+        if (! $user || ! $user->active) {
+            return [];
+        }
         $panels = [];
         foreach ($this->installed as $id => $module) {
-            if ($this->enabled($id)) {
-                foreach ($module->panels() as $panel) {
-                    if ($user->active && $user->can($panel->permission)) {
-                        $panels[] = $panel;
+            if (! $this->enabled($id)) {
+                continue;
+            }
+            foreach ($module->panels() as $panel) {
+                $permissions = [$panel->permission, ...$panel->anyPermissions];
+                if (! preg_match('/^'.preg_quote($id, '/').'(?:[.-][a-z0-9.-]+)?$/D', $panel->id)
+                    || array_key_exists($panel->id, $panels) || trim($panel->label) === '' || mb_strlen($panel->label) > 100
+                    || ! preg_match('~^[A-Za-z][A-Za-z0-9_-]*(?:/[A-Za-z][A-Za-z0-9_-]*)*$~D', $panel->component)
+                    || ! str_starts_with($panel->endpoint, '/') || str_starts_with($panel->endpoint, '//')
+                    || strlen($panel->endpoint) > 2048 || preg_match('/[\\x00-\\x20\\\\]/', $panel->endpoint)) {
+                    throw new \RuntimeException('Invalid or duplicate lead panel for module '.$id.'.');
+                }
+                foreach ($permissions as $permission) {
+                    if (! is_string($permission) || ! str_starts_with($permission, $id.'.') || ! in_array($permission, $module->permissions(), true)) {
+                        throw new \RuntimeException('Lead panel permissions must be declared by their module.');
                     }
+                }
+                // Retain unauthorized IDs too, so duplicate declarations cannot depend on the actor.
+                $panels[$panel->id] = null;
+                if (array_filter($permissions, fn ($permission) => $user->can($permission))) {
+                    $panels[$panel->id] = ['id' => $panel->id, 'label' => $panel->label, 'component' => $panel->component, 'endpoint' => $panel->endpoint];
                 }
             }
         }
 
-        return $panels;
+        return array_values(array_filter($panels));
     }
 
     public function navigation($user): array

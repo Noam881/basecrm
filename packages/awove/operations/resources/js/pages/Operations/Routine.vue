@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import WorkReferences, {
+    type WorkReference,
+} from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import OperationsNav from "../../components/OperationsNav.vue";
 import RoutineEditor from "../../components/RoutineEditor.vue";
@@ -6,7 +9,12 @@ import RoutineCompletionFields from "../../../../../crm-core/resources/js/compon
 import HistoryList from "../../components/HistoryList.vue";
 import type { Options, Routine, Completion, History } from "../../types";
 const props = defineProps<
-    Options & { record: Routine; completions: Completion[]; history: History[] }
+    Options & {
+        record: Routine;
+        completions: Completion[];
+        history: History[];
+        instructionLinks: WorkReference[];
+    }
 >();
 const completion = useForm({
     version: props.record.version,
@@ -101,6 +109,7 @@ function archive() {
                 <small>{{ entry.actor?.name ?? "Former staff" }}</small>
             </article>
         </section>
+        <WorkReferences :links="instructionLinks" />
         <HistoryList :history="history" />
     </div>
 </template>

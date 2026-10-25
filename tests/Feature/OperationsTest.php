@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Awove\Core\Currency;
 use Awove\Core\Installation;
 use Awove\Core\Jobs\DeliverWorkReminder;
 use Awove\Core\Models\Company;
@@ -24,6 +25,7 @@ use Awove\Operations\OperationsModule;
 use Awove\Operations\Orders;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -355,4 +357,52 @@ it('retains reassignment and supplier change snapshots while redacting inaccessi
     expect($history['after'])->toMatchArray(['supplier_relationship_id' => $newSupplier->id, 'owner_id' => $replacement->id]);
     expect($history['after']['ordered_on'])->toStartWith('2026-10-23');
     $this->actingAs($replacement)->get('/operations/orders/'.$order->id)->assertInertia(fn (Assert $page) => $page->where('history.0.details.before.supplier_relationship_id', null)->where('history.0.details.after.supplier_relationship_id', null));
+});
+
+it('preserves order currency snapshots and blocks monetary agreement changes after installation currency changes', function () {
+    $user = opsUser();
+    $data = opsOrderData($user);
+    $orders = app(Orders::class);
+    $order = $orders->create($user, $data);
+    $originalCurrency = Currency::current();
+    expect($order->getAttribute('currency'))->toBe($originalCurrency)
+        ->and(app(Currency::class)->consistent())->toBeTrue();
+    $historyCount = OrderHistory::count();
+    $manifest = Installation::manifest();
+    $manifest['currency'] = $originalCurrency === 'USD' ? 'EUR' : 'USD';
+    file_put_contents($this->operationsManifest, json_encode($manifest));
+    expect(app(Currency::class)->consistent())->toBeFalse()
+        ->and(fn () => $orders->create($user, [...$data, 'reference' => 'PO-102']))->toThrow(ValidationException::class)
+        ->and(fn () => $orders->update($user, $order->id, [...$data, 'version' => 1, 'agreed_total' => '999.99']))->toThrow(ValidationException::class)
+        ->and(SupplierOrder::count())->toBe(1)
+        ->and($order->fresh()->agreed_total)->toBe('1200.50')
+        ->and($order->fresh()->getAttribute('currency'))->toBe($originalCurrency)
+        ->and(OrderHistory::count())->toBe($historyCount);
+    $this->actingAs($user)->get('/operations/orders/'.$order->id)->assertInertia(fn (Assert $page) => $page->where('currencyError', Currency::ERROR)->where('record.currency', $originalCurrency));
+    $csv = $this->actingAs($user)->get('/operations/orders/export')->assertOk()->streamedContent();
+    expect($csv)->toContain('1200.50')->toContain($originalCurrency);
+    // Delivery receipts remain physical records, with no currency conversion or payable creation.
+    $receipt = $orders->receipt($user, $order->id, opsReceiptData());
+    expect($receipt->quantity)->toBe('2.005')->and($order->fresh()->agreed_total)->toBe('1200.50');
+});
+
+it('includes retained disabled Operations orders in the shared currency guard without blocking ordinary work', function () {
+    $user = opsUser();
+    $order = app(Orders::class)->create($user, opsOrderData($user));
+    app(Orders::class)->archive($user, $order->id, ['version' => 1]);
+    $manifest = Installation::manifest();
+    $manifest['modules'] = [];
+    $manifest['currency'] = Currency::current() === 'USD' ? 'EUR' : 'USD';
+    file_put_contents($this->operationsManifest, json_encode($manifest));
+    expect(app(Modules::class)->enabled('operations'))->toBeFalse()
+        ->and(app(Currency::class)->consistent())->toBeFalse()
+        ->and(fn () => app(Currency::class)->assertConsistent())->toThrow(ValidationException::class)
+        ->and($order->fresh()->agreed_total)->toBe('1200.50');
+    $manifest['modules'] = ['operations'];
+    file_put_contents($this->operationsManifest, json_encode($manifest));
+    $work = app(WorkItems::class)->create($user, 'operations', 'requests', ['title' => 'Review fictional delivery', 'due_on' => '2026-10-24']);
+    expect($work->title)->toBe('Review fictional delivery')->and(app(Currency::class)->consistent())->toBeFalse();
+    $manifest['currency'] = $order->getAttribute('currency');
+    file_put_contents($this->operationsManifest, json_encode($manifest));
+    expect(app(Currency::class)->consistent())->toBeTrue();
 });

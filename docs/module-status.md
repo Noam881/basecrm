@@ -1,8 +1,8 @@
 # Modular CRM delivery status
 
-Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
+Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance/Knowledge/Marketing1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
 
-The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–3 complete; Checkpoint 4 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
+The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–4 complete; Checkpoint 5 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
 
 ## Baseline, before edits
 
@@ -73,9 +73,32 @@ Checkpoint 3 integrated verification:
 - Additive Alpha/Beta first-build database/private-file restore rehearsal passed through migrations800/850/900/910. This is synthetic first-build evidence, not an actual historical-release upgrade.
 - Final container image built and started: `/up`200, `/login`200, correct Alpha brand and mirrored Core/Service/Executive/Operations/HR/Finance package copies. Invocation-owned smoke container removed. No push or remote deployment.
 
+## Checkpoint 4 working changes
+
+Optional Knowledge adds typed procedures, reusable materials and training; role/category/topic search; revision/update metadata; immutable protected document references; dated renewal history with explicitly entered next dates; and separately protected system login/item references. System references hold no credential/vault fields. Current materials, upcoming/expired renewals and actual missing owners/documents/revisions/dates are scoped; no universal stale-document interval is invented. Shared instruction links freshly authorize both the existing work parent and Knowledge entry, appearing on existing work profiles without duplicating completion history.
+
+The **Marketing module** independently adds campaign plans/budgets/materials, content planning/manual publication, nonoverlapping inclusive performance periods, exact manual spend/reported leads and weighted aggregate cost per lead. Whole-period filters never invent daily proration. Budgets, actual spend, reported leads and accessible linked CRM opportunities remain separate. Advanced tables, matching bounded CSV, history, scoped document redirects and fresh content reminders use the existing shared controls/infrastructure.
+
+The additive attribution extraction preserves original Lead IDs, versions/timestamps and exact raw JSONB in immutable snapshots while retaining the frozen hidden Core column. Canonical Marketing edits patch only changed fields in PostgreSQL, preserving unknown numeric/object values exactly. Legacy external campaign IDs never become CRM foreign keys; linked_campaign_id is separate. Generic source remains Core/Sales; attribution panel/table IDs and dormant layouts remain stable through disablement and permission loss.
+
+A small shared Currency registry guards retained installed Finance, Marketing and Operations snapshot tables even while their capabilities are disabled. It returns a generic mismatch indication, never converts values and imports no optional package. Operations monetary agreement changes are blocked on mismatch while physical receipts/history remain available with original row currencies. LeadPanel retains its existing arguments and supports optional alternative permissions. The new work-reference contract projects only safe labels/local links after fresh scopes.
+
+Checkpoint 4 integrated verification:
+
+- Full PostgreSQL regression passed383 tests /6,287 assertions (174.7s). Final Knowledge-focused rerun after the browser-discovered current-owner default passed17/332; its controller/default and accessible field-label corrections are covered by final desktop/mobile workflows.
+- Marketing physically standalone backend suite passed16/335, including exact JSONB extraction/patch preservation, period overlap, zero/weighted CPL, filtered totals, hidden relations and disabled surfaces. Shared/Operations/Currency focus passed26/522, including retained disabled/archived monetary snapshots and allowed nonmonetary receipts.
+- New persisted desktop/mobile Knowledge2/2 (24.5s) and Marketing2/2 (21.8s) passed. Strict synthetic fixture cleanup passed. Final desktop/mobile screenshots were visually checked; new forms and history use global gaps/buttons and current-actor ownership defaults.
+- Full PHPStan0 errors, Pint, frontend types/formatting/final native production build passed. Node clipboard/decimal tests5 and Compose configuration passed.
+- Core-only copied discovery/assets with all eight optional packages physically absent passed Foundation + CurrencyRegistry27/327. Knowledge-only copied discovery/assets and its persisted library acceptance case passed1/32; optional work-link tests are not claimed run in that profile. Marketing-only copied discovery/assets and all16/335 passed with Finance/other optional code absent.
+- Guarded local Alpha migrations1000/1100/1110 passed and every original Lead row stayed unchanged. Alpha/Beta additive first-build database/private-file restore rehearsal passed through these migrations; this is not an actual historical-release upgrade.
+- Final local container image46ed1822fb73 built and started: /up200, /login200, correct Alpha brand, all nine installed package directories mirrored copies including Knowledge/Marketing. Invocation-owned smoke container removed. No push, live integration or remote deployment.
+- Existing52-case desktop/mobile regression first finished46/52 (12.4m). Traces showed a desktop ERR_NETWORK_IO_SUSPENDED, initial Service fixture PostgreSQL08006 timeout and long browser execution gaps during the other timed-out checks; Operations had already saved successfully. All six unchanged cases then passed under a command-scoped idle-sleep guard (desktop1/1,1.3s; mobile5/5,1.0m). Thus all52 existing plus4 new cases passed across these coordinated runs; this is not claimed as one clean56-case run. No product assertions were weakened.
+
 ## Reversible implementation decisions
 
 - Spreadsheet transfer supports bounded UTF-8 CSV, not XLS/XLSX.
+- Knowledge renewals use Pending / In progress / Renewed defaults and a30-calendar-day upcoming view. Next expiry/reminder dates are explicit manual entries; document age is never inferred stale.
+- Marketing periods are inclusive and must fit wholly inside date filters; no proration. Aggregate CPL rounds half-up once to2 decimals. Manual Published content requires its recorded actual date and HTTPS publication link.
 - Customer Service feedback: consistent 1–5 scale (1 lowest, 5 highest).
 - Supporting Service documents use HTTPS links rather than duplicate upload storage; existing private Sales proposals remain unchanged.
 - Synthetic generic configurations default currency to USD; real installations must choose their own single currency before financial entry. No live currency was changed.
@@ -84,9 +107,8 @@ Checkpoint 3 integrated verification:
 
 ## Remaining checkpoints
 
-4. Knowledge and **Marketing module**, optional cross-module links and no live integrations.
 5. Assets, assignments/returns and maintenance.
 6. Selected Nonprofit capabilities standalone and with Finance/Operations/Assets.
 7. Cross-module/absent-package regression, desktop/mobile workflows, installation isolation and controlled additive update rehearsal.
 
-Next runnable action: implement Checkpoint 4 Knowledge Management and the clearly marked Marketing module with optional cross-module links and no live integrations. Preserve the completed checkpoints; no push or remote deployment. Preserve legacy lead tasks; no fake lead rows or automatic recurrence.
+Next runnable action: implement Checkpoint 5 Asset Management, including employee/customer/location assignments, retained returns, maintenance and history. Preserve the completed checkpoints; no push or remote deployment. Preserve legacy lead tasks; no fake lead rows or automatic recurrence.

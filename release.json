@@ -8,7 +8,9 @@
     "awove/executive": "1.0.0",
     "awove/operations": "1.0.0",
     "awove/hr": "1.0.0",
-    "awove/finance": "1.0.0"
+    "awove/finance": "1.0.0",
+    "awove/knowledge": "1.0.0",
+    "awove/marketing": "1.0.0"
   },
   "starter_revision": "d282e817c6c2fa1bd475f7c42ea785ccfc67d0ab"
 }

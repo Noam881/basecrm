@@ -96,7 +96,7 @@ Select `hr` and/or `finance` in `modules`. Finance additionally requires explici
 
 Payroll agreed inputs are configured in the deployment manifest's `payroll_inputs` list with stable `key`, `label`, `type` (decimal, money, text or date), `unit`, `scale` (0–4) and `required` fields. At most 20 definitions are accepted. Each preparation snapshots its definitions, so changed deployment configuration applies to new preparations. Pending input may be incomplete; Ready for review and Sent to payroll enforce required inputs. Sent to payroll is a manual status with a manually recorded date; no transmission occurs. Exact employee/start/end period duplicates are rejected even after archive. Overlapping but different date ranges are not silently defined as duplicates; clients must agree their pay-period convention. Supporting documents use freshly scoped HTTPS redirects. Payroll CSV includes schema snapshots and exact manual values, omits document links, and requires its own export grant.
 
-Choose the installation's one currency before financial entry. Currency mismatch with retained ledger/payroll rows blocks new financial writes and marks overview amounts unavailable. Do not rewrite old transactions or add different currencies to bypass this guard. Refunds, credits, overpayments and cancellation after payment remain unresolved source rules and are rejected; no accounting behavior is fabricated.
+Choose the installation's one currency before financial entry. Currency mismatch with retained installed monetary tables blocks new monetary writes and marks combined overview amounts unavailable, including retained data in disabled capabilities. Do not rewrite old transactions or add different currencies to bypass this guard. Refunds, credits, overpayments and cancellation after payment remain unresolved source rules and are rejected; no accounting behavior is fabricated.
 
 
 The copied-package absence verifier can also keep a selected locked package while removing all others, without editing the working app:
@@ -104,6 +104,21 @@ The copied-package absence verifier can also keep a selected locked package whil
 ```sh
 python3 scripts/core-only-build.py --keep finance --filter PayrollPreparationTest
 python3 scripts/core-only-build.py --keep hr --filter HrTest
+python3 scripts/core-only-build.py --keep knowledge --filter="persists procedures materials and training independently"
+python3 scripts/core-only-build.py --keep marketing --filter MarketingTest
 ```
 
 These commands use the exclusive `base_test` slot. Do not run backend suites simultaneously. Browser fixtures use separate synthetic Alpha/Beta accounts and guarded cleanup; local preview listeners must remain running for each profile. Never reuse an occupied port belonging to another service (Payroll proof uses8100;8097 was deliberately left untouched).
+
+
+## Knowledge and Marketing profiles (Checkpoint 4)
+
+Select `knowledge` and/or `marketing` in `modules` and provision exact namespaced grants explicitly. Neither requires HR, Operations, Sales or Finance. Knowledge has independent library, renewal and system scopes, separate document viewing/management and separate system-reference viewing/editing. A system reference is an opaque password-manager item name/ID, not a credential or vault; use the public HTTPS login page without tokens or query strings. Do not put passwords or API keys in notes or references. Missing-owner/document views use actual missing fields; there is no invented stale-document interval. Renewal recording retains its dated event and accepts a manually entered next expiry/reminder, without recurrence generation.
+
+Knowledge instruction selectors expose only enabled and authorized existing work parents. The receiving work profile independently authorizes both its own record and the instruction. Disabling Knowledge removes these links without changing the work/completion history. Do not enable HR or Operations merely to use the Knowledge library.
+
+The **Marketing module** is independently enabled and granted for campaign/reporting, content and attribution. Campaign/reporting access does not grant Sales access. Attribution requires Marketing and Sales, the appropriate Marketing attribution permission and fresh access to the specific Lead. Existing external campaign IDs remain unchanged; select a CRM campaign separately. Knowledge/Marketing migrations1000/1100/1110 are additive and must run through controlled console updates with a backup. The extraction retains the old Lead JSON column and immutable exact snapshots; do not drop these on disablement or use a destructive down migration to roll back canonical Marketing edits.
+
+Manually enter each report's inclusive start/end dates, spend and reported leads. Periods for one campaign may not overlap. Overview/report filters include complete report periods; they do not prorate reports across a partially overlapping window. Cost per lead is computed from total spend / total reported leads and remains empty for zero leads. Budgets, actual spend, reported leads and accessible linked CRM opportunities remain separate. Publication is manual; no ad account or publishing integration is connected.
+
+Choose one currency before monetary data entry. Installed providers register their retained currency snapshots even while disabled. A mismatch requires restoring the agreed deployment currency, not rewriting records or inventing conversions. Readable historical rows retain their own currency; nonmonetary receipt/archive history remains possible where its owning workflow allows it.

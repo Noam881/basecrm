@@ -83,19 +83,6 @@ export interface Task {
     priority: string;
     version: number;
 }
-export interface LeadAttribution {
-    platform?: string | null;
-    landing_page_url?: string | null;
-    campaign_id?: string | null;
-    campaign_name?: string | null;
-    ad_id?: string | null;
-    ad_name?: string | null;
-    referrer_name?: string | null;
-    utm_source?: string | null;
-    utm_medium?: string | null;
-    utm_campaign?: string | null;
-    utm_content?: string | null;
-}
 export interface Lead {
     id: number;
     title: string;
@@ -109,7 +96,6 @@ export interface Lead {
     status_id: string;
     priority: string;
     source: string;
-    attribution?: LeadAttribution | null;
     version: number;
     archived_at: string | null;
     created_at: string;
