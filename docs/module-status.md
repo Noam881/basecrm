@@ -1,8 +1,8 @@
 # Modular CRM delivery status
 
-Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance/Knowledge/Marketing1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
+Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance/Knowledge/Marketing/Assets1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
 
-The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–4 complete; Checkpoint 5 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
+The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–5 complete; Checkpoint 6 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
 
 ## Baseline, before edits
 
@@ -112,3 +112,20 @@ Checkpoint 4 integrated verification:
 7. Cross-module/absent-package regression, desktop/mobile workflows, installation isolation and controlled additive update rehearsal.
 
 Next runnable action: implement Checkpoint 5 Asset Management, including employee/customer/location assignments, retained returns, maintenance and history. Preserve the completed checkpoints; no push or remote deployment. Preserve legacy lead tasks; no fake lead rows or automatic recurrence.
+
+
+## Checkpoint 5 working changes
+
+Optional Asset Management adds the generic register, stable unique Asset IDs, configurable terminology/status labels, shared employee/customer/location assignments, versioned expected-return edits, retained dated returns/condition and one-current-assignment enforcement. Maintenance may coexist with an assignment; physical state transitions respect other ongoing work. Completed and abandoned actions retain their history. Next dates are manual reminders, never recurrence generation.
+
+Optional exact maintenance costs retain the original completion amount and append every late entry/correction separately; current and historical amounts/documents have explicit field grants. A cost creates no Finance transaction. Parent ownership, fresh identities/permissions, versions and module availability scope every child, table, CSV, document and reminder. The slice uses existing global controls, tables, history, private links and reminder infrastructure while Sales, HR, Operations and Finance are disabled.
+
+Checkpoint 5 integrated verification:
+
+- Complete PostgreSQL backend regression passed403 tests /6,644 assertions (279.3s); focused Assets20/355 passed22.4s, including complete CSV fields/formula defense.
+- Final persisted desktop/mobile Assets workflows passed2/2 (1.3m), with strict synthetic cleanup and visually checked global spacing/compact status badges. Current185.35 and original175.35 cost history persist separately.
+- Full PHPStan0 errors, fresh-cache Pint, frontend types/format/final production build, Node5 and Compose configuration passed.
+- Core-only copied discovery/assets passed with all nine optional packages physically absent; Foundation+CurrencyRegistry27/327.
+- Assets-only copied discovery/assets and full20/353 acceptance passed with Finance/HR/Operations and every other optional package physically removed. The first run exposed two test-only assumptions that Finance tables existed; snapshot assertions now require unchanged counts or continued schema absence. The two corrected installed-package cases passed2/46. Old56 browser regression:54 passed in the complete run (7.1m); Service and Finance desktop cases initially failed during root-owned preview restart/origin corrections. Both unchanged workflows then passed2/2 (35.3s) after fixing those local settings. All56 old +2 new distinct cases passed across these coordinated runs; this is not a claim of a single clean58-case run.
+- Additive Alpha/Beta first-build migration and database/private-file backup/restore passed through Assets001200; retained synthetic data fingerprints match. This is not an upgrade from a historical release.
+- Final container image ca862456be2962fcc6ffa84d5c7adcbb57e73609978ec8c8a2b0f06f6ed1f2ea built and started; /up200, /login200, Alpha brand and all ten mirrored Awove package copies verified. Invocation-owned smoke container removed. No push or remote deployment.

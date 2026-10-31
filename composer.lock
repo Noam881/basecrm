@@ -4,8 +4,38 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7f319eb25648c7da9487619bf825ecec",
+    "content-hash": "ffefa9938afe78b901797e6e4dfeeb11",
     "packages": [
+        {
+            "name": "awove/assets",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/assets",
+                "reference": "b02948becd1d045c0627b41d481f3581f8df1219"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Assets\\AssetsProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Assets\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
         {
             "name": "awove/crm-core",
             "version": "1.1.0",

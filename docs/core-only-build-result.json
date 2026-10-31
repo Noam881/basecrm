@@ -9,7 +9,8 @@
     "awove/hr",
     "awove/finance",
     "awove/knowledge",
-    "awove/marketing"
+    "awove/marketing",
+    "awove/assets"
   ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",

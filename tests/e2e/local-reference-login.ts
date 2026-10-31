@@ -11,7 +11,9 @@ export async function signInLocalFixture(
             ? "employees"
             : origin === "http://127.0.0.1:8100"
               ? "payroll"
-              : null;
+              : origin === "http://127.0.0.1:8103"
+                ? "assets"
+                : null;
     if (
         !family ||
         !["desktop", "mobile"].some(
@@ -19,7 +21,7 @@ export async function signInLocalFixture(
         )
     )
         throw new Error(
-            "Only reserved fictional employee/payroll accounts and local proof origins are permitted.",
+            "Only reserved fictional employee/payroll/assets accounts and local proof origins are permitted.",
         );
     const prior = (
         await (await page.request.get(`${mailpit}/api/v1/messages`)).json()
@@ -90,7 +92,7 @@ export async function signInLocalFixture(
         !url.searchParams.has("signature")
     )
         throw new Error(
-            "Only the fictional local employee fixture login link may be used.",
+            "Only the reserved fictional local fixture login link may be used.",
         );
     await page.goto(signed);
     await expect(page).toHaveURL(`${origin}/dashboard`);
