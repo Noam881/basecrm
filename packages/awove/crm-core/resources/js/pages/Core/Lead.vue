@@ -513,14 +513,7 @@ function changeTask(t: Task) {
                     <span class="crm-task-dot" />
                     <div>
                         <strong>{{
-                            t(
-                                a.event
-                                    .replaceAll(".", " ")
-                                    .replaceAll("_", " ")
-                                    .replace(/^./, (value) =>
-                                        value.toUpperCase(),
-                                    ),
-                            )
+                            t(a.event.replaceAll(".", " ").replaceAll("_", " "))
                         }}</strong
                         ><small
                             >{{ a.actor?.name ?? t("System") }} ·
@@ -537,13 +530,13 @@ function changeTask(t: Task) {
                     v-for="item in [
                         {
                             type: 'contacts',
-                            label: t('Contact'),
+                            editLabel: t('Edit contact'),
                             person: lead.contact,
                             editable: identityPermissions.contact,
                         },
                         {
                             type: 'companies',
-                            label: t('Company'),
+                            editLabel: t('Edit company'),
                             person: lead.company,
                             editable: identityPermissions.company,
                         },
@@ -563,7 +556,7 @@ function changeTask(t: Task) {
                         <Link
                             :href="`/people/${item.type}/${item.person?.id}?from_lead=${lead.id}`"
                             class="crm-secondary"
-                            >{{ t("Edit") }} {{ item.label }}</Link
+                            >{{ item.editLabel }}</Link
                         >
                     </div>
                 </div>
@@ -581,13 +574,7 @@ function changeTask(t: Task) {
                     <strong dir="auto">{{ task.title }}</strong>
                     <p>{{ date(task.due_at, zone) }}</p>
                     <small
-                        >{{ task.assignee?.name }} ·
-                        {{
-                            t(
-                                task.status.charAt(0).toUpperCase() +
-                                    task.status.slice(1),
-                            )
-                        }}</small
+                        >{{ task.assignee?.name }} · {{ t(task.status) }}</small
                     >
                     <div
                         v-if="editable && task.status === 'open'"

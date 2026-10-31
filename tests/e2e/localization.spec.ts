@@ -88,6 +88,10 @@ test("Hebrew green presentation preserves neutral controls, RTL tables and saved
     await page.getByRole("button", { name: "יצירת ליד", exact: true }).click();
     await expect(page).toHaveURL(/\/leads\/\d+$/);
     const leadPath = new URL(page.url()).pathname;
+    await expect(
+        page.getByRole("link", { name: "עריכת איש קשר", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("הליד נוצר", { exact: true })).toBeVisible();
     const leadDetails = page.locator("section").filter({
         has: page.getByRole("heading", { name: "פרטי הליד", exact: true }),
     });

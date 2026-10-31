@@ -89,9 +89,7 @@ const targets = ref<Record<number, number | null>>({});
                         type="number"
                         min="0"
                         max="100" /></label
-                ><span class="crm-badge">{{
-                    t(s.kind.charAt(0).toUpperCase() + s.kind.slice(1))
-                }}</span
+                ><span class="crm-badge">{{ t(s.kind) }}</span
                 ><button class="crm-secondary">{{ t("Save stage") }}</button>
             </form>
         </section>

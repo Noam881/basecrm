@@ -1,0 +1,27 @@
+{
+  "optional_package_absent": true,
+  "kept_packages": [],
+  "removed_packages": [
+    "awove/example-service-details",
+    "awove/customer-service",
+    "awove/executive",
+    "awove/operations",
+    "awove/hr",
+    "awove/finance",
+    "awove/knowledge",
+    "awove/marketing",
+    "awove/assets",
+    "awove/nonprofit"
+  ],
+  "php_package_discovery": "passed",
+  "backend_core_workflow": "passed",
+  "backend_filter": "FoundationTest|LocalizationTest",
+  "frontend_production_build": "passed",
+  "core_version": "1.1.0",
+  "mirrored_path_packages": true,
+  "tests": 35,
+  "assertions": 419,
+  "rtl_email_source_retained": true,
+  "scope": "Core-only shared theme and Hebrew localization acceptance",
+  "date": "2026-10-31"
+}
