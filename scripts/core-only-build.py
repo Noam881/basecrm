@@ -25,7 +25,15 @@ if not kept.issubset(optional):
 removed = [name for name in optional if name not in kept]
 with tempfile.TemporaryDirectory(prefix='base-crm-profile-build-') as tmp:
     target = Path(tmp) / 'app'
-    shutil.copytree(root, target, ignore=shutil.ignore_patterns('.git', 'vendor', 'node_modules', '.env*', 'storage', 'public/build', 'test-results', 'playwright-report', '.local-fixtures.json'))
+    ignored_sources = shutil.ignore_patterns('.git', 'vendor', 'node_modules', '.env*', 'storage', 'public/build', 'test-results', 'playwright-report', '.local-fixtures.json')
+
+    def source_ignores(directory, names):
+        ignored = set(ignored_sources(directory, names))
+        if Path(directory).resolve() == (root / 'public').resolve():
+            ignored.add('build')
+        return ignored
+
+    shutil.copytree(root, target, ignore=source_ignores)
     definition = json.loads((target / 'composer.json').read_text())
     removed_namespaces = []
     for name in removed:
@@ -45,6 +53,8 @@ with tempfile.TemporaryDirectory(prefix='base-crm-profile-build-') as tmp:
     for route in routes:
         if any(namespace in route.get('action', '') for namespace in removed_namespaces):
             raise RuntimeError('An absent package still contributes a route.')
+    if (target / 'public/build').exists():
+        raise RuntimeError('Generated public/build must be absent before the fresh profile build.')
     os.symlink(root / 'node_modules', target / 'node_modules')
     subprocess.run(['npm', 'run', 'build'], cwd=target, env=env, check=True, stdout=subprocess.DEVNULL)
     shutil.copy2(root / '.env.testing', target / '.env.testing')

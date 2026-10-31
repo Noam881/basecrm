@@ -1,8 +1,8 @@
 # Modular CRM delivery status
 
-Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance/Knowledge/Marketing/Assets/Nonprofit1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
+Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/Core 1.1.0, Core contract 1, and nine optional business packages at 1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
 
-The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–6 complete; Checkpoint 7 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
+The complete seven-checkpoint local build is **complete**. All ten source modules are implemented and tested, with optional capabilities selected per installation. Current checkpoint: **Checkpoint 7 complete**. Source-deferred features and production acceptance remain outside this delivery.
 
 ## Baseline, before edits
 
@@ -105,14 +105,9 @@ Checkpoint 4 integrated verification:
 - Historical deals with unknown closing/final values are labelled unknown, not silently assigned fabricated values.
 - Dates, reminders, next actions and routine next occurrences are manual; no automatic recurring record generation or external synchronization.
 
-## Remaining checkpoints
+## Delivery state
 
-5. Assets, assignments/returns and maintenance.
-6. Selected Nonprofit capabilities standalone and with Finance/Operations/Assets.
-7. Cross-module/absent-package regression, desktop/mobile workflows, installation isolation and controlled additive update rehearsal.
-
-Next runnable action: implement Checkpoint 5 Asset Management, including employee/customer/location assignments, retained returns, maintenance and history. Preserve the completed checkpoints; no push or remote deployment. Preserve legacy lead tasks; no fake lead rows or automatic recurrence.
-
+All seven checkpoints are complete locally. The final backend, complete desktop/mobile browser regression, independent package profiles, Alpha/Beta isolation/restore and container checks passed. No required implementation or verification remains for this source scope. No push or remote deployment was performed or is authorized by this request.
 
 ## Checkpoint 5 working changes
 
@@ -149,4 +144,55 @@ Checkpoint 6 integrated verification:
 - Review found and fixed useful first-use Program table defaults, archived-parent historical lists/CSV, and Project serializers losing trusted table cells; final copied tests and populated browser tables cover these fixes. A shared crm-back class fixes mobile backlink overlap; final production assets and Programs recapture include it. No page-local CSS was added.
 - Full PHPStan0, fresh-cache Pint, final frontend types/format/production build, Node5 and Compose configuration passed.
 - Exact additive Alpha migrations001300/1310/1320 passed with the entire existing Lead-row fingerprint unchanged. Alpha/Beta synthetic first-build additive-update and database/private-file restore rehearsal passed; this is not an upgrade from a historical release.
-- Core-only copied discovery/assets passed with all ten optional packages physically absent:50/523 including Foundation, Currency and shared capability/parent/reference/routine coverage. Final container and full cross-module verification remain Checkpoint7. No push/deployment, real messages, live integrations or customer imports.
+- Core-only copied discovery/assets passed with all ten optional packages physically absent:50/523 including Foundation, Currency and shared capability/parent/reference/routine coverage. Final container and full cross-module verification subsequently passed in Checkpoint7 below. No push/deployment, real messages, live integrations or customer imports.
+
+
+## Checkpoint 7 complete — final integrated verification
+
+The final full PostgreSQL regression passed **464/464 tests, 7,539 assertions, 311.033 seconds**, after all final Programs/Projects fixes and the compatible Mime patch. The complete Playwright run passed **64/64 cases in 10.7 minutes**: all 32 desktop and all 32 mobile cases, with no skips or filtered reruns. Persisted forms, advanced tables/layouts, documents, manual reminders, email-only sign-in, scoped module workflows, neutral Material controls/motion and Alpha/Beta isolation are included. Strict synthetic before/after cleanup passed. Current screenshots were reviewed and retained privately; generated historical screenshot changes were restored.
+
+| Final command/check | Outcome |
+|---|---|
+| `php artisan test --compact` | Passed: 464 tests / 7,539 assertions |
+| Full `npm run test:e2e` (workers: 1, both projects) | Passed: 64 cases / 10.7 minutes |
+| Full PHPStan, 512MB | Passed: 0 errors |
+| Fresh-cache Pint | Passed |
+| `npm run typecheck`, `npm run check`, `npm run build` | Passed |
+| Node clipboard/exact-decimal checks | Passed: 5 tests, 0 skips |
+| `composer audit --locked --format=json` | Passed: 0 advisories, 0 abandoned packages |
+| Alpha/Beta additive first-build update and database/private-file restore | Passed: retained fingerprints match |
+| Compose full configuration, image build and Alpha/Beta startup | Passed: /up 200, /login 200, correct independent brands |
+
+The final four copied profiles passed serially. Each physically removed all nine other optional packages (including the isolated example extension), passed PHP package discovery, built fresh frontend assets, verified absent routes/bundles and ran its PostgreSQL acceptance suite:
+
+| Kept package / backend filter | Tests | Assertions | Backend duration | Skips |
+|---|---:|---:|---:|---:|
+| Customer Service / `CustomerServiceTest` | 17 | 368 | 5.588s | 0 |
+| Finance / `PayrollPreparationTest` | 10 | 127 | 3.815s | 0 |
+| Marketing / `MarketingTest` | 16 | 335 | 6.316s | 0 |
+| Assets / `AssetsTest` | 20 | 353 | 10.161s | 0 |
+
+Final copied-profile JSONs are retained in this directory. Together with the Checkpoint 6 Core-only 50/523, standalone Nonprofit 40/674 (three explicit counterpart-only skips), connected Nonprofit 61/897 and earlier HR/Knowledge absence builds, these verify the required independent combinations. Counts from overlapping suites are not added to the full 464-case regression.
+
+The locked Symfony Mime 8.1.7 component had a medium dependency advisory. Compatible 8.1.10 is the only changed external package version; frameworks and other external versions remain unchanged. The [Symfony advisory](https://symfony.com/blog/cve-2026-45070-email-header-injection-via-non-token-characters-in-mime-parameter-names) identifies the affected/fixed releases. The final audit, backend, email-sign-in browser flows and container checks passed with the patch. Shared history supplies friendly Owner/Due date/Completion date labels and the existing Project field-label contract; no new page styling or domain redesign was introduced.
+
+The first full 64-case browser attempt stopped after discovering an unregistered local `vendor/awove/assets 2` symlink duplicating the canonical Assets pages. Composer registered only one Assets package. The exact duplicate link was verified and removed, assets rebuilt, and the duplicate resolver guard retained. That partial run had 6 passed, 1 failed, 1 interrupted and 56 not run, with strict cleanup plus exact interrupted Knowledge cleanup. The subsequent unfiltered run started from the beginning and passed all 64 cases.
+
+The first Service source-copy attempt was interrupted before database access because the old basename ignore pattern did not exclude generated `public/build`. The verifier now excludes that exact root directory, preserves legitimate source `build` directories and asserts generated assets are absent before fresh builds. Python syntax and focused ignore checks passed; all four profiles then completed from clean copies. This interruption was not a failing backend test. Assets test setup omits Finance capability keys when that package is absent; no business assertion was removed.
+
+Container image `sha256:afa23edb2bdd1657dc7b0f5b5446beb37bfe7d05fe7fb632376c8eb58facc93f` (`awove-base-crm-cp7-alpha:20261031`) passed separate Alpha/Beta smoke checks. Both use Core 1.1.0 / contract 1 and all 11 mirrored Awove package directories; package Composer hashes match source, no private environment, fixture-credential or installation data files are included, and Symfony Mime 8.1.10 was verified in the image. Invocation-owned smoke containers were removed and port 18091 released. Later edits were verification tooling and documentation, not runtime package behavior.
+
+Detailed logs, screenshots/traces and exact interrupted-run evidence remain ignored under `storage/app/private/acceptance-evidence/checkpoint7-{final,browser,profiles,container}-20261031` with directories 0700 / files 0600. No production deployment, real message, live integration, customer import or push was run.
+
+## Handoff boundaries
+
+All ten source modules use the retained shared host/Core and independent installation boundary. Sales remains the default; optional business packages are selected per installation and sensitive grants are explicit. Marketing planning, reporting and attribution belong to the **Marketing module**. No real external account, message, import or remotely deployed installation was changed by this request.
+
+- The original `CRM_MVP_Module_Requirements.docx` was unavailable. Section 5 of the supplied implementation prompt is the functional source; original-document cross-check was not run.
+- Spreadsheet support is bounded UTF-8 CSV, not XLS/XLSX. Supported protected HTTPS document links supplement the existing private Sales proposal storage.
+- Work entry, next occurrences, campaign performance, attendance, payment records and payroll inputs are manual. Source-deferred integrations, AI, automatic publishing/recurrence, donation receipting, accounting/tax/payroll execution and specialist property workflows remain out of scope.
+- One configured currency is enforced across retained installed monetary snapshots. Refunds, credits, overpayments and cancellation after payment remain unsupported source decisions; they are rejected rather than invented. Nonprofit actuals require current Finance access, with incomplete/hidden coverage unavailable.
+- Update/restore evidence uses a synthetic first-build pre-update fixture, not an actual historical release. Retained Core/customization/legacy-extension fingerprints and module retention tests cover their respective boundaries.
+- Containers were built and smoke-tested locally. The existing built-in PHP HTTP server is a development runtime; production web runtime, real email delivery and deployment acceptance remain separate authorized operational work.
+
+For another client, configure its independent environment/private manifest, branding/terminology and selected modules, then run controlled installation/default initialization and explicit permission provisioning as described in [module operations](module-operations.md#installation-and-enablement). Shared Core source stays unchanged. The [requirements matrix](requirements-matrix.md) maps every source section to its implementation/tests, and [modular architecture](modular-architecture.md) documents the public extension boundaries.

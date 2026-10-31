@@ -29,7 +29,10 @@ beforeEach(function () {
     $this->assetsManifest = tempnam(sys_get_temp_dir(), 'crm-assets-');
     $this->assetsSettings = Installation::manifest();
     $this->assetsSettings['modules'] = ['assets'];
-    $this->assetsSettings['capabilities'] = ['sales' => false, 'finance:collections' => false, 'finance:expenses' => false, 'finance:payroll' => false];
+    $this->assetsSettings['capabilities'] = ['sales' => false];
+    if (isset(app(Modules::class)->installed()['finance'])) {
+        $this->assetsSettings['capabilities'] = [...$this->assetsSettings['capabilities'], 'finance:collections' => false, 'finance:expenses' => false, 'finance:payroll' => false];
+    }
     $this->assetsSettings['timezone'] = 'Asia/Jerusalem';
     file_put_contents($this->assetsManifest, json_encode($this->assetsSettings));
     config(['core.manifest' => $this->assetsManifest]);

@@ -25,6 +25,15 @@ A deployment manifest enables business functions independently:
 
 Use `CRM_MANIFEST` to point at a private deployment-controlled manifest. Do not edit shared core to customize another client's brand, labels or enabled modules. Hebrew source aliases belong in labels/localization metadata, not record keys or forced UI language. Existing Alpha/Beta remain different fictional brands and vocabularies; Service is off by default in both.
 
+For another client, use the [new-installation runbook](installations-and-upgrades.md#new-installation) and [non-secret environment shape](production.env.example):
+
+1. Choose a unique installation identifier and private manifest, set `CRM_INSTALLATION` and `CRM_MANIFEST`, and provision independent database/role, app key, sessions, queue/cache boundaries and private storage. Keep secrets and client data outside the repository.
+2. Supply locally served logo/favicon assets and configure the name, terminology, locale, timezone, single currency and selected installed modules/capabilities. Keep the shared neutral/purple design tokens. Omit capability keys belonging to absent packages, including false selections. No Core file needs changing.
+3. Validate the locked release, back up existing state, then run the controlled migrate/install/diagnose/build steps below. Installation adds missing defaults without replacing customized labels or grants.
+4. Configure and verify the installation's real email transport and queue before relying on email-only sign-in. The environment example deliberately uses a non-delivering log mailer; it is not a working production mail setup. Bootstrap the first administrator and explicitly grant only the optional permissions needed.
+
+This is an operator recipe, not authorization to provision a live installation during the current local-only build.
+
 Enabling a sub-capability requires a registered CapabilityProvider declaration plus `"module:capability": true` under `capabilities`. Only select capabilities that actually ship. Setting Sales false hides and denies lead/pipeline endpoints and contributions while leaving shared identities and other authorized modules available. Removing a required dependency/capability fails validation; it is not silently disabled underneath a dependent module.
 
 Apply controlled database changes and validate before traffic:
@@ -160,3 +169,28 @@ Finance/Operations/Assets connections recheck both source and Nonprofit scopes a
 Follow-up work uses manually entered dates and shared owner notices; reading a notice never completes work. Project tasks/milestones and meeting follow-ups are Core WorkItems, with capability and current parent scope applied even in generic reminders/instruction selectors. Closed-parent history remains readable while editing/reminder delivery is suppressed. Reopen the parent explicitly before continuing work.
 
 Acceptance uses guarded isolated Alpha fixtures on reserved8104/8105/8106. `base_test` remains exclusive; do not overlap backend/copied-profile suites. Strict before/after cleanup owns exact fictional accounts/record graphs and retains private recovery snapshots. Use command-scoped `caffeinate -i` for long local browser/test runs; never disable global safety guards or flush unrelated rate limits.
+
+
+## Full desktop/mobile regression profiles
+
+The full browser suite uses the existing Alpha/Beta installations plus private, synthetic module manifests. All origins are loopback HTTP. Start the appropriate local preview with an absolute `CRM_MANIFEST` and matching `APP_URL`; Beta additionally needs `APP_ENV=beta`. A wrong origin breaks signed email links. The corresponding `scripts/*-browser-fixtures.php` helper prepares/cleans only its reserved fictional graph; follow each spec's setup and retain strict before/after cleanup. Never use real accounts or customer data.
+
+| Port | Profile | Private manifest filename under `storage/app/private/` |
+|---|---|---|
+| 8091 | Alpha / default Sales | Existing Alpha deployment manifest |
+| 8092 | Beta / isolated client extension | Existing Beta deployment manifest |
+| 8093 | Customer Service | `service-browser-manifest.json` |
+| 8094 | Executive | `executive-browser-manifest.json` |
+| 8095 | Operations | `operations-browser-manifest.json` |
+| 8096 | Core employee references | `employee-reference-browser-manifest.json` |
+| 8098 | Finance collections/expenses | `finance-ledger-browser-manifest.json` |
+| 8099 | HR | `hr-browser-manifest.json` |
+| 8100 | Payroll preparation | `payroll-browser-manifest.json` |
+| 8101 | Knowledge with optional instruction link | `knowledge-browser-manifest.json` |
+| 8102 | Marketing with optional Sales attribution | `marketing-browser-manifest.json` |
+| 8103 | Assets | `assets-browser-manifest.json` |
+| 8104 | Nonprofit Programs | `nonprofit-programs-browser-manifest.json` |
+| 8105 | Nonprofit Fundraising with Finance | `nonprofit-fundraising-browser-manifest.json` |
+| 8106 | Nonprofit Projects, standalone then connected | `nonprofit-projects-browser-manifest.json` |
+
+Port 8097 belongs to an unrelated local service and is deliberately excluded. Do not stop or reuse it. Run browsers serially (`workers:1`) and do not rebuild shared frontend assets during a run. Copied-profile tests and backend tests share `base_test` and must also run serially; the browser profiles use their separate synthetic installation databases. Keep current screenshots, traces, fixture recovery copies and detailed logs private and Git-ignored. Historical committed screenshots are illustrative; the exact current acceptance results are in [module-status.md](module-status.md).

@@ -19,6 +19,11 @@ withDefaults(
     }>(),
     { title: "History", eventLabels: () => ({}), fieldLabels: () => ({}) },
 );
+const commonFieldLabels: Record<string, string> = {
+    owner_id: "Owner",
+    due_on: "Due date",
+    completed_on: "Completion date",
+};
 const heading = useId();
 const zone = (usePage().props.brand as { timezone?: string } | undefined)
     ?.timezone;
@@ -41,7 +46,12 @@ function readable(value: string): string {
             <p v-if="entry.changed_fields?.length">
                 {{
                     entry.changed_fields
-                        .map((field) => fieldLabels[field] ?? readable(field))
+                        .map(
+                            (field) =>
+                                fieldLabels[field] ??
+                                commonFieldLabels[field] ??
+                                readable(field),
+                        )
                         .join(", ")
                 }}
             </p>

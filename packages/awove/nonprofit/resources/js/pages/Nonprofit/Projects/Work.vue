@@ -56,6 +56,7 @@ function remove() {
         </p>
         <WorkReferences :links="instructionLinks" /><HistoryList
             :history="history"
+            :field-labels="{ 'module:nonprofit:project_id': 'Project' }"
         />
         <form
             v-if="record.editable && canArchive"

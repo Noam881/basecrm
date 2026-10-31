@@ -20,7 +20,7 @@ Once payments exist, the agreed total and customer/supplier cannot change. Descr
 
 Expected receipts and supplier payments sum current outstanding balances by parent due date. Actual receipts and supplier payments sum immutable payments by their payment date, independently of the parent's due period. A January charge partially paid in February contributes its remaining balance to January expected receipts and the recorded payment to February actual receipts. These views are not an account balance or historical cash-flow forecast.
 
-One configured currency is stored with each financial record and payroll preparation. `Finance\Currency` checks both capabilities' retained rows. A deployment currency mismatch preserves readable records but blocks financial writes and combined monetary reports with a configuration error, rather than summing different currencies or showing a fabricated zero. Currency conversion is unsupported.
+One configured currency is stored with each financial record and payroll preparation. `Finance\Currency` delegates to the shared Core Currency guard across all installed, registered monetary snapshot tables, including retained rows in disabled capabilities. A deployment currency mismatch preserves readable records but blocks financial writes and combined monetary reports with a configuration error, rather than summing different currencies or showing a fabricated zero. Currency conversion is unsupported.
 
 ## Access and lifecycle
 

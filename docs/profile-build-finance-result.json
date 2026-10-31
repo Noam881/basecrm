@@ -8,7 +8,11 @@
     "awove/customer-service",
     "awove/executive",
     "awove/operations",
-    "awove/hr"
+    "awove/hr",
+    "awove/knowledge",
+    "awove/marketing",
+    "awove/assets",
+    "awove/nonprofit"
   ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",

@@ -2,7 +2,7 @@
 
 An independent, newly created CRM foundation. Nothing is imported from, connected to, or migrated from any existing CRM. This repository root is the standalone application root.
 
-The shared host/core and independent installations are retained. Local generic business-module implementation and checkpoint evidence are tracked in [module status](docs/module-status.md); the complete ten-module target remains in progress.
+The shared host/core and independent installations are retained. Local generic business-module implementation and checkpoint evidence are tracked in [module status](docs/module-status.md); all ten source modules and seven checkpoints are complete locally. Source-deferred features and production acceptance remain separate.
 
 ## Canonical source
 
@@ -125,7 +125,7 @@ python3 scripts/rehearse-upgrade.py
 docker-compose --profile full config --quiet
 ```
 
-`--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need both web servers, synthetic local fixtures and the dedicated table fixture accounts created by `seed-table-e2e.php` for Alpha and Beta. Chromium must be available (`npx playwright install chromium` if needed). They invoke the real reminder command and queue worker. Screenshots are in `docs/screenshots/`. Core-only checks build a temporary copy with the optional module physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
+`--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need the Alpha/Beta previews, every isolated module preview/manifest required by the selected specs, and dedicated synthetic fixture accounts. The full suite uses the [documented profile/origin map](docs/module-operations.md#full-desktopmobile-regression-profiles); two servers alone are insufficient. Chromium must be available (`npx playwright install chromium` if needed). Tests invoke the real reminder command and queue worker. Keep current screenshots/traces and fixture recovery evidence private; historical screenshots in `docs/screenshots/` are illustrative. Core-only and selected-package checks build temporary copies with unrelated optional code physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
 
 Workflow and contact-edit browser tests use only the dedicated table account for their Playwright project (desktop/mobile), never the human review account. Strict `beforeEach` and `afterEach` cleanup must match reserved test ownership and exact fictional email/run identifiers while preserving canonical fixtures and unrelated records. Customer display names stay natural English spellings such as Noa Levi; device names, timestamps and run IDs belong only in fictional `example.test` email addresses. Keep local recovery snapshots private and Git-ignored; never publish backups or credentials.
 
@@ -141,4 +141,4 @@ The command uses the dedicated Alpha desktop table account created by `seed-tabl
 
 ## Generic business modules
 
-The local modular implementation is tracked in [module status](docs/module-status.md), [requirements matrix](docs/requirements-matrix.md), [modular architecture](docs/modular-architecture.md), and [module operations](docs/module-operations.md). These distinguish verified functionality from remaining checkpoints and source-deferred features.
+The local modular implementation is tracked in [module status](docs/module-status.md), [requirements matrix](docs/requirements-matrix.md), [modular architecture](docs/modular-architecture.md), and [module operations](docs/module-operations.md). These record the completed seven checkpoints, exact verification, source-deferred features and separate production acceptance.

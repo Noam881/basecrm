@@ -10,7 +10,9 @@
     "awove/operations",
     "awove/hr",
     "awove/finance",
-    "awove/knowledge"
+    "awove/knowledge",
+    "awove/assets",
+    "awove/nonprofit"
   ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",

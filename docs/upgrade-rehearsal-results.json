@@ -31,7 +31,7 @@
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "139a42819711d2e8eb061d654019215e81710a19807e5af052ff693ed2c4a06a"
+    "fingerprint": "23255a57e33b7ae1120fcc7d586060d39b0a1083eb3d60de1cba01d3b907c6d2"
   },
   {
     "installation": "beta",
@@ -65,6 +65,6 @@
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "8a58bc9b09b03dd1457afac6fdad31477ba6d90484d2c7a44f97e9c6d0b50123"
+    "fingerprint": "ff434f10453bafe751f0261620c4adca2eb834d337f83f5291816d95c28b253b"
   }
 ]

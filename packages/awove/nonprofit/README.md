@@ -1,6 +1,6 @@
 # Nonprofit Extension
 
-Optional package `awove/nonprofit`1.0.0, Core`^1.1`, contract1. Hebrew source alias: **עמותה**. English interface labels remain the default. This package has no required optional-business-module dependency. Checkpoint6 acceptance is complete; see the repository delivery ledger for exact backend, browser, physical-absence and restore evidence. Final cross-module verification is tracked separately.
+Optional package `awove/nonprofit`1.0.0, Core`^1.1`, contract1. Hebrew source alias: **עמותה**. English interface labels remain the default. This package has no required optional-business-module dependency. Checkpoint6 acceptance is complete; see the repository delivery ledger for exact backend, browser, physical-absence and restore evidence. Final cross-module verification also passed; see [the completed delivery ledger](../../../docs/module-status.md).
 
 Select only the needed deployment capabilities:
 
