@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from "@inertiajs/vue3";
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { type Person, type Task } from "../../types";
 import ModuleWidgets, {
     type DashboardWidget,
@@ -28,6 +28,7 @@ const props = defineProps<{
     };
 }>();
 const currency = (usePage().props.brand as { currency: string }).currency;
+const filtersOpen = ref(false);
 const filters = reactive({
     owner: props.filters.owner ?? "",
     from: props.filters.from ?? "",
@@ -41,12 +42,29 @@ function apply() {
     <Head title="Overview" />
     <div class="crm-heading">
         <h1>Overview</h1>
-        <Link class="crm-button" href="/leads"
-            >View leads <span aria-hidden="true">↗</span></Link
-        >
+        <div class="crm-form-action">
+            <button
+                type="button"
+                class="crm-secondary"
+                :aria-expanded="filtersOpen"
+                aria-controls="overview-filters"
+                @click="filtersOpen = !filtersOpen"
+            >
+                Filters
+            </button>
+            <Link class="crm-button" href="/leads"
+                >View leads <span aria-hidden="true">↗</span></Link
+            >
+        </div>
     </div>
     <ModuleWidgets :widgets="moduleWidgets" />
-    <form class="crm-card crm-form-grid" @submit.prevent="apply">
+    <form
+        id="overview-filters"
+        v-show="filtersOpen"
+        class="crm-card crm-form-grid"
+        aria-label="Overview filters"
+        @submit.prevent="apply"
+    >
         <label
             ><span class="crm-field-label">Owner</span
             ><select v-model="filters.owner">
