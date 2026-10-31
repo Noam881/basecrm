@@ -40,6 +40,6 @@ class FollowUpReminders implements ReminderSource
             return null;
         }
 
-        return ['version' => $r->version, 'title' => 'Program follow-up: '.$r->getAttribute('next_action'), 'href' => '/nonprofit/programs/feedback/'.$r->id];
+        return ['version' => $r->version, 'title' => __('Program follow-up: :action', ['action' => $r->getAttribute('next_action')]), 'href' => '/nonprofit/programs/feedback/'.$r->id];
     }
 }

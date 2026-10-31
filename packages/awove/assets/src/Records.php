@@ -19,7 +19,7 @@ class Records
 {
     public static function moduleLabel(): string
     {
-        $label = Installation::manifest()['module_labels']['assets'] ?? 'Assets';
+        $label = Installation::manifest()['module_labels']['assets'] ?? __('Assets');
         if (! is_string($label) || trim($label) === '' || mb_strlen($label) > 100) {
             throw new \RuntimeException('Assets module label must be non-empty text of at most 100 characters.');
         }
@@ -49,7 +49,7 @@ class Records
             }
         }
 
-        return array_replace($defaults, array_intersect_key($labels, $defaults));
+        return array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key($labels, $defaults));
     }
 
     public static function clean(array $input): array
@@ -71,7 +71,7 @@ class Records
     public function version(Model $r, array $input, string $field = 'version'): void
     {
         $data = validator($input, [$field => 'required|integer|min:1'])->validate();
-        abort_unless((int) $data[$field] === $r->getAttribute('version'), 409, 'This asset or its work changed. Reload before saving.');
+        abort_unless((int) $data[$field] === $r->getAttribute('version'), 409, __('This asset or its work changed. Reload before saving.'));
     }
 
     public function owner($u, ?int $id, ?Asset $asset = null, ?int $existing = null, bool $maintenance = false): void
@@ -82,14 +82,14 @@ class Records
         abort_unless($id === $u->id || $u->can('assets.assign'), 403);
         if ($id === null) {
             if ($maintenance) {
-                throw ValidationException::withMessages(['owner_id' => 'Choose responsible staff for maintenance.']);
+                throw ValidationException::withMessages(['owner_id' => __('Choose responsible staff for maintenance.')]);
             }
 
             return;
         }
         $owner = config('auth.providers.users.model')::where('active', true)->find($id);
         if (! Access::available($owner) || ($maintenance && $asset && ! Access::query($owner)->whereKey($asset->id)->exists())) {
-            throw ValidationException::withMessages(['owner_id' => 'Choose active staff who already have access to this asset. Assignment does not grant access.']);
+            throw ValidationException::withMessages(['owner_id' => __('Choose active staff who already have access to this asset. Assignment does not grant access.')]);
         }
     }
 
@@ -114,16 +114,16 @@ class Records
         $progress = $this->hasProgress($asset, $completing);
         $field = $completion ? 'asset_status' : 'status';
         if ($progress && $status !== 'under-maintenance') {
-            throw ValidationException::withMessages([$field => 'Other maintenance remains in progress; retain Under maintenance.']);
+            throw ValidationException::withMessages([$field => __('Other maintenance remains in progress; retain Under maintenance.')]);
         }
         if ($status === 'available' && $assigned) {
-            throw ValidationException::withMessages([$field => 'An assigned asset must remain In use or Under maintenance.']);
+            throw ValidationException::withMessages([$field => __('An assigned asset must remain In use or Under maintenance.')]);
         }
         if ($completion && $status === 'in-use' && ! $assigned) {
-            throw ValidationException::withMessages(['asset_status' => 'Choose Available or Under maintenance when no assignment is open.']);
+            throw ValidationException::withMessages(['asset_status' => __('Choose Available or Under maintenance when no assignment is open.')]);
         }
         if ($status === 'retired' && ($assigned || MaintenanceRecord::where('asset_id', $asset->id)->whereNull('archived_at')->where('status', '!=', 'completed')->exists())) {
-            throw ValidationException::withMessages(['status' => 'Return open assignments and complete or explicitly archive abandoned maintenance before retiring this asset.']);
+            throw ValidationException::withMessages(['status' => __('Return open assignments and complete or explicitly archive abandoned maintenance before retiring this asset.')]);
         }
     }
 
@@ -143,7 +143,7 @@ class Records
                 $values = [...($asset?->getAttributes() ?? ['owner_id' => $u->id, 'status' => 'available']), ...$input];
                 $data = validator($values, ['code' => 'required|string|max:80', 'name' => 'required|string|max:180', 'type' => 'required|string|max:120', 'location' => 'required|string|max:180', 'owner_id' => 'nullable|integer|min:1', 'notes' => 'nullable|string|max:10000', 'purchased_on' => 'nullable|date_format:Y-m-d', 'serial_number' => 'nullable|string|max:180', 'status' => ['required', Rule::in(array_keys(self::statuses()))]])->validate();
                 if (Asset::whereRaw('lower(code)=lower(?)', [$data['code']])->when($asset, fn ($q) => $q->whereKeyNot($asset->id))->exists()) {
-                    throw ValidationException::withMessages(['code' => 'This asset ID already exists. Choose a unique ID.']);
+                    throw ValidationException::withMessages(['code' => __('This asset ID already exists. Choose a unique ID.')]);
                 }
                 $data['owner_id'] = isset($data['owner_id']) ? (int) $data['owner_id'] : null;
                 $this->owner($u, $data['owner_id'], $asset, $asset?->owner_id);
@@ -166,7 +166,7 @@ class Records
             });
         } catch (QueryException $e) {
             if ($e->getCode() === '23505' && str_contains($e->getMessage(), 'assets_register_code_unique')) {
-                throw ValidationException::withMessages(['code' => 'This asset ID already exists. Choose a unique ID.']);
+                throw ValidationException::withMessages(['code' => __('This asset ID already exists. Choose a unique ID.')]);
             }
             throw $e;
         }
@@ -181,7 +181,7 @@ class Records
             abort_unless($u->can('assets.archive'), 403);
             $this->version($asset, $input);
             if ($this->hasAssignment($asset) || MaintenanceRecord::where('asset_id', $id)->whereNull('archived_at')->where('status', '!=', 'completed')->exists()) {
-                throw ValidationException::withMessages(['asset' => 'Return current assignments and complete or explicitly archive abandoned maintenance before archiving this asset.']);
+                throw ValidationException::withMessages(['asset' => __('Return current assignments and complete or explicitly archive abandoned maintenance before archiving this asset.')]);
             }
             $asset->update(['archived_at' => now(), 'version' => $asset->version + 1]);
             $this->history($u, $asset, 'asset.archived', ['archived_at']);

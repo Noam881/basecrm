@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { MaintenanceRecord, Options } from "../types";
@@ -50,20 +51,24 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Completion date</span
+            ><span class="crm-field-label">{{ tr("Completion date") }}</span
             ><input
                 v-model="f.completed_on"
                 type="date"
                 required
                 :max="today" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Asset state after completion</span
+            ><span class="crm-field-label">{{
+                tr("Asset state after completion")
+            }}</span
             ><select
                 v-model="f.asset_status"
                 required
-                aria-label="Asset state after completion"
+                :aria-label="tr('Asset state after completion')"
             >
-                <option value="">Choose the asset's current state</option>
+                <option value="">
+                    {{ tr("Choose the asset's current state") }}
+                </option>
                 <option
                     v-for="key in ['available', 'in-use', 'under-maintenance']"
                     :key="key"
@@ -73,22 +78,28 @@ function save() {
                 </option>
             </select></label
         ><label v-if="canManageCosts && !currencyError" class="crm-field"
-            ><span class="crm-field-label">Recorded cost ({{ currency }})</span
+            ><span class="crm-field-label"
+                >{{ tr("Recorded cost (") }}{{ currency }})</span
             ><input
                 v-model="f.cost"
                 type="text"
                 inputmode="decimal"
                 placeholder="0.00" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Manual next due date</span
+            ><span class="crm-field-label">{{
+                tr("Manual next due date")
+            }}</span
             ><input v-model="f.next_due_on" type="date"
         /></label>
         <p class="crm-muted crm-form-span">
-            Use {{ statuses["in-use"] }} for an open assignment, or
-            {{ statuses["under-maintenance"] }} while other work remains in
-            progress. Completion and any recorded cost are retained unchanged.
-            Recording a cost creates no Finance transaction; the next date
-            creates no automatic recurrence.
+            {{ tr("Use") }} {{ statuses["in-use"] }}
+            {{ tr("for an open assignment, or") }}
+            {{ statuses["under-maintenance"] }}
+            {{
+                tr(
+                    "while other work remains in progress. Completion and any recorded cost are retained unchanged. Recording a cost creates no Finance transaction; the next date creates no automatic recurrence.",
+                )
+            }}
         </p>
         <p
             v-if="canManageCosts && currencyError"
@@ -98,20 +109,23 @@ function save() {
             {{ currencyError }}
         </p>
         <p v-if="stale" class="crm-notice crm-form-span" role="alert">
-            The asset or maintenance action changed. Reload the form before
-            recording completion.
+            {{
+                tr(
+                    "The asset or maintenance action changed. Reload the form before recording completion.",
+                )
+            }}
         </p>
         <FormErrors :errors="f.errors" />
         <div class="crm-form-action">
             <button class="crm-button" :disabled="f.processing || stale">
-                Complete maintenance</button
+                {{ tr("Complete maintenance") }}</button
             ><button
                 v-if="stale"
                 class="crm-secondary"
                 type="button"
                 @click="reset"
             >
-                Reload completion form
+                {{ tr("Reload completion form") }}
             </button>
         </div>
     </form>

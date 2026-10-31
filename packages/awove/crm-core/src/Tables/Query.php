@@ -128,13 +128,13 @@ class Query
         foreach ($data['filters'] ?? [] as $i => $f) {
             $c = $columns[$f['id']];
             if (! in_array($f['op'], $c->operators())) {
-                throw ValidationException::withMessages(["filters.$i.op" => 'Unsupported operator for this field.']);
+                throw ValidationException::withMessages(["filters.$i.op" => __('Unsupported operator for this field.')]);
             }if (in_array($f['op'], ['empty', 'not_empty'])) {
                 continue;
             }
             $values = $f['op'] === 'between' ? [$f['value'] ?? null, $f['value2'] ?? null] : ($f['op'] === 'in' ? ($f['value'] ?? null) : [$f['value'] ?? null]);
             if (! is_array($values) || count($values) > 100 || ! $values) {
-                throw ValidationException::withMessages(["filters.$i.value" => 'Choose one or more values.']);
+                throw ValidationException::withMessages(["filters.$i.value" => __('Choose one or more values.')]);
             }
             foreach ($values as $v) {
                 $rule = match ($c->type) {
@@ -143,7 +143,7 @@ class Query
                 validator(['value' => $v], ['value' => ['required', $rule, $c->type === 'number' ? 'between:-999999999999999,999999999999999' : 'max:500']])->validate();
             }
             if ($f['op'] === 'between' && $values[0] > $values[1]) {
-                throw ValidationException::withMessages(["filters.$i.value2" => 'The range end must be after its start.']);
+                throw ValidationException::withMessages(["filters.$i.value2" => __('The range end must be after its start.')]);
             }
         }
 

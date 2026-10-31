@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import IdentityClassificationFields from "../../../../crm-core/resources/js/components/IdentityClassificationFields.vue";
 import type { Classification, Options, Person } from "../types";
@@ -67,10 +68,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save classification"
-                          : "Add classification"
+                          ? tr("Save classification")
+                          : tr("Add classification")
                 }}
             </button>
         </div>

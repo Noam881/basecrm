@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link } from "@inertiajs/vue3";
 import ModuleWidgets, {
     type DashboardWidget,
@@ -9,14 +10,17 @@ defineProps<{
 }>();
 </script>
 <template>
-    <Head title="Overview" />
-    <h1>Overview</h1>
+    <Head :title="t('Overview')" />
+    <h1>{{ t("Overview") }}</h1>
     <ModuleWidgets :widgets="moduleWidgets" />
     <div class="crm-card crm-flow">
-        <h2>Your workspace</h2>
+        <h2>{{ t("Your workspace") }}</h2>
         <p v-if="!moduleNavigation.length">
-            No business modules are available for your account. Ask your
-            administrator for access.
+            {{
+                t(
+                    "No business modules are available for your account. Ask your administrator for access.",
+                )
+            }}
         </p>
         <Link
             v-for="item in moduleNavigation"

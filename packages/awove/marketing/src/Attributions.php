@@ -49,7 +49,7 @@ class Attributions
             $this->lead($u, $id, true);
             $r = Attribution::where('lead_id', $id)->lockForUpdate()->first();
             validator($input, ['version' => 'required|integer|min:0', 'fields' => 'sometimes|array:'.implode(',', array_keys(Labels::ATTRIBUTION)), 'linked_campaign_id' => 'sometimes|nullable|integer|min:1'])->validate();
-            abort_unless((int) $input['version'] === ($r->version ?? 0), 409, 'Attribution changed. Reload before saving.');
+            abort_unless((int) $input['version'] === ($r->version ?? 0), 409, __('Attribution changed. Reload before saving.'));
             $rules = [];
             foreach (Labels::ATTRIBUTION as $key => $label) {
                 $rules['fields.'.$key] = $key === 'landing_page_url' ? ['nullable', 'url:http,https', 'max:2048'] : ($key === 'platform' ? ['nullable', Rule::in(Labels::CHANNELS)] : ['nullable', 'string', 'max:200']);

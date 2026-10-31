@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 export interface RoutineCompletionDraft {
     completed_on: string;
     next_due_on: string;
@@ -16,7 +17,7 @@ withDefaults(
 </script>
 <template>
     <label class="crm-field">
-        <span class="crm-field-label">Completed on</span
+        <span class="crm-field-label">{{ t("Completed on") }}</span
         ><input
             v-model="model.completed_on"
             type="date"
@@ -31,16 +32,17 @@ withDefaults(
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Next due date (optional)</span
+        <span class="crm-field-label">{{ t("Next due date (optional)") }}</span
         ><input
             v-model="model.next_due_on"
             type="date"
             :aria-invalid="!!errors.next_due_on"
         />
-        <small class="crm-muted"
-            >Choose a date manually to schedule the next occurrence. Leave blank
-            to keep it unscheduled.</small
-        >
+        <small class="crm-muted">{{
+            t(
+                "Choose a date manually to schedule the next occurrence. Leave blank to keep it unscheduled.",
+            )
+        }}</small>
         <small v-if="errors.next_due_on" data-slot="input-error" role="alert">{{
             errors.next_due_on
         }}</small>

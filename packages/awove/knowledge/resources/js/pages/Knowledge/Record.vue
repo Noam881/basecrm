@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import RecordForm from "../../components/RecordForm.vue";
@@ -47,7 +48,7 @@ const props = defineProps<
     }
 >();
 const title = computed(
-    () => props.record.title ?? props.record.name ?? "Knowledge record",
+    () => props.record.title ?? props.record.name ?? tr("Knowledge record"),
 );
 const warning = ref("");
 const document = useForm({ name: "", url: "" });
@@ -82,8 +83,9 @@ function renew() {
             renewal.reset("next_expiry_on", "next_remind_on", "summary"),
         onHttpException: (response) => {
             if (response.status === 409) {
-                warning.value =
-                    "This renewal changed. Reload before recording completion.";
+                warning.value = tr(
+                    "This renewal changed. Reload before recording completion.",
+                );
                 return false;
             }
         },
@@ -150,7 +152,8 @@ const events = {
     <Head :title="title" /><Link
         class="crm-back"
         :href="'/knowledge?section=' + section"
-        >← Back to {{ sectionLabels[section].toLowerCase() }}</Link
+        >{{ tr("← Back to") }}
+        {{ tr(sectionLabels[section]).toLowerCase() }}</Link
     >
     <div class="crm-heading">
         <h1>{{ title }}</h1>
@@ -159,19 +162,19 @@ const events = {
             class="crm-secondary"
             @click="archive"
         >
-            Archive record
+            {{ tr("Archive record") }}
         </button>
     </div>
     <div class="crm-flow">
         <p v-if="warning" class="crm-notice" role="alert">{{ warning }}</p>
         <section class="crm-card crm-flow">
-            <h2>Record details</h2>
+            <h2>{{ tr("Record details") }}</h2>
             <p>
-                {{ section === "systems" ? "Access owner" : "Owner" }}:
-                {{ record.owner?.name ?? "Unassigned" }}
+                {{ section === "systems" ? tr("Access owner") : tr("Owner") }}:
+                {{ record.owner?.name ?? tr("Unassigned") }}
             </p>
             <p v-if="record.archived_at" class="crm-muted">
-                Archived · Historical information retained
+                {{ tr("Archived · Historical information retained") }}
             </p>
             <RecordForm
                 v-if="editable"
@@ -189,7 +192,7 @@ const events = {
                             record[field as keyof KnowledgeRecord] !== null
                         "
                     >
-                        <dt>{{ label }}</dt>
+                        <dt>{{ tr(label) }}</dt>
                         <dd>
                             {{
                                 field === "status"
@@ -210,32 +213,37 @@ const events = {
                 :href="record.login_href"
                 target="_blank"
                 rel="noopener noreferrer"
-                >Open public login page</a
+                >{{ tr("Open public login page") }}</a
             >
             <p
                 v-if="section === 'systems' && canViewSystemReferences"
                 class="crm-muted"
             >
-                This record points to your password manager. No password or
-                secret key belongs in the CRM.
+                {{
+                    tr(
+                        "This record points to your password manager. No password or secret key belongs in the CRM.",
+                    )
+                }}
             </p>
         </section>
         <section v-if="section === 'renewals'" class="crm-card crm-flow">
-            <h2>Renewal history</h2>
+            <h2>{{ tr("Renewal history") }}</h2>
             <p v-if="!renewals.length" class="crm-muted">
-                No completed renewal has been recorded.
+                {{ tr("No completed renewal has been recorded.") }}
             </p>
             <article v-for="event in renewals" :key="event.id" class="crm-note">
                 <p>
-                    Renewed {{ event.renewed_on }} ·
-                    {{ event.actor?.name ?? "Former staff" }}
+                    {{ tr("Renewed") }} {{ event.renewed_on }} ·
+                    {{ event.actor?.name ?? tr("Former staff") }}
                 </p>
                 <p>
-                    Previous expiry {{ event.previous_expiry_on }} ·
+                    {{ tr("Previous expiry") }} {{ event.previous_expiry_on }} ·
                     {{
                         event.next_expiry_on
-                            ? "Next expiry " + event.next_expiry_on
-                            : "No next expiry scheduled"
+                            ? tr("Next expiry {date}", {
+                                  date: event.next_expiry_on,
+                              })
+                            : tr("No next expiry scheduled")
                     }}
                 </p>
                 <p v-if="event.summary">{{ event.summary }}</p>
@@ -245,29 +253,33 @@ const events = {
                 class="crm-form-grid"
                 @submit.prevent="renew"
             >
-                <h3>Record renewal</h3>
+                <h3>{{ tr("Record renewal") }}</h3>
                 <label class="crm-field"
-                    ><span class="crm-field-label">Renewed on</span
+                    ><span class="crm-field-label">{{ tr("Renewed on") }}</span
                     ><input
                         v-model="renewal.renewed_on"
                         type="date"
                         :max="today"
                         required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Next expiry date (optional)</span
+                    ><span class="crm-field-label">{{
+                        tr("Next expiry date (optional)")
+                    }}</span
                     ><input
                         v-model="renewal.next_expiry_on"
                         type="date" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Next reminder date (optional)</span
+                    ><span class="crm-field-label">{{
+                        tr("Next reminder date (optional)")
+                    }}</span
                     ><input
                         v-model="renewal.next_remind_on"
                         type="date"
                         :max="renewal.next_expiry_on || undefined" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Renewal summary</span
+                    ><span class="crm-field-label">{{
+                        tr("Renewal summary")
+                    }}</span
                     ><textarea
                         v-model="renewal.summary"
                         rows="3"
@@ -275,9 +287,11 @@ const events = {
                     />
                 </label>
                 <p class="crm-muted">
-                    Enter the next dates explicitly. Leaving the next expiry
-                    blank records a completed renewal without generating another
-                    occurrence.
+                    {{
+                        tr(
+                            "Enter the next dates explicitly. Leaving the next expiry blank records a completed renewal without generating another occurrence.",
+                        )
+                    }}
                 </p>
                 <div
                     v-if="Object.keys(renewal.errors).length"
@@ -290,7 +304,7 @@ const events = {
                 </div>
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="renewal.processing">
-                        Record renewal
+                        {{ tr("Record renewal") }}
                     </button>
                 </div>
             </form>
@@ -299,9 +313,9 @@ const events = {
             v-if="section !== 'systems' && canViewDocuments"
             class="crm-card crm-flow"
         >
-            <h2>Documents and materials</h2>
+            <h2>{{ tr("Documents and materials") }}</h2>
             <p v-if="!documents.length" class="crm-muted">
-                No document references yet.
+                {{ tr("No document references yet.") }}
             </p>
             <article
                 v-for="entry in documents"
@@ -313,9 +327,9 @@ const events = {
                     target="_blank"
                     rel="noopener noreferrer"
                     >{{ entry.name }}</a
-                ><span v-if="entry.archived_at" class="crm-muted"
-                    >Archived, retained</span
-                >
+                ><span v-if="entry.archived_at" class="crm-muted">{{
+                    tr("Archived, retained")
+                }}</span>
                 <div
                     v-else-if="editable && canManageDocuments"
                     class="crm-form-action"
@@ -330,7 +344,7 @@ const events = {
                             )
                         "
                     >
-                        Archive document reference
+                        {{ tr("Archive document reference") }}
                     </button>
                 </div>
             </article>
@@ -340,13 +354,17 @@ const events = {
                 @submit.prevent="addDocument"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Document name</span
+                    ><span class="crm-field-label">{{
+                        tr("Document name")
+                    }}</span
                     ><input
                         v-model="document.name"
                         maxlength="180"
                         required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">HTTPS document link</span
+                    ><span class="crm-field-label">{{
+                        tr("HTTPS document link")
+                    }}</span
                     ><input
                         v-model="document.url"
                         maxlength="2048"
@@ -364,19 +382,22 @@ const events = {
                 </div>
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="document.processing">
-                        Add document reference
+                        {{ tr("Add document reference") }}
                     </button>
                 </div>
             </form>
         </section>
         <section v-if="section === 'library'" class="crm-card crm-flow">
-            <h2>Linked work and routines</h2>
+            <h2>{{ tr("Linked work and routines") }}</h2>
             <p class="crm-muted">
-                Only links you can access are shown. Actual completion remains
-                with the owning work or routine.
+                {{
+                    tr(
+                        "Only links you can access are shown. Actual completion remains with the owning work or routine.",
+                    )
+                }}
             </p>
             <p v-if="!instructions.length" class="crm-muted">
-                No accessible work links yet.
+                {{ tr("No accessible work links yet.") }}
             </p>
             <article
                 v-for="entry in instructions"
@@ -400,7 +421,7 @@ const events = {
                             )
                         "
                     >
-                        Remove instruction link
+                        {{ tr("Remove instruction link") }}
                     </button>
                 </div>
             </article>
@@ -410,9 +431,13 @@ const events = {
                 @submit.prevent="addInstruction"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Work or routine</span
+                    ><span class="crm-field-label">{{
+                        tr("Work or routine")
+                    }}</span
                     ><select v-model="instruction.reference_key" required>
-                        <option value="">Choose accessible work</option>
+                        <option value="">
+                            {{ tr("Choose accessible work") }}
+                        </option>
                         <option
                             v-for="entry in instructionOptions"
                             :key="entry.key"
@@ -436,21 +461,23 @@ const events = {
                         class="crm-button"
                         :disabled="instruction.processing"
                     >
-                        Link instruction
+                        {{ tr("Link instruction") }}
                     </button>
                 </div>
             </form>
         </section>
         <HistoryList
             :history="history"
-            :event-labels="events"
-            :field-labels="{
-                ...fields,
-                owner_id: 'Owner',
-                documents: 'Documents',
-                instructions: 'Linked instructions',
-                login_url: 'Public login page',
-            }"
+            :event-labels="translateLabels(events)"
+            :field-labels="
+                translateLabels({
+                    ...fields,
+                    owner_id: 'Owner',
+                    documents: 'Documents',
+                    instructions: 'Linked instructions',
+                    login_url: 'Public login page',
+                })
+            "
         />
     </div>
 </template>

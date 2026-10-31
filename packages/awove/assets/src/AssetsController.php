@@ -191,9 +191,9 @@ class AssetsController
         $through = now(Installation::settings()['timezone'])->addDays(30)->toDateString();
         $work = Access::maintenance($r->user())->whereIn('asset_id', $active)->whereNull('archived_at');
         $effective = "(CASE WHEN status='completed' THEN next_due_on ELSE due_on END)";
-        $metrics[] = ['id' => 'upcoming-maintenance', 'label' => 'Maintenance in the next 30 days', 'value' => (clone $work)->whereRaw($effective.' BETWEEN ? AND ?', [$today, $through])->count(), 'href' => '/assets?'.http_build_query([...$r->only(['type', 'location', 'owner_id']), 'section' => 'maintenance', 'view' => 'upcoming'])];
-        $metrics[] = ['id' => 'overdue-maintenance', 'label' => 'Overdue maintenance dates', 'value' => (clone $work)->whereRaw($effective.' < ?', [$today])->count(), 'href' => '/assets?'.http_build_query([...$r->only(['type', 'location', 'owner_id']), 'section' => 'maintenance', 'view' => 'overdue'])];
-        $metrics[] = ['id' => 'overdue-returns', 'label' => 'Overdue returns', 'value' => Access::assignments($r->user())->whereIn('asset_id', $active)->whereNull('returned_on')->where('expected_return_on', '<', $today)->count(), 'href' => '/assets?'.http_build_query([...$r->only(['type', 'location', 'owner_id']), 'section' => 'assignments', 'view' => 'overdue'])];
+        $metrics[] = ['id' => 'upcoming-maintenance', 'label' => __('Maintenance in the next 30 days'), 'value' => (clone $work)->whereRaw($effective.' BETWEEN ? AND ?', [$today, $through])->count(), 'href' => '/assets?'.http_build_query([...$r->only(['type', 'location', 'owner_id']), 'section' => 'maintenance', 'view' => 'upcoming'])];
+        $metrics[] = ['id' => 'overdue-maintenance', 'label' => __('Overdue maintenance dates'), 'value' => (clone $work)->whereRaw($effective.' < ?', [$today])->count(), 'href' => '/assets?'.http_build_query([...$r->only(['type', 'location', 'owner_id']), 'section' => 'maintenance', 'view' => 'overdue'])];
+        $metrics[] = ['id' => 'overdue-returns', 'label' => __('Overdue returns'), 'value' => Access::assignments($r->user())->whereIn('asset_id', $active)->whereNull('returned_on')->where('expected_return_on', '<', $today)->count(), 'href' => '/assets?'.http_build_query([...$r->only(['type', 'location', 'owner_id']), 'section' => 'assignments', 'view' => 'overdue'])];
         $table = app(Query::class)->run($this->query($r, $s), 'assets.'.$s, $r);
         $table['page']->through(fn ($row) => $s === 'register' ? [...$this->serializeAsset($row), 'record_url' => '/assets/register/'.$row->id, 'record_link_column' => 'name'] : ($s === 'assignments' ? [...$this->serializeAssignment($r->user(), $row), 'record_url' => '/assets/register/'.$row->asset_id, 'record_link_column' => 'asset'] : [...$this->serializeMaintenance($r->user(), $row), 'record_url' => '/assets/maintenance/'.$row->id, 'record_link_column' => 'action']));
 
@@ -349,7 +349,7 @@ class AssetsController
         $u = Access::fresh($r->user());
         abort_unless($u->can('assets.export'), 403);
         $q = app(Query::class)->filtered($this->query($r, $s), 'assets.'.$s, $r);
-        abort_if((clone $q)->count() > 5000, 422, 'Narrow the filters to export at most 5,000 asset records.');
+        abort_if((clone $q)->count() > 5000, 422, __('Narrow the filters to export at most 5,000 asset records.'));
         $headers = match ($s) {
             'register' => ['id', 'code', 'name', 'type', 'location', 'owner', 'status', 'purchased_on', 'serial_number', 'notes'],'assignments' => ['id', 'asset', 'target_type', 'employee', 'customer', 'location', 'assigned_on', 'expected_return_on', 'returned_on', 'return_condition', 'notes'],'maintenance' => ['id', 'asset', 'action', 'description', 'owner', 'supplier', 'due_on', 'status', 'completed_on', 'next_due_on', ...($u->can('assets.costs.view') ? ['cost', 'currency'] : [])],default => abort(404)
         };

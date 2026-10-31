@@ -22,12 +22,12 @@ class Meetings
             foreach (['summary', 'decisions'] as $f) {
                 $data[$f] = filled($data[$f] ?? null) ? trim($data[$f]) : null;
             }if (! $data['summary']) {
-                throw ValidationException::withMessages(['summary' => 'Enter a meeting summary.']);
+                throw ValidationException::withMessages(['summary' => __('Enter a meeting summary.')]);
             }
             $follow = null;
             if (! empty($data['follow_up'])) {
                 if ($m?->follow_up_work_item_id) {
-                    throw ValidationException::withMessages(['follow_up' => 'Edit the existing follow-up from its task profile.']);
+                    throw ValidationException::withMessages(['follow_up' => __('Edit the existing follow-up from its task profile.')]);
                 }$follow = app(Work::class)->createWithin($u, $p, 'project-tasks', $data['follow_up']);
             }unset($data['follow_up']);
             if ($m) {

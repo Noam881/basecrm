@@ -9,6 +9,7 @@ use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
 use Awove\Core\Models\Status;
 use Awove\Core\Modules;
+use Awove\Core\StatusDisplay;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,7 @@ class Spreadsheet
             'source' => ContactDetails::SOURCES,
         ];
         if (app(Modules::class)->enabled('sales')) {
-            $definitions['leads']['options'] = ['status_id' => Status::orderBy('position')->pluck('name', 'id')->all(), 'priority' => ['low' => 'Low', 'normal' => 'Normal', 'high' => 'High']];
+            $definitions['leads']['options'] = ['status_id' => Status::orderBy('position')->get()->mapWithKeys(fn (Status $status) => [$status->id => StatusDisplay::label($status)])->all(), 'priority' => ['low' => 'Low', 'normal' => 'Normal', 'high' => 'High']];
         }
 
         return $definitions;
@@ -67,7 +68,7 @@ class Spreadsheet
         $this->authorize($user, 'import', $type);
         validator(['file' => $file], ['file' => 'required|file|max:1024'])->validate();
         if (strtolower($file->getClientOriginalExtension()) !== 'csv') {
-            throw ValidationException::withMessages(['file' => 'Upload a UTF-8 CSV file. Excel workbooks are not supported.']);
+            throw ValidationException::withMessages(['file' => __('Upload a UTF-8 CSV file. Excel workbooks are not supported.')]);
         }
         $rows = $this->parse($file, $type);
         [$validated, $errors, $warnings] = $this->validateRows($user, $type, $rows);
@@ -83,23 +84,23 @@ class Spreadsheet
     public function confirm($user, string $token, bool $acceptDuplicates = false): array
     {
         $this->authorize($user, 'import');
-        abort_unless(preg_match('/^[a-f0-9]{64}$/D', $token), 409, 'Preview this file again before importing.');
+        abort_unless(preg_match('/^[a-f0-9]{64}$/D', $token), 409, __('Preview this file again before importing.'));
         $key = $this->key($user, $token);
         $result = Cache::lock($key.':lock', 60)->get(function () use ($user, $key, $acceptDuplicates) {
             $preview = Cache::get($key);
-            abort_unless(is_array($preview), 409, 'This preview expired or was already imported. Preview the file again.');
+            abort_unless(is_array($preview), 409, __('This preview expired or was already imported. Preview the file again.'));
             $this->authorize($user, 'import', $preview['type']);
             $result = DB::transaction(function () use ($user, $preview, $acceptDuplicates, $key) {
                 [$rows, $errors, $warnings] = $this->validateRows($user, $preview['type'], $preview['rows']);
                 if ($errors !== []) {
-                    throw ValidationException::withMessages(['preview' => 'Some records are no longer valid or accessible. Preview this file again.']);
+                    throw ValidationException::withMessages(['preview' => __('Some records are no longer valid or accessible. Preview this file again.')]);
                 }
-                abort_unless($warnings === $preview['warnings'], 409, 'Possible duplicates changed since preview. Preview the file again.');
+                abort_unless($warnings === $preview['warnings'], 409, __('Possible duplicates changed since preview. Preview the file again.'));
                 if ($warnings !== [] && ! $acceptDuplicates) {
-                    throw ValidationException::withMessages(['accept_duplicates' => 'Review the duplicate warnings and confirm keeping separate records.']);
+                    throw ValidationException::withMessages(['accept_duplicates' => __('Review the duplicate warnings and confirm keeping separate records.')]);
                 }
                 // Consume before creating: a cache failure after DB commit must never make this token replayable.
-                abort_unless(Cache::forget($key), 503, 'The preview could not be consumed safely. Preview the file again.');
+                abort_unless(Cache::forget($key), 503, __('The preview could not be consumed safely. Preview the file again.'));
                 $ids = [];
                 foreach ($rows as $row) {
                     $record = $preview['type'] === 'leads'
@@ -113,7 +114,7 @@ class Spreadsheet
 
             return $result;
         });
-        abort_if($result === false, 409, 'An import is already processing this preview.');
+        abort_if($result === false, 409, __('An import is already processing this preview.'));
 
         return $result;
     }
@@ -131,7 +132,7 @@ class Spreadsheet
         $query = $type === 'leads'
             ? Access::leads($user)->whereNull('archived_at')->with(['contact:id,name', 'company:id,name'])
             : Access::identities($user, $type === 'contacts' ? Contact::class : Company::class);
-        abort_if((clone $query)->count() > self::MAX_EXPORT_ROWS, 422, 'This export exceeds the 10,000-record limit.');
+        abort_if((clone $query)->count() > self::MAX_EXPORT_ROWS, 422, __('This export exceeds the 10,000-record limit.'));
         $columns = $type === 'leads'
             ? ['id', ...self::COLUMNS[$type], 'contact_name', 'company_name', 'created_at']
             : ['id', ...array_diff(self::COLUMNS[$type], ['notes']), 'created_at'];
@@ -270,7 +271,7 @@ class Spreadsheet
 
     private function csv(string $name, array $header, iterable $rows): StreamedResponse
     {
-        return app(Csv::class)->download($name, $header, $rows);
+        return app(Csv::class)->download($name, $header, $rows, localizeHeaders: false);
     }
 
     public static function safeCell(string $value): string

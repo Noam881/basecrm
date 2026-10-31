@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
 import NonprofitNav from "../../../components/NonprofitNav.vue";
 import ProjectForm from "../../../components/Projects/ProjectForm.vue";
@@ -77,33 +78,36 @@ function unlink(
     <Head :title="record.name" /><Link
         class="crm-back"
         href="/nonprofit/projects"
-        >← Projects</Link
+        >{{ tr("← Projects") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.name }}</h1>
         <span class="crm-badge">{{
-            record.archived_at ? "Archived" : statuses[record.status]
+            record.archived_at ? tr("Archived") : statuses[record.status]
         }}</span>
     </div>
     <div class="crm-flow">
         <NonprofitNav :sections="sections" />
         <section class="crm-card crm-flow">
-            <h2>Project plan</h2>
+            <h2>{{ tr("Project plan") }}</h2>
             <ProjectForm v-bind="p" />
         </section>
         <p v-if="!record.active" class="crm-notice">
-            Related work, meetings and links are retained read only. Reopen an
-            unarchived project to resume work.
+            {{
+                tr(
+                    "Related work, meetings and links are retained read only. Reopen an unarchived project to resume work.",
+                )
+            }}
         </p>
         <section v-if="canViewBudget" class="crm-card crm-flow">
-            <h2>Budget and actual payments</h2>
+            <h2>{{ tr("Budget and actual payments") }}</h2>
             <dl class="crm-detail-grid">
                 <div class="crm-detail-item">
-                    <dt>Planned budget</dt>
+                    <dt>{{ tr("Planned budget") }}</dt>
                     <dd>
                         {{
                             actuals.planned_budget === null
-                                ? "Not entered"
+                                ? tr("Not entered")
                                 : actuals.planned_budget +
                                   " " +
                                   actuals.currency
@@ -111,35 +115,36 @@ function unlink(
                     </dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Actual incoming receipts</dt>
+                    <dt>{{ tr("Actual incoming receipts") }}</dt>
                     <dd>
                         {{
                             actuals.incoming.available
                                 ? actuals.incoming.total +
                                   " " +
                                   actuals.currency
-                                : "Unavailable"
+                                : tr("Unavailable")
                         }}
                     </dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Actual outgoing payments</dt>
+                    <dt>{{ tr("Actual outgoing payments") }}</dt>
                     <dd>
                         {{
                             actuals.outgoing.available
                                 ? actuals.outgoing.total +
                                   " " +
                                   actuals.currency
-                                : "Unavailable"
+                                : tr("Unavailable")
                         }}
                     </dd>
                 </div>
             </dl>
             <p class="crm-muted">
-                Actuals include whole linked Finance payments only. Planned
-                budgets, receipts and outgoing payments remain separate. A
-                missing capability or inaccessible linked record makes that
-                actual total unavailable.
+                {{
+                    tr(
+                        "Actuals include whole linked Finance payments only. Planned budgets, receipts and outgoing payments remain separate. A missing capability or inaccessible linked record makes that actual total unavailable.",
+                    )
+                }}
             </p>
             <form
                 class="crm-form-grid"
@@ -147,31 +152,37 @@ function unlink(
                 :action="`/nonprofit/projects/${record.id}`"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Payment date from</span
+                    ><span class="crm-field-label">{{
+                        tr("Payment date from")
+                    }}</span
                     ><input
                         type="date"
                         name="actual_from"
                         :value="actuals.from ?? ''" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Payment date to</span
+                    ><span class="crm-field-label">{{
+                        tr("Payment date to")
+                    }}</span
                     ><input
                         type="date"
                         name="actual_to"
                         :value="actuals.to ?? ''"
                 /></label>
                 <div class="crm-form-action">
-                    <button class="crm-secondary">Apply payment dates</button>
+                    <button class="crm-secondary">
+                        {{ tr("Apply payment dates") }}
+                    </button>
                 </div>
             </form>
             <details v-if="budgets.length" class="crm-form-disclosure">
-                <summary>Budget history</summary>
+                <summary>{{ tr("Budget history") }}</summary>
                 <article
                     v-for="budget in budgets"
                     :key="budget.id"
                     class="crm-note"
                 >
                     <strong>{{ budget.amount }} {{ budget.currency }}</strong>
-                    <p>{{ budget.actor?.name ?? "Former staff" }}</p>
+                    <p>{{ budget.actor?.name ?? tr("Former staff") }}</p>
                 </article>
             </details>
             <article
@@ -186,8 +197,8 @@ function unlink(
                     <p>
                         {{
                             link.target.direction === "incoming"
-                                ? "Incoming receipt"
-                                : "Outgoing supplier payment"
+                                ? tr("Incoming receipt")
+                                : tr("Outgoing supplier payment")
                         }}
                     </p>
                     <div
@@ -200,13 +211,16 @@ function unlink(
                             class="crm-secondary"
                             @click="unlink('payments', link)"
                         >
-                            Remove payment association
+                            {{ tr("Remove payment association") }}
                         </button>
                     </div></template
                 >
                 <p v-else class="crm-muted">
-                    A retained financial association is unavailable with your
-                    current access.
+                    {{
+                        tr(
+                            "A retained financial association is unavailable with your current access.",
+                        )
+                    }}
                 </p>
             </article>
         </section>
@@ -218,12 +232,12 @@ function unlink(
             <h2>
                 {{
                     kind === "project-tasks"
-                        ? "Tasks and follow-ups"
-                        : "Milestones"
+                        ? tr("Tasks and follow-ups")
+                        : tr("Milestones")
                 }}
             </h2>
             <p v-if="!work[kind]?.length" class="crm-muted">
-                No accessible work recorded.
+                {{ tr("No accessible work recorded.") }}
             </p>
             <article
                 v-for="item in work[kind] ?? []"
@@ -234,14 +248,15 @@ function unlink(
                     <Link :href="item.record_url">{{ item.title }}</Link
                     ><span class="crm-badge">{{
                         item.archived_at
-                            ? "Archived"
+                            ? tr("Archived")
                             : workStatuses[item.status]
                     }}</span>
                 </div>
                 <p>
-                    {{ item.owner?.name ?? "Unassigned" }} · Due {{ item.due_on
+                    {{ item.owner?.name ?? tr("Unassigned") }} {{ tr("· Due") }}
+                    {{ item.due_on
                     }}<span v-if="item.completed_on">
-                        · Completed {{ item.completed_on }}</span
+                        {{ tr("· Completed") }} {{ item.completed_on }}</span
                     >
                 </p>
             </article>
@@ -252,8 +267,8 @@ function unlink(
                 <summary>
                     {{
                         kind === "project-tasks"
-                            ? "Add project task"
-                            : "Add milestone"
+                            ? tr("Add project task")
+                            : tr("Add milestone")
                     }}
                 </summary>
                 <WorkEditor
@@ -265,9 +280,9 @@ function unlink(
             </details>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Meetings and decisions</h2>
+            <h2>{{ tr("Meetings and decisions") }}</h2>
             <p v-if="!meetings.length" class="crm-muted">
-                No meeting summaries recorded.
+                {{ tr("No meeting summaries recorded.") }}
             </p>
             <article
                 v-for="meeting in meetings"
@@ -277,23 +292,24 @@ function unlink(
                 <h3>{{ meeting.held_on }}</h3>
                 <p>{{ meeting.summary }}</p>
                 <p v-if="meeting.decisions">
-                    <strong>Decisions: </strong>{{ meeting.decisions }}
+                    <strong>{{ tr("Decisions:") }} </strong
+                    >{{ meeting.decisions }}
                 </p>
                 <p v-if="meeting.follow_up">
                     <Link :href="meeting.follow_up.record_url">{{
                         meeting.follow_up.title
                     }}</Link>
-                    · {{ meeting.follow_up.owner?.name ?? "Unassigned" }} · Due
-                    {{ meeting.follow_up.due_on }}
+                    · {{ meeting.follow_up.owner?.name ?? tr("Unassigned") }}
+                    {{ tr("· Due") }} {{ meeting.follow_up.due_on }}
                 </p>
                 <p v-else-if="meeting.follow_up_restricted" class="crm-muted">
-                    A follow-up is retained with restricted access.
+                    {{ tr("A follow-up is retained with restricted access.") }}
                 </p>
                 <details
                     v-if="record.editable && record.active"
                     class="crm-form-disclosure"
                 >
-                    <summary>Edit meeting</summary>
+                    <summary>{{ tr("Edit meeting") }}</summary>
                     <MeetingEditor
                         v-bind="p"
                         :project="record"
@@ -305,14 +321,14 @@ function unlink(
                 v-if="record.editable && record.active && canCreate"
                 class="crm-form-disclosure"
             >
-                <summary>Record a meeting</summary>
+                <summary>{{ tr("Record a meeting") }}</summary>
                 <MeetingEditor v-bind="p" :project="record" />
             </details>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Equipment and purchases</h2>
+            <h2>{{ tr("Equipment and purchases") }}</h2>
             <p v-if="!resources.length" class="crm-muted">
-                No existing resources linked.
+                {{ tr("No existing resources linked.") }}
             </p>
             <article
                 v-for="(link, index) in resources"
@@ -331,12 +347,16 @@ function unlink(
                             class="crm-secondary"
                             @click="unlink('resources', link)"
                         >
-                            Remove resource link
+                            {{ tr("Remove resource link") }}
                         </button>
                     </div></template
                 >
                 <p v-else class="crm-muted">
-                    A retained resource is unavailable with your current access.
+                    {{
+                        tr(
+                            "A retained resource is unavailable with your current access.",
+                        )
+                    }}
                 </p>
             </article>
             <ConnectionsForms
@@ -346,13 +366,15 @@ function unlink(
             />
         </section>
         <section v-if="canViewDocuments" class="crm-card crm-flow">
-            <h2>Documents</h2>
+            <h2>{{ tr("Documents") }}</h2>
             <p v-if="!documents.length" class="crm-muted">
-                No document links recorded.
+                {{ tr("No document links recorded.") }}
             </p>
             <article v-for="d in documents" :key="d.id" class="crm-note">
                 <Link :href="d.href">{{ d.name }}</Link>
-                <p v-if="d.archived_at" class="crm-muted">Archived</p>
+                <p v-if="d.archived_at" class="crm-muted">
+                    {{ tr("Archived") }}
+                </p>
                 <div
                     v-if="
                         !d.archived_at &&
@@ -363,7 +385,7 @@ function unlink(
                     class="crm-form-action"
                 >
                     <button class="crm-secondary" @click="archiveDocument(d)">
-                        Archive document
+                        {{ tr("Archive document") }}
                     </button>
                 </div>
             </article>
@@ -371,16 +393,20 @@ function unlink(
                 v-if="record.editable && record.active && canManageDocuments"
                 class="crm-form-disclosure"
             >
-                <summary>Add document link</summary>
+                <summary>{{ tr("Add document link") }}</summary>
                 <form class="crm-form" @submit.prevent="addDocument">
                     <label class="crm-field"
-                        ><span class="crm-field-label">Document name</span
+                        ><span class="crm-field-label">{{
+                            tr("Document name")
+                        }}</span
                         ><input
                             v-model="document.name"
                             required
                             maxlength="180" /></label
                     ><label class="crm-field"
-                        ><span class="crm-field-label">Document URL</span
+                        ><span class="crm-field-label">{{
+                            tr("Document URL")
+                        }}</span
                         ><input
                             v-model="document.url"
                             required
@@ -392,7 +418,7 @@ function unlink(
                             class="crm-button"
                             :disabled="document.processing"
                         >
-                            Add document
+                            {{ tr("Add document") }}
                         </button>
                     </div>
                 </form>
@@ -405,13 +431,16 @@ function unlink(
             @submit.prevent="remove"
         >
             <p>
-                Archiving retains the plan, work, meeting summaries, financial
-                associations and history. It creates no financial transaction.
+                {{
+                    tr(
+                        "Archiving retains the plan, work, meeting summaries, financial associations and history. It creates no financial transaction.",
+                    )
+                }}
             </p>
             <Errors :errors="archive.errors" />
             <div class="crm-form-action">
                 <button class="crm-secondary" :disabled="archive.processing">
-                    Archive project
+                    {{ tr("Archive project") }}
                 </button>
             </div>
         </form>

@@ -20,6 +20,7 @@ use Awove\Core\Services\Sales;
 use Awove\Core\Services\Tasks;
 use Awove\Core\Services\Users;
 use Awove\Core\Services\WorkReminders;
+use Awove\Core\StatusDisplay;
 use Awove\Core\Tables\Preferences;
 use Awove\Core\Tables\Query;
 use Carbon\CarbonImmutable;
@@ -34,7 +35,7 @@ class CrmController
 {
     private function options($u): array
     {
-        return ['statuses' => Status::orderBy('position')->get(), 'contacts' => Access::identities($u, Contact::class)->orderBy('name')->limit(200)->get(['id', 'name']), 'companies' => Access::identities($u, Company::class)->orderBy('name')->limit(200)->get(['id', 'name']), 'owners' => $u->can('leads.assign') ? config('auth.providers.users.model')::where('active', true)->get(['id', 'name']) : [['id' => $u->id, 'name' => $u->name]], 'fields' => Installation::manifest()['custom_fields']];
+        return ['statuses' => Status::orderBy('position')->get()->map(fn (Status $status) => StatusDisplay::copy($status)), 'contacts' => Access::identities($u, Contact::class)->orderBy('name')->limit(200)->get(['id', 'name']), 'companies' => Access::identities($u, Company::class)->orderBy('name')->limit(200)->get(['id', 'name']), 'owners' => $u->can('leads.assign') ? config('auth.providers.users.model')::where('active', true)->get(['id', 'name']) : [['id' => $u->id, 'name' => $u->name]], 'fields' => Installation::manifest()['custom_fields']];
     }
 
     public function dashboard(Request $r)
@@ -109,7 +110,7 @@ class CrmController
         }
 
         $table = app(Query::class)->run($q, 'leads', $r);
-        $table['page']->getCollection()->each(fn (Lead $lead) => $lead->setAttribute('editable', Gate::forUser($r->user())->allows('update', $lead)));
+        $table['page']->getCollection()->each(fn (Lead $lead) => $lead->setAttribute('editable', Gate::forUser($r->user())->allows('update', $lead))->setRelation('status', $lead->status ? StatusDisplay::copy($lead->status) : null));
 
         return Inertia::render('Core/Leads', [...$this->options($r->user()), 'table' => $table, 'leads' => $table['page'], 'filters' => $r->only('owner', 'status', 'source', 'priority', 'view'), 'preferences' => $table['preferences']]);
     }
@@ -130,7 +131,7 @@ class CrmController
             abort_unless(config('auth.providers.users.model')::where('active', true)->whereKey($data['owner_id'])->exists(), 422);
         }
         if (! $update) {
-            abort_unless(! empty($data['contact_id']) || ! empty($data['company_id']), 422, 'Choose a contact or company.');
+            abort_unless(! empty($data['contact_id']) || ! empty($data['company_id']), 422, __('Choose a contact or company.'));
         }
 
         return $data;
@@ -147,7 +148,10 @@ class CrmController
     {
         Gate::authorize('view', $lead);
 
-        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name'), 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'sales' => app(Sales::class)->details($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
+        $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name');
+        $lead->setRelation('status', $lead->status ? StatusDisplay::copy($lead->status) : null);
+
+        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead, 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'sales' => app(Sales::class)->details($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
     }
 
     public function update(Request $r, Lead $lead, Leads $service)

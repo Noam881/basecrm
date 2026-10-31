@@ -1,9 +1,13 @@
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
+import "@fontsource/noto-sans-hebrew/400.css";
+import "@fontsource/noto-sans-hebrew/500.css";
+import "@fontsource/noto-sans-hebrew/700.css";
 import "@fontsource/material-symbols-outlined";
 import { materialStateLayers } from "./lib/material";
-import { createInertiaApp } from "@inertiajs/vue3";
+import { configurePresentation, t } from "./lib/i18n";
+import { createInertiaApp, router } from "@inertiajs/vue3";
 import { createApp, h, type DefineComponent, type DirectiveBinding } from "vue";
 import Shell from "../../vendor/awove/crm-core/resources/js/Shell.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
@@ -37,7 +41,21 @@ void createInertiaApp({
         return (await loader()).default;
     },
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        configurePresentation(
+            props.initialPage.props.brand as {
+                locale?: unknown;
+                theme?: unknown;
+            },
+        );
+        router.on("navigate", (event) => {
+            configurePresentation(
+                event.detail.page.props.brand as {
+                    locale?: unknown;
+                    theme?: unknown;
+                },
+            );
+        });
+        const app = createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(materialStateLayers)
             .directive("focus", {
@@ -47,8 +65,9 @@ void createInertiaApp({
                 ) {
                     if (binding.value !== false) el.focus();
                 },
-            })
-            .mount(el);
+            });
+        app.config.globalProperties.$t = t;
+        app.mount(el);
     },
     progress: { color: "var(--md-sys-color-primary)" },
 });

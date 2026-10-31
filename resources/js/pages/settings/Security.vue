@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head } from "@inertiajs/vue3";
 import Heading from "@/components/Heading.vue";
 import { edit } from "@/routes/security";
@@ -12,7 +13,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: "Account settings",
+                title: t("Account settings"),
                 href: edit(),
             },
         ],
@@ -21,16 +22,18 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Account settings" />
+    <Head :title="t('Account settings')" />
 
     <div class="crm-flow">
         <Heading
             variant="small"
-            title="Account sign-in"
-            description="Sign in using a link sent to your email address."
+            :title="t('Account sign-in')"
+            :description="t('Sign in using a link sent to your email address.')"
         />
         <dl>
-            <dt class="text-sm text-muted-foreground">Email address</dt>
+            <dt class="text-sm text-muted-foreground">
+                {{ t("Email address") }}
+            </dt>
             <dd class="break-all">{{ email }}</dd>
         </dl>
     </div>

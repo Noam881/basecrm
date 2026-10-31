@@ -62,7 +62,7 @@ class FinanceModule implements CapabilityProvider, DashboardContributor, Module,
             }
         }
 
-        return $permissions ? [new NavigationItem(Installation::manifest()['module_labels']['finance'] ?? 'Finance', '/finance', array_shift($permissions), $permissions)] : [];
+        return $permissions ? [new NavigationItem(Installation::manifest()['module_labels']['finance'] ?? __('Finance'), '/finance', array_shift($permissions), $permissions)] : [];
     }
 
     public function sections($user): array

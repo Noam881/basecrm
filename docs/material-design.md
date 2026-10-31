@@ -1,8 +1,31 @@
 # Material Design 3
 
-The CRM follows Material Design 3 component geometry, typography, interaction states, motion and elevation with a neutral product palette. Black, white and greys define the canvas, surfaces, text, navigation, tables and form fields in both light and dark modes. Purple shades are reserved for buttons, notices and count/status bubbles. This user preference supersedes the earlier pink accent preference and exact [Material 3 baseline colour](https://m3.material.io/styles/color/static/baseline) palette. All colours come from shared semantic tokens; pages must not introduce their own tints. The light application canvas remains near-white grey `#FAFAFA` through `--crm-canvas-color`. Brand names and logos remain installation-specific.
+The CRM follows Material Design 3 component geometry, typography, interaction states, motion and elevation with a neutral product palette. Black, white and greys define the canvas, surfaces, text, navigation, tables and form fields in both light and dark modes. The Base default reserves purple shades for buttons, notices and count/status bubbles. Installations may select the shared green accent preset; neutral surface roles remain identical. This user preference supersedes the earlier pink accent preference and exact [Material 3 baseline colour](https://m3.material.io/styles/color/static/baseline) palette. All colours come from shared semantic tokens; pages must not introduce their own tints. The light application canvas remains near-white grey `#FAFAFA` through `--crm-canvas-color`. Brand names and logos remain installation-specific.
 
 Accent roles are explicit and shared: light mode uses `#6750A4` with white text, and `#EADDFF` containers with `#21005D` text. Dark mode uses `#D0BCFF` with `#381E72` text, and `#4F378B` containers with `#EADDFF` text. These accents do not tint navigation, tables, fields or page surfaces.
+
+## Installation themes and Hebrew
+
+Deployment manifests select `theme: "purple" | "green"` and `locale: "en" | "he"`. Both values are validated and deployment-locked; a persisted settings row or user preference cannot replace them. Omitted values retain Base's purple/English defaults. Legacy free-form `color` is still ignored. The selected theme changes only shared accent roles, not component geometry or neutral canvas/surface/field/table/navigation roles.
+
+| Green theme | Accent    | On accent | Container | On container |
+| ----------- | --------- | --------- | --------- | ------------ |
+| Light       | `#23654E` | `#FFFFFF` | `#E7F1EB` | `#173B2B`    |
+| Dark        | `#8DD2B1` | `#093825` | `#234D3A` | `#C7ECD8`    |
+
+These paired roles have contrast ratios of at least 6.9:1. Dark appearance remains independent of the installation theme. The green preset implements Niva's approved direction while purple remains the Base default.
+
+Hebrew sets the initial document `lang="he"` and `dir="rtl"` before application rendering. The frontend retains those values on navigation. Locally bundled Noto Sans Hebrew supplies Hebrew glyphs; default English retains Roboto. Shared outlined fields, dialogs, menus, drawer, tables, logical pinning/resizing and directional icons use the same Material system. Email, URL, phone and exact decimal inputs keep their appropriate reading direction. Interface language never converts currencies, rewrites record names/content or changes stable status IDs.
+
+English source messages and Hebrew catalogs belong to their packages. The host loads only installed package catalogs. Translate explicit interface text and metadata; never traverse domain payloads or translate arbitrary authored names, notes, saved-view names or custom field labels. Backend errors, validation and sign-in email use the installation locale as well.
+
+The fictional [Hebrew profile](../installations/examples/hebrew/manifest.json) demonstrates the presentation independently of real installation settings. To exercise it against the existing isolated Alpha fixture database, keep Alpha running on 8091 and start a second local preview:
+
+```sh
+CRM_MANIFEST="$PWD/installations/examples/hebrew/manifest.json" APP_URL=http://127.0.0.1:8107 php artisan serve --host=127.0.0.1 --port=8107 --no-reload
+```
+
+Do not run `crm:install` or provisioning for this shared local preview. `tests/e2e/localization.spec.ts` uses reserved Alpha table accounts and strict fixture cleanup to verify Hebrew/green, persisted forms and return to English/purple. An actual Niva deployment keeps its own database and private manifest; the shared database above is only a local test arrangement.
 
 ## Shared implementation
 

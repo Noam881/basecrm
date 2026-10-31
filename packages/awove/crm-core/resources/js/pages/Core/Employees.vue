@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, router, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
 import DataTable from "../../components/table/DataTable.vue";
@@ -27,9 +28,9 @@ function save() {
 }
 </script>
 <template>
-    <Head title="Employee references" />
+    <Head :title="t('Employee references')" />
     <div class="crm-heading">
-        <h1>Employee references</h1>
+        <h1>{{ t("Employee references") }}</h1>
         <a
             v-if="canExport"
             class="crm-secondary"
@@ -37,7 +38,7 @@ function save() {
                 '/people/employees/export?' +
                 queryString({ ...filters, ...table.state })
             "
-            >Export CSV</a
+            >{{ t("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
@@ -48,20 +49,22 @@ function save() {
             "
         >
             <label class="crm-field"
-                ><span class="crm-field-label">Reference status filter</span
+                ><span class="crm-field-label">{{
+                    t("Reference status filter")
+                }}</span
                 ><select v-model="active">
-                    <option value="">All references</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
+                    <option value="">{{ t("All references") }}</option>
+                    <option value="1">{{ t("Active") }}</option>
+                    <option value="0">{{ t("Inactive") }}</option>
                 </select></label
             >
             <div class="crm-form-action">
-                <button class="crm-button">Apply filter</button>
+                <button class="crm-button">{{ t("Apply filter") }}</button>
             </div>
         </form>
         <section v-if="canManage" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add employee reference</summary>
+                <summary>{{ t("Add employee reference") }}</summary>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <EmployeeReferenceFields
                         :model-value="form"
@@ -80,8 +83,8 @@ function save() {
                         <button class="crm-button" :disabled="form.processing">
                             {{
                                 form.processing
-                                    ? "Saving…"
-                                    : "Create employee reference"
+                                    ? t("Saving…")
+                                    : t("Create employee reference")
                             }}
                         </button>
                     </div>
@@ -91,7 +94,7 @@ function save() {
         <DataTable
             :payload="table"
             endpoint="/people/employees"
-            title="Employee references"
+            :title="t('Employee references')"
             :base-query="filters"
         />
     </div>

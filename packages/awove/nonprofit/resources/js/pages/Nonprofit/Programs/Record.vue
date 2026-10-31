@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { computed } from "vue";
 import type {
@@ -39,8 +40,8 @@ const title = computed(
     () =>
         p.record.name ??
         (p.kind === "attendance"
-            ? "Attendance"
-            : (p.record.next_action ?? "Feedback")),
+            ? tr("Attendance")
+            : (p.record.next_action ?? tr("Feedback"))),
 );
 function archive() {
     router.post(
@@ -57,13 +58,15 @@ function archive() {
     <Head :title="title" /><Link
         class="crm-back"
         :href="`/nonprofit/programs?section=${kind}`"
-        >← {{ titles[kind] }}</Link
+        >← {{ tr(titles[kind]) }}</Link
     >
     <div class="crm-heading">
         <h1>{{ title }}</h1>
-        <span v-if="record.archived_at" class="crm-badge">Archived</span
+        <span v-if="record.archived_at" class="crm-badge">{{
+            tr("Archived")
+        }}</span
         ><span v-else-if="record.active !== undefined" class="crm-badge">{{
-            record.active ? "Active" : "Inactive"
+            record.active ? tr("Active") : tr("Inactive")
         }}</span>
     </div>
     <div class="crm-flow">
@@ -75,10 +78,10 @@ function archive() {
             <h2>
                 {{
                     kind === "attendance"
-                        ? "Attendance details"
+                        ? tr("Attendance details")
                         : kind === "feedback"
-                          ? "Feedback details"
-                          : titles[kind] + " details"
+                          ? tr("Feedback details")
+                          : tr("{kind} details", { kind: tr(titles[kind]) })
                 }}
             </h2>
             <p v-if="program && kind !== 'programs'">
@@ -88,7 +91,7 @@ function archive() {
             </p>
             <template v-if="kind === 'attendance' && session && program"
                 ><p>
-                    Session:
+                    {{ tr("Session:") }}
                     <Link
                         :href="`/nonprofit/programs/sessions/${session.id}`"
                         >{{ session.name }}</Link
@@ -110,22 +113,22 @@ function archive() {
                 class="crm-detail-grid"
             >
                 <div class="crm-detail-item">
-                    <dt>Shared contact</dt>
+                    <dt>{{ tr("Shared contact") }}</dt>
                     <dd>{{ record.contact.name }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Shared contact email</dt>
-                    <dd>{{ record.contact.email ?? "Not provided" }}</dd>
+                    <dt>{{ tr("Shared contact email") }}</dt>
+                    <dd>{{ record.contact.email ?? tr("Not provided") }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Shared contact phone</dt>
-                    <dd>{{ record.contact.phone ?? "Not provided" }}</dd>
+                    <dt>{{ tr("Shared contact phone") }}</dt>
+                    <dd>{{ record.contact.phone ?? tr("Not provided") }}</dd>
                 </div>
             </dl>
         </section>
         <section v-if="kind === 'programs'" class="crm-card crm-flow">
-            <h2>Sessions</h2>
-            <p v-if="!sessions.length">No sessions recorded.</p>
+            <h2>{{ tr("Sessions") }}</h2>
+            <p v-if="!sessions.length">{{ tr("No sessions recorded.") }}</p>
             <article
                 v-for="child in sessions"
                 :key="child.id"
@@ -135,20 +138,20 @@ function archive() {
                     <Link :href="`/nonprofit/programs/sessions/${child.id}`">{{
                         child.name
                     }}</Link
-                    ><span v-if="child.archived_at" class="crm-badge"
-                        >Archived</span
-                    >
+                    ><span v-if="child.archived_at" class="crm-badge">{{
+                        tr("Archived")
+                    }}</span>
                 </div>
                 <p>
                     {{ child.session_on }} ·
-                    {{ child.location?.name ?? "Location not specified" }}
+                    {{ child.location?.name ?? tr("Location not specified") }}
                 </p>
             </article>
             <details
                 v-if="record.editable && canCreate"
                 class="crm-form-disclosure"
             >
-                <summary>Add session</summary>
+                <summary>{{ tr("Add session") }}</summary>
                 <Editor
                     v-bind="p"
                     kind="sessions"
@@ -158,13 +161,16 @@ function archive() {
             </details>
         </section>
         <section v-if="kind === 'sessions'" class="crm-card crm-flow">
-            <h2>Recorded attendance</h2>
+            <h2>{{ tr("Recorded attendance") }}</h2>
             <p v-if="!canViewParticipants" class="crm-notice">
-                Participant and attendance records require separate roster
-                access.
+                {{
+                    tr(
+                        "Participant and attendance records require separate roster access.",
+                    )
+                }}
             </p>
             <p v-else-if="!attendance.length">
-                No attendance recorded for visible participants.
+                {{ tr("No attendance recorded for visible participants.") }}
             </p>
             <article v-for="row in attendance" :key="row.id" class="crm-note">
                 <div class="crm-inline">
@@ -181,7 +187,7 @@ function archive() {
                 v-if="record.editable && canManageAttendance && program"
                 class="crm-form-disclosure"
             >
-                <summary>Record participant attendance</summary>
+                <summary>{{ tr("Record participant attendance") }}</summary>
                 <AttendanceEditor
                     v-bind="p"
                     :record="undefined"
@@ -191,29 +197,29 @@ function archive() {
             </details>
         </section>
         <section v-if="kind === 'programs'" class="crm-card crm-flow">
-            <h2>Feedback and follow-ups</h2>
-            <p v-if="!feedback.length">No feedback recorded.</p>
+            <h2>{{ tr("Feedback and follow-ups") }}</h2>
+            <p v-if="!feedback.length">{{ tr("No feedback recorded.") }}</p>
             <article
                 v-for="child in feedback"
                 :key="child.id"
                 class="crm-note crm-flow"
             >
                 <Link :href="`/nonprofit/programs/feedback/${child.id}`"
-                    >{{ child.next_action ?? "Feedback" }} ·
+                    >{{ child.next_action ?? tr("Feedback") }} ·
                     {{ child.feedback_on }}</Link
                 >
                 <p>{{ child.comments }}</p>
                 <p v-if="child.due_on">
-                    Follow-up: {{ child.due_on }} ·
-                    {{ child.follow_up_owner?.name ?? "Unassigned"
-                    }}{{ child.completed_on ? " · Completed" : "" }}
+                    {{ tr("Follow-up:") }} {{ child.due_on }} ·
+                    {{ child.follow_up_owner?.name ?? tr("Unassigned")
+                    }}{{ child.completed_on ? tr(" · Completed") : "" }}
                 </p>
             </article>
             <details
                 v-if="record.editable && canCreate"
                 class="crm-form-disclosure"
             >
-                <summary>Add feedback</summary>
+                <summary>{{ tr("Add feedback") }}</summary>
                 <Editor
                     v-bind="p"
                     kind="feedback"
@@ -231,11 +237,11 @@ function archive() {
         <HistoryList :history="history" />
         <section v-if="canArchive && record.editable" class="crm-card crm-flow">
             <p class="crm-muted">
-                Archiving retains this record and its history.
+                {{ tr("Archiving retains this record and its history.") }}
             </p>
             <div class="crm-form-action">
                 <button type="button" class="crm-secondary" @click="archive">
-                    Archive record
+                    {{ tr("Archive record") }}
                 </button>
             </div>
         </section>

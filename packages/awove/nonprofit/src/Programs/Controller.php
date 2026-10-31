@@ -246,7 +246,7 @@ class Controller
         abort_unless(is_string($kind) && isset(Access::MODELS[$kind]), 404);
         abort_unless($u->can(Access::prefix($kind).'.export'), 403);
         $q = $this->tables->filtered($this->query($request, $kind), 'nonprofit.programs-'.$kind, $request);
-        abort_if((clone $q)->count() > 5000, 422, 'Narrow the export to at most 5,000 records.');
+        abort_if((clone $q)->count() > 5000, 422, __('Narrow the export to at most 5,000 records.'));
         $columns = (new Tables)->columns('nonprofit.programs-'.$kind, $u);
         $rows = $q->cursor()->map(function ($r) use ($columns) {
             $row = [];

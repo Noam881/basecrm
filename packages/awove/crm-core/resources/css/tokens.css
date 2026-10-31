@@ -1,6 +1,7 @@
-/* Neutral product palette. Purple is reserved for shared actions, notices and badges. */
+/* Neutral surfaces with deployment-selected accents for actions, notices and badges. */
 :root {
     color-scheme: light;
+    --crm-font-family: Roboto, Arial, sans-serif;
     --crm-canvas-color: #fafafa;
     --crm-accent: #6750a4;
     --crm-on-accent: #ffffff;
@@ -115,6 +116,22 @@
     --md-sys-color-scrim: #000000;
     --md-sys-color-shadow: #000000;
 }
+/* Approved semantic theme presets never tint neutral surfaces or change geometry. */
+:root[data-crm-theme="green"] {
+    --crm-accent: #23654e;
+    --crm-on-accent: #ffffff;
+    --crm-accent-container: #e7f1eb;
+    --crm-on-accent-container: #173b2b;
+}
+:root.dark[data-crm-theme="green"] {
+    --crm-accent: #8dd2b1;
+    --crm-on-accent: #093825;
+    --crm-accent-container: #234d3a;
+    --crm-on-accent-container: #c7ecd8;
+}
+:root[lang="he"] {
+    --crm-font-family: "Noto Sans Hebrew", Roboto, Arial, sans-serif;
+}
 :root {
     --md-sys-shape-corner-extra-small: 4px;
     --md-sys-shape-corner-small: 8px;
@@ -122,10 +139,10 @@
     --md-sys-shape-corner-large: 16px;
     --md-sys-shape-corner-extra-large: 28px;
     --md-sys-shape-corner-full: 999px;
-    --md-sys-typescale-body-large-font: Roboto;
-    --md-sys-typescale-body-medium-font: Roboto;
-    --md-sys-typescale-label-large-font: Roboto;
-    --md-sys-typescale-title-large-font: Roboto;
+    --md-sys-typescale-body-large-font: var(--crm-font-family);
+    --md-sys-typescale-body-medium-font: var(--crm-font-family);
+    --md-sys-typescale-label-large-font: var(--crm-font-family);
+    --md-sys-typescale-title-large-font: var(--crm-font-family);
     --md-sys-motion-duration-short1: 50ms;
     --md-sys-motion-duration-short2: 100ms;
     --md-sys-motion-duration-short3: 150ms;

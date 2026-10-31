@@ -42,6 +42,6 @@ class LedgerReminders implements ReminderSource
             return null;
         }$record = app(Ledger::class)->query($user, $this->cap)->where('owner_id', $recipientId)->whereNull('cancelled_at')->whereRaw(Tables::remainingExpression().'>0')->whereRaw(($this->cap === 'collections' ? 'COALESCE(next_action_on,due_on)' : 'due_on').' <= ?', [now(Installation::settings()['timezone'])->toDateString()])->find($recordId);
 
-        return $record ? ['version' => $record->version, 'title' => ($this->cap === 'collections' ? 'Collection action: ' : 'Supplier payment due: ').$record->reference, 'href' => '/finance/'.$this->cap.'/'.$record->id] : null;
+        return $record ? ['version' => $record->version, 'title' => __($this->cap === 'collections' ? 'Collection action: :reference' : 'Supplier payment due: :reference', ['reference' => $record->reference]), 'href' => '/finance/'.$this->cap.'/'.$record->id] : null;
     }
 }

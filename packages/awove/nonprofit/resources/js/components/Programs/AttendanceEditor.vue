@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { Options, ProgramRecord } from "./types";
@@ -68,21 +69,28 @@ function save() {
             "
         >
             <label class="crm-field"
-                ><span class="crm-field-label">Participant</span
+                ><span class="crm-field-label">{{ tr("Participant") }}</span
                 ><select
                     v-model="f.participant_id"
                     required
                     :disabled="!!record"
-                    aria-label="Participant"
+                    :aria-label="tr('Participant')"
                 >
-                    <option :value="null" disabled>Choose participant</option>
+                    <option :value="null" disabled>
+                        {{ tr("Choose participant") }}
+                    </option>
                     <option v-for="r in people" :key="r.id" :value="r.id">
                         {{ r.name }}
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Attendance status</span
-                ><select v-model="f.status" aria-label="Attendance status">
+                ><span class="crm-field-label">{{
+                    tr("Attendance status")
+                }}</span
+                ><select
+                    v-model="f.status"
+                    :aria-label="tr('Attendance status')"
+                >
                     <option
                         v-for="(label, key) in statuses"
                         :key="key"
@@ -92,16 +100,23 @@ function save() {
                     </option>
                 </select></label
             ><label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Attendance notes</span
+                ><span class="crm-field-label">{{
+                    tr("Attendance notes")
+                }}</span
                 ><textarea v-model="f.notes" maxlength="3000" rows="2" />
             </label>
         </fieldset>
         <p class="crm-muted">
-            One record per participant and session. Unrecorded attendance is not
-            counted as absent.
+            {{
+                tr(
+                    "One record per participant and session. Unrecorded attendance is not counted as absent.",
+                )
+            }}
         </p>
         <p v-if="stale" class="crm-notice" role="alert">
-            The session changed. Reload current details before saving.
+            {{
+                tr("The session changed. Reload current details before saving.")
+            }}
         </p>
         <Errors :errors="f.errors" />
         <div
@@ -109,14 +124,16 @@ function save() {
             class="crm-form-action"
         >
             <button class="crm-button" :disabled="f.processing || stale">
-                {{ record ? "Save attendance" : "Record attendance" }}</button
+                {{
+                    record ? tr("Save attendance") : tr("Record attendance")
+                }}</button
             ><button
                 v-if="stale"
                 type="button"
                 class="crm-secondary"
                 @click="sync"
             >
-                Reload current details
+                {{ tr("Reload current details") }}
             </button>
         </div>
     </form>

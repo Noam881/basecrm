@@ -26,7 +26,7 @@ class Tables
         } elseif ($s === 'candidates') {
             $columns = [...$columns, new Column('name', 'Candidate', "$table.name", width: 240), new Column('email', 'Email', "$table.email"), new Column('phone', 'Phone', "$table.phone"), new Column('stage', 'Stage', "$table.stage", 'select', options: $choices(Records::stages())), new Column('next_action_on', 'Next action date', "$table.next_action_on", 'date')];
         } else {
-            $columns = [...$columns, new Column('name', 'Case', "$table.name", width: 260), new Column('kind', 'Purpose', "$table.kind", 'select', options: $choices(['onboarding' => 'Onboarding', 'offboarding' => 'Offboarding'])), new Column('due_on', 'Due date', "$table.due_on", 'date'), new Column('completed_on', 'Completion date', "$table.completed_on", 'date'), new Column('final_work_on', 'Final working date', "$table.final_work_on", 'date')];
+            $columns = [...$columns, new Column('name', 'Case', "$table.name", width: 260), new Column('kind', 'Purpose', "$table.kind", 'select', options: $choices(['onboarding' => __('Onboarding'), 'offboarding' => __('Offboarding')])), new Column('due_on', 'Due date', "$table.due_on", 'date'), new Column('completed_on', 'Completion date', "$table.completed_on", 'date'), new Column('final_work_on', 'Final working date', "$table.final_work_on", 'date')];
         }
 
         return [...$columns, new Column('created_at', 'Created', "$table.created_at", 'datetime'), new Column('archived_at', 'Archived', "$table.archived_at", 'datetime')];

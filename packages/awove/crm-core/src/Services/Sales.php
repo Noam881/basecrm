@@ -70,10 +70,10 @@ class Sales
             'version' => $quotation ? 'required|integer|min:1' : 'prohibited',
         ])->after(function ($validator) use ($data) {
             if (empty($data['proposal_id']) && empty($data['document_url'])) {
-                $validator->errors()->add('document_url', 'Attach an uploaded proposal version or a document link.');
+                $validator->errors()->add('document_url', __('Attach an uploaded proposal version or a document link.'));
             }
             if (! empty($data['proposal_id']) && ! empty($data['document_url'])) {
-                $validator->errors()->add('document_url', 'Choose one uploaded document or one document link.');
+                $validator->errors()->add('document_url', __('Choose one uploaded document or one document link.'));
             }
         })->validate();
 
@@ -83,8 +83,8 @@ class Sales
             if ($quotation) {
                 $quotation = Quotation::lockForUpdate()->findOrFail($quotation->id);
                 abort_unless($quotation->lead_id === $locked->id, 404);
-                abort_unless($quotation->version === (int) $data['version'], 409, 'This quotation changed. Reload before saving.');
-                abort_if($quotation->status === 'accepted', 422, 'Accepted quotations are retained unchanged. Create a new quotation for a revision.');
+                abort_unless($quotation->version === (int) $data['version'], 409, __('This quotation changed. Reload before saving.'));
+                abort_if($quotation->status === 'accepted', 422, __('Accepted quotations are retained unchanged. Create a new quotation for a revision.'));
             }
             unset($data['version']);
             $data['accepted_at'] = $data['status'] === 'accepted' ? now() : null;

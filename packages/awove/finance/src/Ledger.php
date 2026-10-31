@@ -61,11 +61,11 @@ class Ledger
             $record = $this->query($user, $cap)->lockForUpdate()->findOrFail($id);
             Access::edit($user, $record, $cap);
             $this->version($record, $input);
-            abort_if($record->cancelled_at !== null, 403, 'Cancelled records are retained read only.');
+            abort_if($record->cancelled_at !== null, 403, __('Cancelled records are retained read only.'));
             $this->currency($record);
             $data = $this->validate($user, $cap, $input, $record);
             if (Payment::where('record_id', $id)->exists() && ($data['total'] !== $record->total || $data['relationship_id'] !== $record->relationship_id)) {
-                throw ValidationException::withMessages(['total' => 'Payments already exist. Changing the financial total or customer/supplier requires an agreed correction policy and is unsupported.']);
+                throw ValidationException::withMessages(['total' => __('Payments already exist. Changing the financial total or customer/supplier requires an agreed correction policy and is unsupported.')]);
             }
             $before = $record->only(array_keys($data));
             $record->update([...$data, 'version' => $record->version + 1]);
@@ -91,15 +91,15 @@ class Ledger
             $fingerprint = hash('sha256', json_encode(array_intersect_key($data, array_flip(['amount', 'paid_on', 'reference', 'notes'])), JSON_THROW_ON_ERROR));
             $existing = Payment::where('record_id', $id)->where('submission_key', $data['submission_key'])->first();
             if ($existing) {
-                abort_unless(hash_equals($existing->submission_fingerprint, $fingerprint), 409, 'This payment key records different input.');
+                abort_unless(hash_equals($existing->submission_fingerprint, $fingerprint), 409, __('This payment key records different input.'));
 
                 return $existing;
             }
             $this->version($record, $data);
             if ($record->cancelled_at) {
-                throw ValidationException::withMessages(['amount' => 'Cancelled records cannot receive payments.']);
+                throw ValidationException::withMessages(['amount' => __('Cancelled records cannot receive payments.')]);
             }if (Money::compare($data['amount'], $this->remaining($record)) > 0) {
-                throw ValidationException::withMessages(['amount' => 'Payment exceeds the outstanding balance. Overpayments, credits and refunds are unsupported.']);
+                throw ValidationException::withMessages(['amount' => __('Payment exceeds the outstanding balance. Overpayments, credits and refunds are unsupported.')]);
             }
             $payment = Payment::create(['record_id' => $id, 'actor_id' => $user->id, ...array_intersect_key($data, array_flip(['amount', 'paid_on', 'reference', 'notes', 'submission_key'])), 'submission_fingerprint' => $fingerprint]);
             $record->update(['version' => $record->version + 1]);
@@ -120,7 +120,7 @@ class Ledger
             $this->version($record, $input);
             $data = validator($input, ['cancellation_reason' => 'required|string|max:10000'])->validate();
             if (Payment::where('record_id', $id)->exists()) {
-                throw ValidationException::withMessages(['cancellation_reason' => 'Payments already exist. Cancellation after payment requires an agreed refund/credit policy and is unsupported.']);
+                throw ValidationException::withMessages(['cancellation_reason' => __('Payments already exist. Cancellation after payment requires an agreed refund/credit policy and is unsupported.')]);
             }if (! $record->cancelled_at) {
                 $record->update(['cancelled_at' => now(), 'cancelled_by' => $user->id, 'cancellation_reason' => $data['cancellation_reason'], 'version' => $record->version + 1]);
                 $this->historyEntry($record, $user, 'record.cancelled', ['reason' => $data['cancellation_reason']]);
@@ -201,7 +201,7 @@ class Ledger
         $data = [...['relationship_id' => $record?->relationship_id, 'owner_id' => $record ? $record->owner_id : $user->id, 'category' => null, 'document_url' => null, 'next_action' => null, 'next_action_on' => null], ...$data];
         $data['relationship_id'] = filled($data['relationship_id']) ? (int) $data['relationship_id'] : $record?->relationship_id;
         if (! $data['relationship_id']) {
-            throw ValidationException::withMessages(['relationship_id' => 'Choose an existing active '.self::role($cap).' classification.']);
+            throw ValidationException::withMessages(['relationship_id' => __('Choose an existing active :role classification.', ['role' => __(ucfirst(self::role($cap)))])]);
         }if (! $record || $data['relationship_id'] !== $record->relationship_id) {
             $relationship = app(IdentityRelationships::class)->query($user, self::role($cap))->where('active', true)->find($data['relationship_id']);
             abort_unless($relationship !== null, 403);
@@ -219,7 +219,7 @@ class Ledger
             $data['next_action'] = null;
             $data['next_action_on'] = null;
         } elseif (filled($data['next_action']) !== filled($data['next_action_on'])) {
-            throw ValidationException::withMessages(['next_action' => 'Enter both the next collection action and its date, or leave both blank.']);
+            throw ValidationException::withMessages(['next_action' => __('Enter both the next collection action and its date, or leave both blank.')]);
         }
 
         return $data;
@@ -234,13 +234,13 @@ class Ledger
     private function version(LedgerRecord $record, array $input): void
     {
         $data = validator($input, ['version' => 'required|integer|min:1'])->validate();
-        abort_unless($record->version === (int) $data['version'], 409, 'This financial record changed. Reload before saving.');
+        abort_unless($record->version === (int) $data['version'], 409, __('This financial record changed. Reload before saving.'));
     }
 
     private function currency(LedgerRecord $record): void
     {
         if ($record->currency !== Installation::settings()['currency']) {
-            throw ValidationException::withMessages(['currency' => 'The installation currency differs from this retained record. Cross-currency changes are unsupported.']);
+            throw ValidationException::withMessages(['currency' => __('The installation currency differs from this retained record. Cross-currency changes are unsupported.')]);
         }
     }
 

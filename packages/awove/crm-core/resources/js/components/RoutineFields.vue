@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 export interface RoutineDraft {
     name: string;
     owner_id: number | null;
@@ -20,7 +21,7 @@ withDefaults(
 </script>
 <template>
     <label class="crm-field crm-form-span">
-        <span class="crm-field-label">Name</span
+        <span class="crm-field-label">{{ t("Name") }}</span
         ><input
             v-model="model.name"
             required
@@ -32,10 +33,15 @@ withDefaults(
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Owner</span
+        <span class="crm-field-label">{{ t("Owner") }}</span
         ><select v-model="model.owner_id" :disabled="!canAssign">
-            <option :value="null">Unassigned</option>
-            <option v-for="owner in owners" :key="owner.id" :value="owner.id">
+            <option :value="null">{{ t("Unassigned") }}</option>
+            <option
+                dir="auto"
+                v-for="owner in owners"
+                :key="owner.id"
+                :value="owner.id"
+            >
                 {{ owner.name }}
             </option>
         </select>
@@ -44,24 +50,25 @@ withDefaults(
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Frequency</span
+        <span class="crm-field-label">{{ t("Frequency") }}</span
         ><input
             v-model="model.frequency"
             required
             maxlength="120"
-            placeholder="For example, Weekly"
+            :placeholder="t('For example, Weekly')"
             :aria-invalid="!!errors.frequency"
         />
-        <small class="crm-muted"
-            >A description for the owner; the next occurrence is scheduled
-            manually.</small
-        >
+        <small class="crm-muted">{{
+            t(
+                "A description for the owner; the next occurrence is scheduled manually.",
+            )
+        }}</small>
         <small v-if="errors.frequency" data-slot="input-error" role="alert">{{
             errors.frequency
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Next due date</span
+        <span class="crm-field-label">{{ t("Next due date") }}</span
         ><input
             v-model="model.next_due_on"
             type="date"
@@ -75,17 +82,22 @@ withDefaults(
     <section
         v-if="showChecklist"
         class="crm-flow crm-form-span"
-        aria-label="Routine checklist"
+        :aria-label="t('Routine checklist')"
     >
-        <h3>Checklist (optional)</h3>
+        <h3>{{ t("Checklist (optional)") }}</h3>
         <label
             v-for="(_, index) in model.checklist"
             :key="index"
             class="crm-field"
         >
-            <span class="crm-field-label">Checklist item {{ index + 1 }}</span
+            <span class="crm-field-label">{{
+                t("Checklist item {number}", { number: index + 1 })
+            }}</span
             ><input
                 v-model="model.checklist[index]"
+                :aria-label="
+                    t('Checklist item {number}', { number: index + 1 })
+                "
                 required
                 maxlength="200"
                 :aria-invalid="!!errors[`checklist.${index}`]"
@@ -99,10 +111,14 @@ withDefaults(
             <button
                 type="button"
                 class="crm-ghost"
-                :aria-label="`Remove checklist item ${index + 1}`"
+                :aria-label="
+                    t('Remove checklist item {value0}', {
+                        value0: String(index + 1),
+                    })
+                "
                 @click="model.checklist.splice(index, 1)"
             >
-                Remove item
+                {{ t("Remove item") }}
             </button>
         </label>
         <small v-if="errors.checklist" data-slot="input-error" role="alert">{{
@@ -115,7 +131,7 @@ withDefaults(
                 :disabled="model.checklist.length >= 20"
                 @click="model.checklist.push('')"
             >
-                Add checklist item
+                {{ t("Add checklist item") }}
             </button>
         </div>
     </section>

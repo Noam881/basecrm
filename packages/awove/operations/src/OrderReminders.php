@@ -32,6 +32,6 @@ class OrderReminders implements ReminderSource
         $user = config('auth.providers.users.model')::find($recipientId);
         $order = Access::orders($user)->where('owner_id', $recipientId)->whereNull('archived_at')->whereIn('status', ['ordered', 'part-received'])->where('expected_on', '<=', now(Installation::settings()['timezone'])->toDateString())->find($recordId);
 
-        return $order ? ['version' => $order->version, 'title' => 'Supplier delivery: '.$order->reference, 'href' => '/operations/orders/'.$order->id] : null;
+        return $order ? ['version' => $order->version, 'title' => __('Supplier delivery: :reference', ['reference' => $order->reference]), 'href' => '/operations/orders/'.$order->id] : null;
     }
 }

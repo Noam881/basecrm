@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { computed } from "vue";
 export interface EmployeeSummary {
     id: number;
@@ -15,7 +16,7 @@ const props = withDefaults(
         error?: string;
         canManage?: boolean;
     }>(),
-    { label: "Employee", required: true, canManage: false },
+    { label: () => t("Employee"), required: true, canManage: false },
 );
 const choices = computed(() =>
     props.selected &&
@@ -33,13 +34,14 @@ const choices = computed(() =>
             :aria-invalid="!!error"
             :aria-label="label"
         >
-            <option :value="null">Choose an employee</option>
+            <option :value="null">{{ t("Choose an employee") }}</option>
             <option
+                dir="auto"
                 v-for="employee in choices"
                 :key="employee.id"
                 :value="employee.id"
             >
-                {{ employee.name }}{{ employee.active ? "" : " (inactive)" }}
+                {{ employee.name }}{{ employee.active ? "" : t(" (inactive)") }}
             </option>
         </select>
         <small v-if="error" data-slot="input-error" role="alert">{{
@@ -51,7 +53,7 @@ const choices = computed(() =>
             href="/people/employees"
             target="_blank"
             rel="noopener noreferrer"
-            >Manage employee references</a
+            >{{ t("Manage employee references") }}</a
         >
     </label>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Link } from "@inertiajs/vue3";
 import type { Options, Kind } from "./types";
 import { titles } from "./types";
@@ -13,7 +14,7 @@ const general: Kind[] = [
 ];
 </script>
 <template>
-    <nav class="crm-tabs" aria-label="Programs sections">
+    <nav class="crm-tabs" :aria-label="tr('Programs sections')">
         <template v-if="canViewPrograms"
             ><Link
                 v-for="kind in general.filter(
@@ -21,12 +22,12 @@ const general: Kind[] = [
                 )"
                 :key="kind"
                 :href="`/nonprofit/programs?section=${kind}`"
-                >{{ titles[kind] }}</Link
+                >{{ tr(titles[kind]) }}</Link
             ></template
         ><Link
             v-if="canViewParticipants"
             href="/nonprofit/programs?section=participants"
-            >Participants</Link
+            >{{ tr("Participants") }}</Link
         >
     </nav>
 </template>

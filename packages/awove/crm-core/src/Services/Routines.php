@@ -86,7 +86,7 @@ class Routines
             $record = $this->query($user, $module, $kind)->lockForUpdate()->findOrFail($id);
             abort_unless($this->access->editable($user, $type, $record), 403);
             $this->access->version($input, $record);
-            abort_unless($record->getAttribute('next_due_on') !== null, 422, 'Set the next due date before completing another occurrence.');
+            abort_unless($record->getAttribute('next_due_on') !== null, 422, __('Set the next due date before completing another occurrence.'));
             $values = ['completed_on' => $this->access->today(), 'next_due_on' => null, 'checked_items' => [], ...$input];
             foreach (['completed_on', 'next_due_on'] as $field) {
                 if (is_string($values[$field] ?? null) && trim($values[$field]) === '') {

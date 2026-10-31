@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { reactive } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import type { Options } from "../types";
@@ -19,9 +20,9 @@ const draft = reactive({
         "
     >
         <label class="crm-field"
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ tr("Owner") }}</span
             ><select v-model="draft.owner_id">
-                <option value="">All accessible owners</option>
+                <option value="">{{ tr("All accessible owners") }}</option>
                 <option
                     v-for="owner in owners"
                     :key="owner.id"
@@ -32,26 +33,28 @@ const draft = reactive({
             </select></label
         ><label class="crm-field"
             ><span class="crm-field-label">{{
-                cap === "collections" ? "Customer" : "Supplier"
+                cap === "collections" ? tr("Customer") : tr("Supplier")
             }}</span
             ><select v-model="draft.relationship_id">
-                <option value="">All accessible classifications</option>
+                <option value="">
+                    {{ tr("All accessible classifications") }}
+                </option>
                 <option v-for="r in relationships" :key="r.id" :value="r.id">
                     {{ r.name }}
                 </option>
             </select></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Due from</span
+            ><span class="crm-field-label">{{ tr("Due from") }}</span
             ><input v-model="draft.from" type="date" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Due to</span
+            ><span class="crm-field-label">{{ tr("Due to") }}</span
             ><input v-model="draft.to" type="date"
         /></label>
         <div class="crm-form-action">
-            <button class="crm-button">Apply filters</button
-            ><Link class="crm-secondary" :href="`/finance/${cap}`"
-                >Clear filters</Link
-            >
+            <button class="crm-button">{{ tr("Apply filters") }}</button
+            ><Link class="crm-secondary" :href="`/finance/${cap}`">{{
+                tr("Clear filters")
+            }}</Link>
         </div>
     </form>
 </template>

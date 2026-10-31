@@ -62,6 +62,6 @@ class DueReminders implements ReminderSource
             return null;
         }
 
-        return ['version' => $asset->version, 'title' => $this->section === 'returns' ? 'Asset return due: '.$asset->name : ($row->status === 'completed' ? 'Next maintenance date due: ' : 'Maintenance due: ').$asset->name.' — '.$row->action, 'href' => $this->section === 'returns' ? '/assets/register/'.$asset->id : '/assets/maintenance/'.$row->id];
+        return ['version' => $asset->version, 'title' => $this->section === 'returns' ? __('Asset return due: :name', ['name' => $asset->name]) : __($row->status === 'completed' ? 'Next maintenance date due: :name — :action' : 'Maintenance due: :name — :action', ['name' => $asset->name, 'action' => $row->action]), 'href' => $this->section === 'returns' ? '/assets/register/'.$asset->id : '/assets/maintenance/'.$row->id];
     }
 }

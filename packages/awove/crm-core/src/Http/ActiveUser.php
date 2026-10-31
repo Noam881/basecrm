@@ -9,7 +9,7 @@ class ActiveUser
         if ($request->user() && ! $request->user()->fresh()?->active) {
             auth()->logout();
             $request->session()->invalidate();
-            abort(403, 'This account is inactive.');
+            abort(403, __('This account is inactive.'));
         }
 
         return $next($request);

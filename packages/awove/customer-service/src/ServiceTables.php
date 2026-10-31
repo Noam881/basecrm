@@ -25,17 +25,17 @@ class ServiceTables
         };
         $person = fn (string $foreignKey) => '(SELECT name FROM users WHERE users.id = '.$table.'.'.$foreignKey.')';
         $choices = fn (array $labels) => array_map(fn ($value, $label) => compact('value', 'label'), array_keys($labels), array_values($labels));
-        $statuses = array_replace(ServiceController::STATUSES, array_intersect_key(Installation::manifest()['customer_service_statuses'] ?? [], ServiceController::STATUSES));
+        $statuses = array_replace(array_map(fn ($label) => (string) __($label), ServiceController::STATUSES), array_intersect_key(Installation::manifest()['customer_service_statuses'] ?? [], ServiceController::STATUSES));
         $columns = [
             new Column('id', 'Request ID', "$table.id", 'number'),
             new Column('subject', 'Subject', "$table.subject", width: 300),
             new Column('description', 'Description', "$table.description", width: 320),
             new Column('status', 'Status', "$table.status", 'select', 'Workflow', $choices($statuses)),
-            new Column('priority', 'Priority', "$table.priority", 'select', 'Workflow', $choices(['low' => 'Low', 'normal' => 'Normal', 'high' => 'High'])),
+            new Column('priority', 'Priority', "$table.priority", 'select', 'Workflow', $choices(['low' => __('Low'), 'normal' => __('Normal'), 'high' => __('High')])),
             new Column('owner', 'Owner', $person('owner_id'), group: 'Ownership'),
             new Column('owner_id', 'Owner ID', "$table.owner_id", 'number', 'Ownership'),
             new Column('created_by', 'Created by', $person('created_by'), group: 'Ownership'),
-            new Column('channel', 'Channel', "$table.channel", 'select', 'Intake', $choices(ServiceController::CHANNELS)),
+            new Column('channel', 'Channel', "$table.channel", 'select', 'Intake', $choices(array_map(fn ($label) => (string) __($label), ServiceController::CHANNELS))),
             new Column('received_on', 'Date received', "$table.received_on", 'date', 'Intake'),
             new Column('next_action', 'Next action', "$table.next_action", group: 'Workflow', width: 280),
             new Column('due_on', 'Due date', "$table.due_on", 'date', 'Workflow'),

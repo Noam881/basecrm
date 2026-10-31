@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive, ref } from "vue";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
@@ -40,12 +41,12 @@ function exportUrl() {
 }
 </script>
 <template>
-    <Head title="Executive management" />
+    <Head :title="tr('Executive management')" />
     <div class="crm-heading">
-        <h1>Executive management</h1>
+        <h1>{{ tr("Executive management") }}</h1>
         <div class="crm-form-action">
             <a v-if="canExport" :href="exportUrl()" class="crm-secondary"
-                >Export {{ section }} (CSV)</a
+                >{{ tr("Export") }} {{ tr(section) }} {{ tr("(CSV)") }}</a
             ><button
                 v-if="canCreate"
                 class="crm-button"
@@ -53,30 +54,30 @@ function exportUrl() {
             >
                 {{
                     create
-                        ? "Close form"
+                        ? tr("Close form")
                         : section === "goals"
-                          ? "Add goal"
+                          ? tr("Add goal")
                           : section === "routines"
-                            ? "Add routine"
-                            : "Add task"
+                            ? tr("Add routine")
+                            : tr("Add task")
                 }}
             </button>
         </div>
     </div>
     <div class="crm-flow">
-        <nav class="crm-tabs" aria-label="Executive sections">
+        <nav class="crm-tabs" :aria-label="tr('Executive sections')">
             <Link
                 href="/executive?section=tasks"
                 :aria-current="section === 'tasks' ? 'page' : undefined"
-                >Tasks</Link
+                >{{ tr("Tasks") }}</Link
             ><Link
                 href="/executive?section=goals"
                 :aria-current="section === 'goals' ? 'page' : undefined"
-                >Goals</Link
+                >{{ tr("Goals") }}</Link
             ><Link
                 href="/executive?section=routines"
                 :aria-current="section === 'routines' ? 'page' : undefined"
-                >Routines</Link
+                >{{ tr("Routines") }}</Link
             >
         </nav>
         <div class="crm-metrics">
@@ -91,15 +92,15 @@ function exportUrl() {
                 :key="key"
                 class="crm-card"
             >
-                <span>{{ label }}</span
+                <span>{{ tr(label) }}</span
                 ><strong>{{ metrics[key] }}</strong>
             </div>
         </div>
         <form class="crm-card crm-form-grid" @submit.prevent="apply">
             <label class="crm-field"
-                ><span class="crm-field-label">Owner filter</span
+                ><span class="crm-field-label">{{ tr("Owner filter") }}</span
                 ><select v-model="filters.owner_id">
-                    <option value="">All accessible owners</option>
+                    <option value="">{{ tr("All accessible owners") }}</option>
                     <option
                         v-for="owner in filterOwners"
                         :key="owner.id"
@@ -109,44 +110,49 @@ function exportUrl() {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Priority filter (tasks)</span
+                ><span class="crm-field-label">{{
+                    tr("Priority filter (tasks)")
+                }}</span
                 ><select v-model="filters.priority">
-                    <option value="">All priorities</option>
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
+                    <option value="">{{ tr("All priorities") }}</option>
+                    <option value="low">{{ tr("Low") }}</option>
+                    <option value="normal">{{ tr("Normal") }}</option>
+                    <option value="high">{{ tr("High") }}</option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">From date</span
+                ><span class="crm-field-label">{{ tr("From date") }}</span
                 ><input v-model="filters.from" type="date" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">To date</span
+                ><span class="crm-field-label">{{ tr("To date") }}</span
                 ><input
                     v-model="filters.to"
                     type="date"
                     :min="filters.from || undefined" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">View</span
+                ><span class="crm-field-label">{{ tr("View") }}</span
                 ><select v-model="filters.view">
-                    <option value="">All active records</option>
-                    <option value="open">Open</option>
-                    <option value="overdue">Overdue</option>
+                    <option value="">{{ tr("All active records") }}</option>
+                    <option value="open">{{ tr("Open") }}</option>
+                    <option value="overdue">{{ tr("Overdue") }}</option>
                     <option v-if="section === 'tasks'" value="blocked">
-                        Blocked
+                        {{ tr("Blocked") }}
                     </option>
-                    <option value="archived">Archived</option>
+                    <option value="archived">{{ tr("Archived") }}</option>
                 </select></label
             >
             <p class="crm-muted">
-                Period filters use task deadlines, goal target dates and the
-                manually scheduled next routine date. Priority applies to tasks.
+                {{
+                    tr(
+                        "Period filters use task deadlines, goal target dates and the manually scheduled next routine date. Priority applies to tasks.",
+                    )
+                }}
             </p>
             <div class="crm-form-action">
-                <button class="crm-button">Apply filters</button
+                <button class="crm-button">{{ tr("Apply filters") }}</button
                 ><Link
                     :href="`/executive?section=${section}`"
                     class="crm-secondary"
-                    >Clear filters</Link
+                    >{{ tr("Clear filters") }}</Link
                 >
             </div>
         </form>
@@ -154,10 +160,10 @@ function exportUrl() {
             <h2>
                 {{
                     section === "goals"
-                        ? "New goal"
+                        ? tr("New goal")
                         : section === "routines"
-                          ? "New routine"
-                          : "New management task"
+                          ? tr("New routine")
+                          : tr("New management task")
                 }}
             </h2>
             <GoalEditor

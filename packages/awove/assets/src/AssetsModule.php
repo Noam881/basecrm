@@ -75,6 +75,6 @@ class AssetsModule implements DashboardContributor, Module, RecordTableContribut
         $q = Access::query($u)->whereNull('archived_at');
         $permission = ['permission' => 'assets.view.own', 'anyPermissions' => ['assets.view.all']];
 
-        return [[...$permission, 'id' => 'assets.available', 'label' => 'Available assets', 'value' => (clone $q)->where('status', 'available')->count(), 'href' => '/assets?section=register&status=available'], [...$permission, 'id' => 'assets.returns', 'label' => 'Overdue asset returns', 'value' => Access::assignments($u)->whereNull('returned_on')->where('expected_return_on', '<', $today)->whereIn('asset_id', (clone $q)->select('id'))->count(), 'href' => '/assets?section=assignments&view=overdue']];
+        return [[...$permission, 'id' => 'assets.available', 'label' => __('Available assets'), 'value' => (clone $q)->where('status', 'available')->count(), 'href' => '/assets?section=register&status=available'], [...$permission, 'id' => 'assets.returns', 'label' => __('Overdue asset returns'), 'value' => Access::assignments($u)->whereNull('returned_on')->where('expected_return_on', '<', $today)->whereIn('asset_id', (clone $q)->select('id'))->count(), 'href' => '/assets?section=assignments&view=overdue']];
     }
 }

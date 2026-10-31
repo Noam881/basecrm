@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Link, router } from "@inertiajs/vue3";
 export interface WorkReminder {
     id: number;
@@ -13,9 +14,9 @@ defineProps<{ reminders: WorkReminder[] }>();
     <section
         v-if="reminders.length"
         class="crm-card crm-flow"
-        aria-label="Business module reminders"
+        :aria-label="t('Business module reminders')"
     >
-        <h2>Work reminders</h2>
+        <h2>{{ t("Work reminders") }}</h2>
         <article
             v-for="notice in reminders"
             :key="notice.id"
@@ -23,16 +24,16 @@ defineProps<{ reminders: WorkReminder[] }>();
         >
             <div>
                 <Link :href="notice.href"
-                    ><strong>{{ notice.title }}</strong></Link
+                    ><strong dir="auto">{{ notice.title }}</strong></Link
                 >
-                <p>{{ notice.read_at ? "Read" : "Unread" }}</p>
+                <p>{{ notice.read_at ? t("Read") : t("Unread") }}</p>
             </div>
             <button
                 v-if="!notice.read_at"
                 class="crm-secondary"
                 @click="router.post(`/work-reminders/${notice.id}/read`)"
             >
-                Mark read
+                {{ t("Mark read") }}
             </button>
         </article>
     </section>

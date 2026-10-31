@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import type { Document } from "../types";
 import FormErrors from "./FormErrors.vue";
@@ -29,9 +30,9 @@ function archive(d: Document) {
         v-if="canViewDocuments || canManageDocuments"
         class="crm-card crm-flow"
     >
-        <h2>Documents</h2>
+        <h2>{{ tr("Documents") }}</h2>
         <p v-if="canViewDocuments && !documents.length" class="crm-muted">
-            No document links recorded.
+            {{ tr("No document links recorded.") }}
         </p>
         <article
             v-for="document in documents"
@@ -45,7 +46,9 @@ function archive(d: Document) {
                 rel="noreferrer"
                 >{{ document.name }}</a
             ><strong v-else>{{ document.name }}</strong
-            ><span v-if="document.archived_at" class="crm-muted">Archived</span>
+            ><span v-if="document.archived_at" class="crm-muted">{{
+                tr("Archived")
+            }}</span>
             <div
                 v-if="editable && canManageDocuments && !document.archived_at"
                 class="crm-form-action"
@@ -56,7 +59,7 @@ function archive(d: Document) {
                     :disabled="archival.processing"
                     @click="archive(document)"
                 >
-                    Archive document
+                    {{ tr("Archive document") }}
                 </button>
             </div>
         </article>
@@ -65,22 +68,26 @@ function archive(d: Document) {
             v-if="editable && canManageDocuments"
             class="crm-form-disclosure"
         >
-            <summary>Add document link</summary>
+            <summary>{{ tr("Add document link") }}</summary>
             <form class="crm-form-grid" @submit.prevent="save">
                 <label class="crm-field"
-                    ><span class="crm-field-label">Document name</span
+                    ><span class="crm-field-label">{{
+                        tr("Document name")
+                    }}</span
                     ><input v-model="f.name" required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Document URL</span
+                    ><span class="crm-field-label">{{
+                        tr("Document URL")
+                    }}</span
                     ><input
                         v-model="f.url"
                         type="url"
-                        placeholder="https://"
+                        :placeholder="tr('https://')"
                         required /></label
                 ><FormErrors :errors="f.errors" />
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="f.processing">
-                        Add document
+                        {{ tr("Add document") }}
                     </button>
                 </div>
             </form>

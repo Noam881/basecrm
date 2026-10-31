@@ -2,6 +2,8 @@
 .env*
 !.env.example
 vendor
+!resources/views/vendor/
+!resources/views/vendor/**
 node_modules
 storage/**
 !storage/**/.gitignore

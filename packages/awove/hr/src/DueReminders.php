@@ -45,6 +45,6 @@ class DueReminders implements ReminderSource
         }
         $row = $this->query()->whereKey($recordId)->where('owner_id', $recipientId)->first();
 
-        return $row ? ['version' => $row->version, 'title' => ($this->section === 'cases' ? 'HR case due: ' : 'Candidate follow-up due: ').$row->name, 'href' => '/hr/'.$this->section.'/'.$row->id] : null;
+        return $row ? ['version' => $row->version, 'title' => __($this->section === 'cases' ? 'HR case due: :name' : 'Candidate follow-up due: :name', ['name' => $row->name]), 'href' => '/hr/'.$this->section.'/'.$row->id] : null;
     }
 }

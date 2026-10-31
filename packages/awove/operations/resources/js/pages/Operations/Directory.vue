@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive } from "vue";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
@@ -23,14 +24,14 @@ const filters = reactive({
 });
 </script>
 <template>
-    <Head title="Customers & suppliers" />
+    <Head :title="tr('Customers & suppliers')" />
     <div class="crm-heading">
-        <h1>Customers &amp; suppliers</h1>
+        <h1>{{ tr("Customers & suppliers") }}</h1>
         <a
             v-if="canExport"
             class="crm-secondary"
             :href="exportUrl('/operations/directory', filters, table.state)"
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
@@ -44,43 +45,52 @@ const filters = reactive({
             "
         >
             <label class="crm-field"
-                ><span class="crm-field-label">Classification</span
+                ><span class="crm-field-label">{{ tr("Classification") }}</span
                 ><select v-model="filters.role">
-                    <option value="">Customers and suppliers</option>
-                    <option value="customer">Customers</option>
-                    <option value="supplier">Suppliers</option>
+                    <option value="">
+                        {{ tr("Customers and suppliers") }}
+                    </option>
+                    <option value="customer">{{ tr("Customers") }}</option>
+                    <option value="supplier">{{ tr("Suppliers") }}</option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Activity</span
+                ><span class="crm-field-label">{{ tr("Activity") }}</span
                 ><select v-model="filters.active">
-                    <option value="">All activity states</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
+                    <option value="">{{ tr("All activity states") }}</option>
+                    <option value="1">{{ tr("Active") }}</option>
+                    <option value="0">{{ tr("Inactive") }}</option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Archive</span
+                ><span class="crm-field-label">{{ tr("Archive") }}</span
                 ><select v-model="filters.archived">
-                    <option value="">Current classifications</option>
-                    <option value="1">Archived classifications</option>
+                    <option value="">
+                        {{ tr("Current classifications") }}
+                    </option>
+                    <option value="1">
+                        {{ tr("Archived classifications") }}
+                    </option>
                 </select></label
             >
             <div class="crm-form-action">
-                <button class="crm-button">Apply directory filters</button
-                ><Link class="crm-secondary" href="/operations/directory"
-                    >Clear filters</Link
-                >
+                <button class="crm-button">
+                    {{ tr("Apply directory filters") }}</button
+                ><Link class="crm-secondary" href="/operations/directory">{{
+                    tr("Clear filters")
+                }}</Link>
             </div>
         </form>
         <section v-if="canClassify" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Classify existing contact or company</summary>
+                <summary>
+                    {{ tr("Classify existing contact or company") }}
+                </summary>
                 <ClassificationEditor v-bind="props" />
             </details>
         </section>
         <DataTable
             :payload="table"
             endpoint="/operations/directory"
-            title="Customers and suppliers"
+            :title="tr('Customers and suppliers')"
             :base-query="filters"
         />
     </div>

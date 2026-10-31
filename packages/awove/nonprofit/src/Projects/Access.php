@@ -67,7 +67,7 @@ class Access
         if ($owner !== null) {
             $candidate = config('auth.providers.users.model')::find($owner);
             if (! self::available($candidate)) {
-                throw ValidationException::withMessages(['owner_id' => 'Choose an active staff member with Projects access.']);
+                throw ValidationException::withMessages(['owner_id' => __('Choose an active staff member with Projects access.')]);
             }
         }
     }
@@ -86,6 +86,6 @@ class Access
     public static function version($record, array $input, string $key = 'version'): void
     {
         $data = validator($input, [$key => 'required|integer|min:1'])->validate();
-        abort_unless((int) $data[$key] === $record->version, 409, 'This record changed. Reload before saving.');
+        abort_unless((int) $data[$key] === $record->version, 409, __('This record changed. Reload before saving.'));
     }
 }

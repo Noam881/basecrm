@@ -1,11 +1,10 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { usePage } from "@inertiajs/vue3";
 import { useId } from "vue";
 import { date } from "../../../../crm-core/resources/js/types";
 import type { History } from "../types";
-withDefaults(defineProps<{ history: History[]; title?: string }>(), {
-    title: "History",
-});
+defineProps<{ history: History[]; title?: string }>();
 const eventLabels: Record<string, string> = {
     created: "Goal created",
     updated: "Goal updated",
@@ -42,28 +41,32 @@ const fieldLabels: Record<string, string> = {
 };
 function readable(value: string): string {
     const label = (value.split(":").at(-1) ?? value).replaceAll(/[_.]/g, " ");
-    return label.charAt(0).toUpperCase() + label.slice(1);
+    return tr(label.charAt(0).toUpperCase() + label.slice(1));
 }
 function fieldName(field: string): string {
     const key = field.split(":").at(-1) ?? field;
-    return fieldLabels[key] ?? readable(key);
+    return fieldLabels[key] ? tr(fieldLabels[key]) : readable(key);
 }
 const headingId = `executive-history-${useId()}`;
 const zone = (usePage().props.brand as { timezone: string }).timezone;
 </script>
 <template>
     <section class="crm-card crm-flow" :aria-labelledby="headingId">
-        <h2 :id="headingId">{{ title }}</h2>
-        <p v-if="!history.length" class="crm-muted">No history recorded.</p>
+        <h2 :id="headingId">{{ title ?? tr("History") }}</h2>
+        <p v-if="!history.length" class="crm-muted">
+            {{ tr("No history recorded.") }}
+        </p>
         <article v-for="entry in history" :key="entry.id" class="crm-note">
             <strong>{{
-                eventLabels[entry.event] ?? readable(entry.event)
+                eventLabels[entry.event]
+                    ? tr(eventLabels[entry.event])
+                    : readable(entry.event)
             }}</strong>
             <p v-if="entry.changed_fields?.length">
                 {{ entry.changed_fields.map(fieldName).join(", ") }}
             </p>
             <small
-                >{{ entry.actor?.name ?? "Former team member" }} ·
+                >{{ entry.actor?.name ?? tr("Former team member") }} ·
                 {{ date(entry.created_at, zone) }}</small
             >
         </article>

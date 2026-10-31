@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t, isRtl, localeTag } from "@/lib/i18n";
 import { computed, ref, watch, onBeforeUnmount, type CSSProperties } from "vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
 import {
@@ -73,7 +74,7 @@ const defs = computed<ColumnDef<TableRow>[]>(() => [
     ...props.payload.columns.map((c) => ({
         id: c.id,
         accessorFn: (row: TableRow) => row.cells[c.id],
-        header: c.label,
+        header: columnLabel(c),
         size: c.width,
         minSize: 100,
         maxSize: 600,
@@ -92,6 +93,9 @@ const table = useVueTable({
     manualFiltering: true,
     manualPagination: true,
     columnResizeMode: "onChange",
+    get columnResizeDirection() {
+        return isRtl() ? "rtl" : "ltr";
+    },
     state: {
         get columnOrder() {
             return ["__select", ...order.value];
@@ -105,12 +109,11 @@ const table = useVueTable({
             );
         },
         get columnPinning() {
-            return {
-                left: [
-                    "__select",
-                    ...pinned.value.filter((id) => order.value.includes(id)),
-                ],
-            };
+            const ids = [
+                "__select",
+                ...pinned.value.filter((id) => order.value.includes(id)),
+            ];
+            return isRtl() ? { right: ids } : { left: ids };
         },
         get columnSizing() {
             return widths.value;
@@ -128,14 +131,40 @@ const table = useVueTable({
         (selected.value =
             typeof update === "function" ? update(selected.value) : update),
 });
+function columnLabel(column: TableColumn | undefined): string {
+    if (!column) return "";
+    return column.label;
+}
+// Only trusted technical field IDs get a forced text direction. Other authored
+// values use their own first strong character without inheriting the table's RTL.
+const ltrFields = new Set([
+    "email",
+    "phone",
+    "secondary_phone",
+    "contact_email",
+    "contact_phone",
+    "contact_secondary_phone",
+    "company_email",
+    "company_phone",
+    "document_url",
+    "materials_url",
+    "landing_url",
+    "asset_url",
+    "publication_url",
+]);
+function cellDirection(id: string): "ltr" | "auto" {
+    return ltrFields.has(id) ? "ltr" : "auto";
+}
 const displayed = computed(() => [
-    ...table.getLeftVisibleLeafColumns(),
+    ...(isRtl()
+        ? table.getRightVisibleLeafColumns()
+        : table.getLeftVisibleLeafColumns()),
     ...table.getCenterVisibleLeafColumns(),
 ]);
 const selectedRows = computed(() => table.getSelectedRowModel().rows);
 const filteredFields = computed(() =>
     props.payload.columns.filter((c) =>
-        `${c.label} ${c.group}`
+        `${columnLabel(c)} ${c.group}`
             .toLowerCase()
             .includes(columnSearch.value.toLowerCase()),
     ),
@@ -147,7 +176,7 @@ const sortSummary = computed(() =>
     state.value.sorts
         .map(
             (s) =>
-                `${catalog.value.get(s.id)?.label ?? s.id} ${s.direction === "asc" ? "↑" : "↓"}`,
+                `${columnLabel(catalog.value.get(s.id)) || s.id} ${s.direction === "asc" ? "↑" : "↓"}`,
         )
         .join(", "),
 );
@@ -164,10 +193,10 @@ function symbol(c: TableColumn) {
 }
 function labelDirection(c: TableColumn | undefined, d: "asc" | "desc") {
     if (c?.id === "priority" || c?.type === "number")
-        return d === "asc" ? "Low → high" : "High → low";
+        return d === "asc" ? t("Low → high") : t("High → low");
     if (["date", "datetime"].includes(c?.type ?? ""))
-        return d === "asc" ? "Oldest → newest" : "Newest → oldest";
-    return d === "asc" ? "A → Z" : "Z → A";
+        return d === "asc" ? t("Oldest → newest") : t("Newest → oldest");
+    return d === "asc" ? t("A → Z") : t("Z → A");
 }
 const opNames: Record<string, string> = {
     contains: "contains",
@@ -188,22 +217,35 @@ const opNames: Record<string, string> = {
 function format(value: Value | undefined, c: TableColumn) {
     if (value === null || value === undefined || value === "") return "—";
     if (c.type === "boolean")
-        return ["true", "1"].includes(String(value)) ? "Yes" : "No";
+        return ["true", "1"].includes(String(value)) ? t("Yes") : t("No");
     if (c.type === "number") return exactDecimal(value);
     if (["date", "datetime"].includes(c.type)) {
         const d = new Date(String(value));
         if (Number.isNaN(d.valueOf())) return String(value);
         return new Intl.DateTimeFormat(
-            "en",
+            localeTag(),
             c.type === "date"
                 ? { dateStyle: "medium", timeZone: "UTC" }
                 : { dateStyle: "medium", timeStyle: "short", timeZone: zone },
         ).format(d);
     }
-    return (
-        c.options.find((o) => String(o.value) === String(value))?.label ??
-        String(value)
-    );
+    // These columns are composed exclusively from controlled contact availability labels.
+    // Localize display only; retained English filter/query values stay stable.
+    if (
+        [
+            "preferred_contact_times",
+            "preferred_contact_days",
+            "contact_preferred_contact_times",
+            "contact_preferred_contact_days",
+        ].includes(c.id)
+    ) {
+        return String(value)
+            .split(", ")
+            .map((segment) => t(segment))
+            .join(", ");
+    }
+    const option = c.options.find((o) => String(o.value) === String(value));
+    return option ? option.label : String(value);
 }
 function link(row: TableRow) {
     if (!props.rowLink) return "";
@@ -248,7 +290,8 @@ function cellStyle(column: Column<TableRow>): CSSProperties {
         ...(column.getIsPinned()
             ? {
                   position: "sticky",
-                  left: `${column.getStart("left")}px`,
+                  [isRtl() ? "right" : "left"]:
+                      `${column.getStart(isRtl() ? "right" : "left")}px`,
                   zIndex: 2,
               }
             : {}),
@@ -310,10 +353,10 @@ function toggle(id: string) {
     } else order.value = [...order.value, id];
     persist();
 }
-function move(id: string, delta: number) {
+function move(id: string, delta: number, visual = true) {
     const next = [...order.value];
     const index = next.indexOf(id);
-    const target = index + delta;
+    const target = index + (visual && isRtl() ? -delta : delta);
     if (target < 0 || target >= next.length) return;
     next.splice(index, 1);
     next.splice(target, 0, id);
@@ -358,7 +401,10 @@ function resize(id: string, delta: number) {
     if (!col) return;
     table.setColumnSizing((current) => ({
         ...current,
-        [id]: Math.min(600, Math.max(100, col.getSize() + delta)),
+        [id]: Math.min(
+            600,
+            Math.max(100, col.getSize() + (isRtl() ? -delta : delta)),
+        ),
     }));
 }
 function addFilter() {
@@ -397,7 +443,7 @@ function preferenceBody() {
 async function saveNow() {
     clearTimeout(saveTimer);
     saveTimer = undefined;
-    saveStatus.value = "Saving…";
+    saveStatus.value = t("Saving…");
     try {
         const token = decodeURIComponent(
             document.cookie
@@ -418,16 +464,16 @@ async function saveNow() {
         if (!response.ok) {
             const body = await response.json();
             throw new Error(
-                body.message ?? "Could not save table preferences.",
+                body.message ?? t("Could not save table preferences."),
             );
         }
-        saveStatus.value = "Layout saved";
+        saveStatus.value = t("Layout saved");
     } catch (e) {
         saveStatus.value = String(e);
     }
 }
 function persist() {
-    saveStatus.value = "Saving…";
+    saveStatus.value = t("Saving…");
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveNow, 250);
 }
@@ -462,7 +508,7 @@ async function copyRows() {
     const columns = displayed.value.filter((c) => c.id !== "__select");
     const text = [
         columns
-            .map((c) => clipboardCell(catalog.value.get(c.id)!.label))
+            .map((c) => clipboardCell(columnLabel(catalog.value.get(c.id))))
             .join("\t"),
         ...selectedRows.value.map((row) =>
             columns
@@ -479,9 +525,11 @@ async function copyRows() {
     ].join("\n");
     try {
         await navigator.clipboard.writeText(text);
-        copied.value = `Copied ${selectedRows.value.length} rows`;
+        copied.value = t("Copied {value0} rows", {
+            value0: String(selectedRows.value.length ?? ""),
+        });
     } catch {
-        copied.value = "Clipboard permission unavailable.";
+        copied.value = t("Clipboard permission unavailable.");
     }
 }
 watch(
@@ -532,8 +580,8 @@ onBeforeUnmount(() => {
             <div>
                 <h2>{{ title }}</h2>
                 <span
-                    >{{ payload.page.total.toLocaleString() }} matching
-                    records</span
+                    >{{ payload.page.total.toLocaleString(localeTag()) }}
+                    {{ t("matching records") }}</span
                 >
             </div>
             <span class="md-table-save" role="status">{{ saveStatus }}</span>
@@ -544,14 +592,16 @@ onBeforeUnmount(() => {
                     >search</span
                 ><input
                     v-model="state.q"
-                    :aria-label="`Search ${title.toLowerCase()}`"
-                    placeholder="Search all fields…"
+                    :aria-label="
+                        t('Search {value0}', { value0: title.toLowerCase() })
+                    "
+                    :placeholder="t('Search all fields…')"
                     @input="search"
                 /><button
                     v-if="state.q"
                     type="button"
                     class="md-icon-button"
-                    aria-label="Clear search"
+                    :aria-label="t('Clear search')"
                     @click="
                         state.q = '';
                         apply();
@@ -569,7 +619,7 @@ onBeforeUnmount(() => {
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >view_column</span
-                    >Columns
+                    >{{ t("Columns") }}
                     <span class="md-count">{{ order.length }}</span></button
                 ><button
                     class="crm-secondary"
@@ -577,14 +627,14 @@ onBeforeUnmount(() => {
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >filter_list</span
-                    >Filters
+                    >{{ t("Filters") }}
                     <span v-if="state.filters.length" class="md-count">{{
                         state.filters.length
                     }}</span></button
                 ><button class="crm-secondary" @click="sortDialog?.showModal()">
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >sort</span
-                    >Sort
+                    >{{ t("Sort") }}
                     <span class="md-count">{{
                         state.sorts.length
                     }}</span></button
@@ -592,8 +642,8 @@ onBeforeUnmount(() => {
                     class="md-icon-button"
                     :aria-label="
                         density === 'compact'
-                            ? 'Comfortable rows'
-                            : 'Compact rows'
+                            ? t('Comfortable rows')
+                            : t('Compact rows')
                     "
                     :aria-pressed="density === 'compact'"
                     @click="
@@ -607,7 +657,7 @@ onBeforeUnmount(() => {
                     ></button
                 ><button
                     class="md-icon-button"
-                    aria-label="Wrap cell text"
+                    :aria-label="t('Wrap cell text')"
                     :aria-pressed="wrap"
                     @click="
                         wrap = !wrap;
@@ -619,7 +669,7 @@ onBeforeUnmount(() => {
                     ></button
                 ><button
                     class="md-icon-button"
-                    aria-label="Refresh table"
+                    :aria-label="t('Refresh table')"
                     @click="apply(payload.page.current_page)"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
@@ -634,10 +684,10 @@ onBeforeUnmount(() => {
                     >bookmark_border</span
                 ><select
                     v-model="activeView"
-                    aria-label="Saved table views"
+                    :aria-label="t('Saved table views')"
                     @change="loadView"
                 >
-                    <option value="">Current view</option>
+                    <option value="">{{ t("Current view") }}</option>
                     <option
                         v-for="view in views"
                         :key="view.id"
@@ -649,13 +699,13 @@ onBeforeUnmount(() => {
                     class="crm-ghost md-text-button"
                     @click="viewDialog?.showModal()"
                 >
-                    Save view</button
+                    {{ t("Save view") }}</button
                 ><button
                     v-if="activeView"
                     class="crm-ghost md-text-button"
                     @click="removeView"
                 >
-                    Delete view
+                    {{ t("Delete view") }}
                 </button>
             </div>
             <span class="md-table-sort-summary" :title="sortSummary">{{
@@ -667,19 +717,23 @@ onBeforeUnmount(() => {
                 v-for="(f, index) in state.filters"
                 :key="index"
                 class="md-filter-chip"
-                :aria-label="`Remove filter ${catalog.get(f.id)?.label}`"
+                :aria-label="
+                    t('Remove filter {value0}', {
+                        value0: columnLabel(catalog.get(f.id)),
+                    })
+                "
                 @click="
                     state.filters.splice(index, 1);
                     apply();
                 "
             >
-                {{ catalog.get(f.id)?.label }} {{ opNames[f.op] }}
+                {{ columnLabel(catalog.get(f.id)) }} {{ t(opNames[f.op]) }}
                 {{ Array.isArray(f.value) ? f.value.join(", ") : f.value
                 }}<span class="material-symbols-outlined" aria-hidden="true"
                     >close</span
                 ></button
             ><button class="crm-ghost md-text-button" @click="clearFilters">
-                Clear filters
+                {{ t("Clear filters") }}
             </button>
         </div>
         <div
@@ -687,9 +741,11 @@ onBeforeUnmount(() => {
             class="md-table-selection"
             role="status"
         >
-            <strong>{{ selectedRows.length }} selected on this page</strong
+            <strong
+                >{{ selectedRows.length }}
+                {{ t("selected on this page") }}</strong
             ><button class="crm-ghost md-text-button" @click="copyRows">
-                Copy rows</button
+                {{ t("Copy rows") }}</button
             ><button
                 class="crm-ghost md-text-button"
                 @click="
@@ -697,17 +753,21 @@ onBeforeUnmount(() => {
                     copied = '';
                 "
             >
-                Clear selection</button
+                {{ t("Clear selection") }}</button
             ><span>{{ copied }}</span>
         </div>
         <div
             class="md-data-scroll"
             tabindex="0"
-            :aria-label="`${title} data, scroll horizontally for more columns`"
+            :aria-label="
+                t('{title} data, scroll horizontally for more columns', {
+                    title,
+                })
+            "
         >
             <table
                 :style="{ width: `${table.getTotalSize()}px` }"
-                :aria-label="`${title} records`"
+                :aria-label="t('{title} records', { title })"
             >
                 <thead>
                     <tr>
@@ -738,7 +798,9 @@ onBeforeUnmount(() => {
                                 class="md-checkbox-target"
                                 ><input
                                     type="checkbox"
-                                    aria-label="Select all rows on this page"
+                                    :aria-label="
+                                        t('Select all rows on this page')
+                                    "
                                     :checked="table.getIsAllPageRowsSelected()"
                                     :indeterminate="
                                         table.getIsSomePageRowsSelected()
@@ -749,13 +811,19 @@ onBeforeUnmount(() => {
                                 ><div class="md-header-content">
                                     <button
                                         class="crm-ghost md-header-sort"
-                                        :aria-label="`Sort by ${catalog.get(column.id)?.label}`"
+                                        :aria-label="
+                                            t('Sort by {value0}', {
+                                                value0: columnLabel(
+                                                    catalog.get(column.id),
+                                                ),
+                                            })
+                                        "
                                         @click="
                                             sorted(column.id, $event.shiftKey)
                                         "
                                     >
                                         <span class="md-header-label">{{
-                                            catalog.get(column.id)?.label
+                                            columnLabel(catalog.get(column.id))
                                         }}</span
                                         ><span
                                             v-if="sortNumber(column.id)"
@@ -778,7 +846,16 @@ onBeforeUnmount(() => {
                                     ><button
                                         class="crm-icon-control md-drag-handle"
                                         draggable="true"
-                                        :aria-label="`Move ${catalog.get(column.id)?.label} column; Alt and arrow keys to reorder`"
+                                        :aria-label="
+                                            t(
+                                                'Move {value0} column; Alt and arrow keys to reorder',
+                                                {
+                                                    value0: columnLabel(
+                                                        catalog.get(column.id),
+                                                    ),
+                                                },
+                                            )
+                                        "
                                         @dragstart="
                                             startDrag($event, column.id)
                                         "
@@ -800,7 +877,13 @@ onBeforeUnmount(() => {
                                         ></button
                                     ><button
                                         class="crm-icon-control md-header-menu"
-                                        :aria-label="`Options for ${catalog.get(column.id)?.label}`"
+                                        :aria-label="
+                                            t('Options for {value0}', {
+                                                value0: columnLabel(
+                                                    catalog.get(column.id),
+                                                ),
+                                            })
+                                        "
                                         @click="openColumn(column.id)"
                                     >
                                         <span
@@ -814,7 +897,13 @@ onBeforeUnmount(() => {
                                     class="md-resize-handle"
                                     role="separator"
                                     aria-orientation="vertical"
-                                    :aria-label="`Resize ${catalog.get(column.id)?.label} column`"
+                                    :aria-label="
+                                        t('Resize {value0} column', {
+                                            value0: columnLabel(
+                                                catalog.get(column.id),
+                                            ),
+                                        })
+                                    "
                                     :aria-valuenow="column.getSize()"
                                     tabindex="0"
                                     @mousedown="
@@ -870,7 +959,13 @@ onBeforeUnmount(() => {
                                 class="md-checkbox-target"
                                 ><input
                                     type="checkbox"
-                                    :aria-label="`Select ${recordName(row.original)}`"
+                                    :aria-label="
+                                        t('Select {value0}', {
+                                            value0: String(
+                                                recordName(row.original) ?? '',
+                                            ),
+                                        })
+                                    "
                                     :checked="row.getIsSelected()"
                                     @change="row.toggleSelected()" /></label
                             ><slot
@@ -885,18 +980,19 @@ onBeforeUnmount(() => {
                                     "
                                     :href="link(row.original)"
                                     class="md-table-record"
+                                    dir="auto"
                                     :title="
                                         format(
                                             row.original.cells[column.id],
                                             catalog.get(column.id)!,
                                         )
                                     "
-                                    >{{
+                                    ><bdi :dir="cellDirection(column.id)">{{
                                         format(
                                             row.original.cells[column.id],
                                             catalog.get(column.id)!,
                                         )
-                                    }}</Link
+                                    }}</bdi></Link
                                 ><span
                                     v-else
                                     :title="
@@ -912,12 +1008,12 @@ onBeforeUnmount(() => {
                                             'outcome',
                                         ].includes(column.id),
                                     }"
-                                    >{{
+                                    ><bdi :dir="cellDirection(column.id)">{{
                                         format(
                                             row.original.cells[column.id],
                                             catalog.get(column.id)!,
                                         )
-                                    }}</span
+                                    }}</bdi></span
                                 ></slot
                             >
                         </td>
@@ -930,24 +1026,26 @@ onBeforeUnmount(() => {
                     aria-hidden="true"
                     >search_off</span
                 >
-                <h3>No matching records</h3>
-                <p>Try a different search or remove a filter.</p>
+                <h3>{{ t("No matching records") }}</h3>
+                <p>{{ t("Try a different search or remove a filter.") }}</p>
                 <button
                     v-if="state.q || state.filters.length"
                     class="crm-ghost md-text-button"
                     @click="clearFilters"
                 >
-                    Clear search and filters
+                    {{ t("Clear search and filters") }}
                 </button>
             </div>
         </div>
         <footer class="md-table-footer">
-            <span class="md-table-hint"
-                >Drag columns to reorder · Shift + click to multi-sort</span
+            <span class="md-table-hint">{{
+                t("Drag columns to reorder · Shift + click to multi-sort")
+            }}</span
             ><label
-                >Rows per page<select
+                >{{ t("Rows per page")
+                }}<select
                     v-model.number="state.per_page"
-                    aria-label="Rows per page"
+                    :aria-label="t('Rows per page')"
                     @change="apply()"
                 >
                     <option
@@ -959,11 +1057,12 @@ onBeforeUnmount(() => {
                     </option>
                 </select></label
             ><span
-                >{{ payload.page.from ?? 0 }}–{{ payload.page.to ?? 0 }} of
-                {{ payload.page.total.toLocaleString() }}</span
+                >{{ payload.page.from ?? 0 }}–{{ payload.page.to ?? 0 }}
+                {{ t("of") }}
+                {{ payload.page.total.toLocaleString(localeTag()) }}</span
             ><button
                 class="md-icon-button"
-                aria-label="First page"
+                :aria-label="t('First page')"
                 :disabled="payload.page.current_page <= 1 || loading"
                 @click="apply(1)"
             >
@@ -972,7 +1071,7 @@ onBeforeUnmount(() => {
                 ></button
             ><button
                 class="md-icon-button"
-                aria-label="Previous page"
+                :aria-label="t('Previous page')"
                 :disabled="payload.page.current_page <= 1 || loading"
                 @click="apply(payload.page.current_page - 1)"
             >
@@ -981,7 +1080,7 @@ onBeforeUnmount(() => {
                 ></button
             ><button
                 class="md-icon-button"
-                aria-label="Next page"
+                :aria-label="t('Next page')"
                 :disabled="
                     payload.page.current_page >= payload.page.last_page ||
                     loading
@@ -993,7 +1092,7 @@ onBeforeUnmount(() => {
                 ></button
             ><button
                 class="md-icon-button"
-                aria-label="Last page"
+                :aria-label="t('Last page')"
                 :disabled="
                     payload.page.current_page >= payload.page.last_page ||
                     loading
@@ -1009,24 +1108,28 @@ onBeforeUnmount(() => {
             v-if="loading"
             class="md-table-progress"
             role="status"
-            aria-label="Loading records"
+            :aria-label="t('Loading records')"
         />
     </section>
     <dialog
         ref="fieldsDialog"
-        aria-label="Columns"
+        :aria-label="t('Columns')"
         class="md-table-dialog md-table-sheet"
     >
         <header>
             <div>
-                <h2>Columns</h2>
+                <h2>{{ t("Columns") }}</h2>
                 <p>
-                    Choose any available field. Drag selected fields to reorder.
+                    {{
+                        t(
+                            "Choose any available field. Drag selected fields to reorder.",
+                        )
+                    }}
                 </p>
             </div>
             <button
                 class="md-icon-button"
-                aria-label="Close columns"
+                :aria-label="t('Close columns')"
                 @click="fieldsDialog?.close()"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
@@ -1040,8 +1143,8 @@ onBeforeUnmount(() => {
                     >search</span
                 ><input
                     v-model="columnSearch"
-                    placeholder="Find a field…"
-                    aria-label="Find a column"
+                    :placeholder="t('Find a field…')"
+                    :aria-label="t('Find a column')"
             /></label>
             <div class="md-dialog-actions-inline">
                 <button
@@ -1051,12 +1154,12 @@ onBeforeUnmount(() => {
                         persist();
                     "
                 >
-                    Show all fields</button
+                    {{ t("Show all fields") }}</button
                 ><button class="crm-ghost md-text-button" @click="reset">
-                    Reset layout
+                    {{ t("Reset layout") }}
                 </button>
             </div>
-            <h3>Visible columns · {{ order.length }}</h3>
+            <h3>{{ t("Visible columns ·") }} {{ order.length }}</h3>
             <ol class="md-column-order">
                 <li
                     v-for="(id, index) in order"
@@ -1073,12 +1176,21 @@ onBeforeUnmount(() => {
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >drag_indicator</span
-                    ><span>{{ catalog.get(id)?.label }}</span
+                    ><span>{{ columnLabel(catalog.get(id)) }}</span
                     ><button
                         class="md-icon-button"
-                        :aria-label="`Move ${catalog.get(id)?.label} left`"
+                        :aria-label="
+                            t(
+                                isRtl()
+                                    ? 'Move {value0} right'
+                                    : 'Move {value0} left',
+                                {
+                                    value0: columnLabel(catalog.get(id)),
+                                },
+                            )
+                        "
                         :disabled="index === 0"
-                        @click="move(id, -1)"
+                        @click="move(id, -1, false)"
                     >
                         <span
                             class="material-symbols-outlined"
@@ -1087,9 +1199,18 @@ onBeforeUnmount(() => {
                         ></button
                     ><button
                         class="md-icon-button"
-                        :aria-label="`Move ${catalog.get(id)?.label} right`"
+                        :aria-label="
+                            t(
+                                isRtl()
+                                    ? 'Move {value0} left'
+                                    : 'Move {value0} right',
+                                {
+                                    value0: columnLabel(catalog.get(id)),
+                                },
+                            )
+                        "
                         :disabled="index === order.length - 1"
-                        @click="move(id, 1)"
+                        @click="move(id, 1, false)"
                     >
                         <span
                             class="material-symbols-outlined"
@@ -1098,7 +1219,11 @@ onBeforeUnmount(() => {
                         ></button
                     ><button
                         class="md-icon-button"
-                        :aria-label="`Pin ${catalog.get(id)?.label}`"
+                        :aria-label="
+                            t('Pin {value0}', {
+                                value0: columnLabel(catalog.get(id)),
+                            })
+                        "
                         :aria-pressed="pinned.includes(id)"
                         @click="pin(id)"
                     >
@@ -1125,7 +1250,11 @@ onBeforeUnmount(() => {
                     ><input
                         type="checkbox"
                         :checked="order.includes(field.id)"
-                        :aria-label="`Show ${field.label} column`"
+                        :aria-label="
+                            t('Show {value0} column', {
+                                value0: columnLabel(field),
+                            })
+                        "
                         :disabled="
                             order.length === 1 && order.includes(field.id)
                         "
@@ -1134,32 +1263,51 @@ onBeforeUnmount(() => {
                         class="material-symbols-outlined"
                         aria-hidden="true"
                         >{{ symbol(field) }}</span
-                    ><span>{{ field.label }}</span
-                    ><small>{{ field.type }}</small></label
+                    ><span>{{ columnLabel(field) }}</span
+                    ><small>{{
+                        t(
+                            {
+                                text: t("Text"),
+                                number: t("Number"),
+                                date: t("Date"),
+                                datetime: t("Date and time"),
+                                boolean: t("Yes / no"),
+                                select: t("Selection"),
+                            }[field.type],
+                        )
+                    }}</small></label
                 >
             </section>
-            <p v-if="!filteredFields.length">No fields match your search.</p>
+            <p v-if="!filteredFields.length">
+                {{ t("No fields match your search.") }}
+            </p>
         </div>
         <footer>
             <span role="status">{{ saveStatus }}</span
             ><button class="crm-button" @click="fieldsDialog?.close()">
-                Done
+                {{ t("Done") }}
             </button>
         </footer>
     </dialog>
     <dialog
         ref="filterDialog"
-        aria-label="Advanced filters"
+        :aria-label="t('Advanced filters')"
         class="md-table-dialog md-filter-dialog"
     >
         <header>
             <div>
-                <h2>Advanced filters</h2>
-                <p>Filter the entire result set by any available field.</p>
+                <h2>{{ t("Advanced filters") }}</h2>
+                <p>
+                    {{
+                        t(
+                            "Filter the entire result set by any available field.",
+                        )
+                    }}
+                </p>
             </div>
             <button
                 class="md-icon-button"
-                aria-label="Close filters"
+                :aria-label="t('Close filters')"
                 @click="filterDialog?.close()"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
@@ -1169,12 +1317,13 @@ onBeforeUnmount(() => {
         </header>
         <div class="md-dialog-body">
             <label class="md-match-choice"
-                >Match<select
+                >{{ t("Match")
+                }}<select
                     v-model="state.match"
-                    aria-label="Filter match mode"
+                    :aria-label="t('Filter match mode')"
                 >
-                    <option value="all">All conditions (AND)</option>
-                    <option value="any">Any condition (OR)</option>
+                    <option value="all">{{ t("All conditions (AND)") }}</option>
+                    <option value="any">{{ t("Any condition (OR)") }}</option>
                 </select></label
             >
             <div
@@ -1184,7 +1333,11 @@ onBeforeUnmount(() => {
             >
                 <select
                     v-model="f.id"
-                    :aria-label="`Filter ${index + 1} field`"
+                    :aria-label="
+                        t('Filter {value0} field', {
+                            value0: String(index + 1),
+                        })
+                    "
                     @change="changeField(f)"
                 >
                     <optgroup
@@ -1201,12 +1354,16 @@ onBeforeUnmount(() => {
                             :key="c.id"
                             :value="c.id"
                         >
-                            {{ c.label }}
+                            {{ columnLabel(c) }}
                         </option>
                     </optgroup></select
                 ><select
                     v-model="f.op"
-                    :aria-label="`Filter ${index + 1} operator`"
+                    :aria-label="
+                        t('Filter {value0} operator', {
+                            value0: String(index + 1),
+                        })
+                    "
                     @change="f.value = f.op === 'in' ? [] : ''"
                 >
                     <option
@@ -1214,7 +1371,7 @@ onBeforeUnmount(() => {
                         :key="op"
                         :value="op"
                     >
-                        {{ opNames[op] }}
+                        {{ t(opNames[op]) }}
                     </option></select
                 ><template v-if="!['empty', 'not_empty'].includes(f.op)"
                     ><select
@@ -1224,11 +1381,17 @@ onBeforeUnmount(() => {
                         "
                         v-model="f.value"
                         :multiple="f.op === 'in'"
-                        :aria-label="`Filter ${index + 1} value`"
+                        :aria-label="
+                            t('Filter {value0} value', {
+                                value0: String(index + 1),
+                            })
+                        "
                     >
                         <template v-if="catalog.get(f.id)?.type === 'boolean'"
-                            ><option value="true">Yes</option>
-                            <option value="false">No</option></template
+                            ><option value="true">{{ t("Yes") }}</option>
+                            <option value="false">
+                                {{ t("No") }}
+                            </option></template
                         >
                         <option
                             v-for="o in catalog.get(f.id)?.options"
@@ -1249,8 +1412,12 @@ onBeforeUnmount(() => {
                                   ? 'number'
                                   : 'text'
                         "
-                        :aria-label="`Filter ${index + 1} value`"
-                        placeholder="Value" /><input
+                        :aria-label="
+                            t('Filter {value0} value', {
+                                value0: String(index + 1),
+                            })
+                        "
+                        :placeholder="t('Value')" /><input
                         v-if="f.op === 'between'"
                         v-model="f.value2"
                         :type="
@@ -1260,11 +1427,19 @@ onBeforeUnmount(() => {
                                 ? 'date'
                                 : 'number'
                         "
-                        :aria-label="`Filter ${index + 1} range end`"
-                        placeholder="To" /></template
+                        :aria-label="
+                            t('Filter {value0} range end', {
+                                value0: String(index + 1),
+                            })
+                        "
+                        :placeholder="t('To')" /></template
                 ><button
                     class="md-icon-button"
-                    :aria-label="`Remove condition ${index + 1}`"
+                    :aria-label="
+                        t('Remove condition {value0}', {
+                            value0: String(index + 1),
+                        })
+                    "
                     @click="state.filters.splice(index, 1)"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
@@ -1273,7 +1448,9 @@ onBeforeUnmount(() => {
                 </button>
             </div>
             <p v-if="!state.filters.length" class="crm-muted">
-                No conditions yet. All accessible records are included.
+                {{
+                    t("No conditions yet. All accessible records are included.")
+                }}
             </p>
             <button
                 class="crm-ghost md-text-button"
@@ -1282,7 +1459,7 @@ onBeforeUnmount(() => {
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >add</span
-                >Add condition
+                >{{ t("Add condition") }}
             </button>
         </div>
         <footer>
@@ -1294,7 +1471,7 @@ onBeforeUnmount(() => {
                     filterDialog?.close();
                 "
             >
-                Clear filters</button
+                {{ t("Clear filters") }}</button
             ><button
                 class="crm-button"
                 @click="
@@ -1302,23 +1479,27 @@ onBeforeUnmount(() => {
                     filterDialog?.close();
                 "
             >
-                Apply filters
+                {{ t("Apply filters") }}
             </button>
         </footer>
     </dialog>
     <dialog
         ref="sortDialog"
-        aria-label="Sort records"
+        :aria-label="t('Sort records')"
         class="md-table-dialog md-filter-dialog"
     >
         <header>
             <div>
-                <h2>Sort records</h2>
-                <p>Sort by up to five fields. Top rules take priority.</p>
+                <h2>{{ t("Sort records") }}</h2>
+                <p>
+                    {{
+                        t("Sort by up to five fields. Top rules take priority.")
+                    }}
+                </p>
             </div>
             <button
                 class="md-icon-button"
-                aria-label="Close sorting"
+                :aria-label="t('Close sorting')"
                 @click="sortDialog?.close()"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
@@ -1333,17 +1514,28 @@ onBeforeUnmount(() => {
                 class="md-sort-row"
             >
                 <span>{{ index + 1 }}</span
-                ><select v-model="s.id" :aria-label="`Sort ${index + 1} field`">
+                ><select
+                    v-model="s.id"
+                    :aria-label="
+                        t('Sort {value0} field', {
+                            value0: String(index + 1),
+                        })
+                    "
+                >
                     <option
                         v-for="c in payload.columns"
                         :key="c.id"
                         :value="c.id"
                     >
-                        {{ c.label }}
+                        {{ columnLabel(c) }}
                     </option></select
                 ><select
                     v-model="s.direction"
-                    :aria-label="`Sort ${index + 1} direction`"
+                    :aria-label="
+                        t('Sort {value0} direction', {
+                            value0: String(index + 1),
+                        })
+                    "
                 >
                     <option value="asc">
                         {{ labelDirection(catalog.get(s.id), "asc") }}
@@ -1353,7 +1545,11 @@ onBeforeUnmount(() => {
                     </option></select
                 ><button
                     class="md-icon-button"
-                    :aria-label="`Remove sort ${index + 1}`"
+                    :aria-label="
+                        t('Remove sort {value0}', {
+                            value0: String(index + 1),
+                        })
+                    "
                     @click="state.sorts.splice(index, 1)"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
@@ -1373,11 +1569,13 @@ onBeforeUnmount(() => {
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >add</span
-                >Add sort
+                >{{ t("Add sort") }}
             </button>
         </div>
         <footer>
-            <span class="crm-muted">Empty values always appear last.</span
+            <span class="crm-muted">{{
+                t("Empty values always appear last.")
+            }}</span
             ><button
                 class="crm-button"
                 @click="
@@ -1385,20 +1583,20 @@ onBeforeUnmount(() => {
                     sortDialog?.close();
                 "
             >
-                Apply sorting
+                {{ t("Apply sorting") }}
             </button>
         </footer>
     </dialog>
     <dialog
         ref="viewDialog"
-        aria-label="Save view"
+        :aria-label="t('Save view')"
         class="md-table-dialog md-small-dialog"
     >
         <header>
-            <h2>Save this view</h2>
+            <h2>{{ t("Save this view") }}</h2>
             <button
                 class="md-icon-button"
-                aria-label="Close save view"
+                :aria-label="t('Close save view')"
                 @click="viewDialog?.close()"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
@@ -1409,34 +1607,38 @@ onBeforeUnmount(() => {
         <form @submit.prevent="saveView">
             <div class="md-dialog-body">
                 <p>
-                    Save these columns, search, sorting and filters for your
-                    account.
+                    {{
+                        t(
+                            "Save these columns, search, sorting and filters for your account.",
+                        )
+                    }}
                 </p>
                 <label
-                    >View name<input
+                    >{{ t("View name")
+                    }}<input
                         v-model="viewName"
                         required
                         maxlength="60"
-                        placeholder="e.g. High-priority prospects"
+                        :placeholder="t('e.g. High-priority prospects')"
                 /></label>
             </div>
             <footer>
                 <button class="crm-button" :disabled="views.length >= 20">
-                    Save view
+                    {{ t("Save view") }}
                 </button>
             </footer>
         </form>
     </dialog>
     <dialog
         ref="columnDialog"
-        aria-label="Column options"
+        :aria-label="t('Column options')"
         class="md-table-dialog md-small-dialog"
     >
         <header>
-            <h2>{{ catalog.get(activeColumn)?.label }}</h2>
+            <h2>{{ columnLabel(catalog.get(activeColumn)) }}</h2>
             <button
                 class="md-icon-button"
-                aria-label="Close column options"
+                :aria-label="t('Close column options')"
                 @click="columnDialog?.close()"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
@@ -1474,25 +1676,33 @@ onBeforeUnmount(() => {
                     >keep</span
                 >{{
                     pinned.includes(activeColumn)
-                        ? "Unpin column"
-                        : "Pin to left"
+                        ? t("Unpin column")
+                        : t(isRtl() ? "Pin to right" : "Pin to left")
                 }}</button
             ><button
                 class="crm-menu-item"
-                :disabled="order.indexOf(activeColumn) <= 0"
+                :disabled="
+                    isRtl()
+                        ? order.indexOf(activeColumn) >= order.length - 1
+                        : order.indexOf(activeColumn) <= 0
+                "
                 @click="move(activeColumn, -1)"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_back</span
-                >Move left</button
+                >{{ t("Move left") }}</button
             ><button
                 class="crm-menu-item"
-                :disabled="order.indexOf(activeColumn) >= order.length - 1"
+                :disabled="
+                    isRtl()
+                        ? order.indexOf(activeColumn) <= 0
+                        : order.indexOf(activeColumn) >= order.length - 1
+                "
                 @click="move(activeColumn, 1)"
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >arrow_forward</span
-                >Move right</button
+                >{{ t("Move right") }}</button
             ><button
                 class="crm-menu-item"
                 :disabled="order.length <= 1"
@@ -1503,9 +1713,10 @@ onBeforeUnmount(() => {
             >
                 <span class="material-symbols-outlined" aria-hidden="true"
                     >visibility_off</span
-                >Hide column</button
+                >{{ t("Hide column") }}</button
             ><label
-                >Column width<input
+                >{{ t("Column width")
+                }}<input
                     type="range"
                     min="100"
                     max="600"

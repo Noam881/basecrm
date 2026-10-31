@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
 import EmployeeReferenceSelect from "../../../../crm-core/resources/js/components/EmployeeReferenceSelect.vue";
@@ -99,8 +100,9 @@ function save() {
         preserveScroll: true,
         onHttpException: (response: { status: number }) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "This HR record or your access changed. Your edits are kept. Reload before saving.";
+                warning.value = tr(
+                    "This HR record or your access changed. Your edits are kept. Reload before saving.",
+                );
                 return false;
             }
         },
@@ -114,11 +116,13 @@ function save() {
     <form class="crm-form-grid" @submit.prevent="save">
         <template v-if="section === 'employees' || section === 'cases'">
             <div v-if="record" class="crm-field">
-                <span class="crm-field-label">Employee</span>
+                <span class="crm-field-label">{{ tr("Employee") }}</span>
                 <p>
-                    {{ record.employee?.name ?? "Restricted employee reference"
+                    {{
+                        record.employee?.name ??
+                        tr("Restricted employee reference")
                     }}<span v-if="record.employee && !record.employee.active">
-                        · Inactive</span
+                        {{ tr("· Inactive") }}</span
                     >
                 </p>
             </div>
@@ -136,7 +140,7 @@ function save() {
         </template>
         <template v-if="section === 'employees'">
             <label class="crm-field"
-                ><span class="crm-field-label">Role</span
+                ><span class="crm-field-label">{{ tr("Role") }}</span
                 ><input v-model="form.role_name" required maxlength="180"
             /></label>
             <EmployeeReferenceSelect
@@ -144,18 +148,24 @@ function save() {
                 v-model="form.manager_employee_reference_id"
                 :options="options.employees"
                 :selected="record?.manager"
-                label="Manager (optional)"
+                :label="tr('Manager (optional)')"
                 :required="false"
             />
             <p v-else class="crm-muted">
-                The existing manager reference is restricted and will be kept.
+                {{
+                    tr(
+                        "The existing manager reference is restricted and will be kept.",
+                    )
+                }}
             </p>
             <label class="crm-field"
-                ><span class="crm-field-label">Start date</span
+                ><span class="crm-field-label">{{ tr("Start date") }}</span
                 ><input v-model="form.start_on" type="date" required
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Employment status</span
+                ><span class="crm-field-label">{{
+                    tr("Employment status")
+                }}</span
                 ><select v-model="form.employment_status">
                     <option
                         v-for="(label, id) in options.employmentStatuses"
@@ -167,7 +177,9 @@ function save() {
                 </select></label
             >
             <label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Role description</span
+                ><span class="crm-field-label">{{
+                    tr("Role description")
+                }}</span
                 ><textarea
                     v-model="form.role_description"
                     rows="3"
@@ -175,7 +187,9 @@ function save() {
                 />
             </label>
             <label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Responsibilities</span
+                ><span class="crm-field-label">{{
+                    tr("Responsibilities")
+                }}</span
                 ><textarea
                     v-model="form.responsibilities"
                     rows="3"
@@ -186,15 +200,15 @@ function save() {
         </template>
         <template v-if="section === 'vacancies'">
             <label class="crm-field"
-                ><span class="crm-field-label">Vacancy role</span
+                ><span class="crm-field-label">{{ tr("Vacancy role") }}</span
                 ><input v-model="form.role_name" required maxlength="180"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Opened date</span
+                ><span class="crm-field-label">{{ tr("Opened date") }}</span
                 ><input v-model="form.opened_on" type="date" required
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Vacancy status</span
+                ><span class="crm-field-label">{{ tr("Vacancy status") }}</span
                 ><select v-model="form.status">
                     <option
                         v-for="(label, id) in options.vacancyStatuses"
@@ -206,7 +220,7 @@ function save() {
                 </select></label
             >
             <label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Description</span
+                ><span class="crm-field-label">{{ tr("Description") }}</span
                 ><textarea
                     v-model="form.description"
                     rows="3"
@@ -217,13 +231,15 @@ function save() {
         </template>
         <template v-if="section === 'candidates'">
             <label class="crm-field"
-                ><span class="crm-field-label">Candidate name</span
+                ><span class="crm-field-label">{{ tr("Candidate name") }}</span
                 ><input v-model="form.name" required maxlength="180"
             /></label>
             <label v-if="!record?.vacancy_restricted" class="crm-field"
-                ><span class="crm-field-label">Vacancy</span
+                ><span class="crm-field-label">{{ tr("Vacancy") }}</span
                 ><select v-model="form.vacancy_id" required>
-                    <option :value="null" disabled>Choose a vacancy</option>
+                    <option :value="null" disabled>
+                        {{ tr("Choose a vacancy") }}
+                    </option>
                     <option
                         v-if="
                             record?.vacancy &&
@@ -233,7 +249,7 @@ function save() {
                         "
                         :value="record.vacancy_id"
                     >
-                        {{ record.vacancy.role_name }} (retained)
+                        {{ record.vacancy.role_name }} {{ tr("(retained)") }}
                     </option>
                     <option
                         v-for="vacancy in options.vacancies"
@@ -245,10 +261,10 @@ function save() {
                 </select></label
             >
             <p v-else class="crm-muted">
-                The existing vacancy is restricted and will be kept.
+                {{ tr("The existing vacancy is restricted and will be kept.") }}
             </p>
             <label class="crm-field"
-                ><span class="crm-field-label">Candidate stage</span
+                ><span class="crm-field-label">{{ tr("Candidate stage") }}</span
                 ><select v-model="form.stage">
                     <option
                         v-for="(label, id) in options.stages"
@@ -260,7 +276,9 @@ function save() {
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Next action date</span
+                ><span class="crm-field-label">{{
+                    tr("Next action date")
+                }}</span
                 ><input v-model="form.next_action_on" type="date"
             /></label>
             <EmployeeReferenceSelect
@@ -268,59 +286,67 @@ function save() {
                 v-model="form.employee_reference_id"
                 :options="options.employees"
                 :selected="record?.employee"
-                label="Resolved employee (optional)"
+                :label="tr('Resolved employee (optional)')"
                 :required="false"
                 :can-manage="options.canManageEmployees"
             />
             <p v-if="form.stage === 'hired'" class="crm-muted">
-                Choose an existing employee explicitly, or create a reference
-                and return. Hiring never matches people by name or creates a
-                login.
+                {{
+                    tr(
+                        "Choose an existing employee explicitly, or create a reference and return. Hiring never matches people by name or creates a login.",
+                    )
+                }}
             </p>
             <label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Candidate notes</span
+                ><span class="crm-field-label">{{ tr("Candidate notes") }}</span
                 ><textarea v-model="form.notes" rows="3" maxlength="20000" />
             </label>
         </template>
         <template v-if="section === 'employees' || section === 'candidates'">
             <label class="crm-field"
-                ><span class="crm-field-label">Private email</span
+                ><span class="crm-field-label">{{ tr("Private email") }}</span
                 ><input v-model="form.email" type="email" maxlength="254"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Private phone</span
+                ><span class="crm-field-label">{{ tr("Private phone") }}</span
                 ><input v-model="form.phone" type="tel" maxlength="80"
             /></label>
             <p class="crm-muted">
-                These HR contact details are restricted to this record and are
-                not added to the shared contacts directory.
+                {{
+                    tr(
+                        "These HR contact details are restricted to this record and are not added to the shared contacts directory.",
+                    )
+                }}
             </p>
         </template>
         <template v-if="section === 'cases'">
             <label class="crm-field"
-                ><span class="crm-field-label">Case name</span
+                ><span class="crm-field-label">{{ tr("Case name") }}</span
                 ><input v-model="form.name" required maxlength="180"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Purpose</span
+                ><span class="crm-field-label">{{ tr("Purpose") }}</span
                 ><select v-model="form.kind" :disabled="!!record">
-                    <option value="onboarding">Onboarding</option>
-                    <option value="offboarding">Offboarding</option>
+                    <option value="onboarding">{{ tr("Onboarding") }}</option>
+                    <option value="offboarding">{{ tr("Offboarding") }}</option>
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Case due date</span
+                ><span class="crm-field-label">{{ tr("Case due date") }}</span
                 ><input v-model="form.due_on" type="date" required
             /></label>
             <label v-if="form.kind === 'offboarding'" class="crm-field"
-                ><span class="crm-field-label">Final working date</span
+                ><span class="crm-field-label">{{
+                    tr("Final working date")
+                }}</span
                 ><input v-model="form.final_work_on" type="date" required
             /></label>
             <label
                 v-if="form.kind === 'offboarding' && options.canEditFinalPay"
                 class="crm-field crm-form-span"
-                ><span class="crm-field-label"
-                    >Manual final-pay information</span
+                ><span class="crm-field-label">{{
+                    tr("Manual final-pay information")
+                }}</span
                 ><textarea
                     v-model="form.final_pay_info"
                     rows="3"
@@ -328,13 +354,15 @@ function save() {
                 />
             </label>
             <p v-if="form.kind === 'offboarding'" class="crm-muted">
-                Record handover and access/equipment return work in the
-                checklist. Completion does not revoke accounts, calculate pay or
-                notify payroll automatically.
+                {{
+                    tr(
+                        "Record handover and access/equipment return work in the checklist. Completion does not revoke accounts, calculate pay or notify payroll automatically.",
+                    )
+                }}
             </p>
         </template>
         <label class="crm-field"
-            ><span class="crm-field-label">Responsible staff</span
+            ><span class="crm-field-label">{{ tr("Responsible staff") }}</span
             ><select v-model="form.owner_id" :disabled="!options.canAssign">
                 <option
                     v-for="owner in options.owners"
@@ -357,10 +385,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing || !!warning">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save record"
-                          : "Create record"
+                          ? tr("Save record")
+                          : tr("Create record")
                 }}
             </button>
         </div>

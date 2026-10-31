@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { router, useForm } from "@inertiajs/vue3";
 import { computed, ref, useId, watch } from "vue";
 import {
@@ -60,14 +61,16 @@ function changeStage(value: unknown) {
         errorBag: `lead_stage_${props.leadId}`,
         preserveScroll: true,
         onSuccess: () => {
-            feedback.value = "Stage saved";
+            feedback.value = t("Stage saved");
         },
         onHttpException: (response) => {
             if (response.status === 409) {
                 needsRefresh.value = true;
                 form.setError(
                     "status_id",
-                    "This lead changed in another session. Refresh the stage before trying again; your other edits will be kept.",
+                    t(
+                        "This lead changed in another session. Refresh the stage before trying again; your other edits will be kept.",
+                    ),
                 );
                 return false;
             }
@@ -80,7 +83,9 @@ function changeStage(value: unknown) {
             needsRefresh.value = true;
             form.setError(
                 "status_id",
-                "The connection was interrupted. Refresh the stage to check whether your change was saved.",
+                t(
+                    "The connection was interrupted. Refresh the stage to check whether your change was saved.",
+                ),
             );
             return false;
         },
@@ -95,7 +100,9 @@ function denyPermission() {
     needsRefresh.value = false;
     form.setError(
         "status_id",
-        "You no longer have permission to change this stage. Your change was not saved.",
+        t(
+            "You no longer have permission to change this stage. Your change was not saved.",
+        ),
     );
 }
 function refreshStage() {
@@ -106,7 +113,9 @@ function refreshStage() {
         onSuccess: () => {
             needsRefresh.value = false;
             form.clearErrors();
-            feedback.value = "Stage refreshed. Review it before changing it.";
+            feedback.value = t(
+                "Stage refreshed. Review it before changing it.",
+            );
         },
         onHttpException: (response) => {
             if (response.status === 403) {
@@ -117,7 +126,9 @@ function refreshStage() {
         onNetworkError: () => {
             form.setError(
                 "status_id",
-                "The stage could not be refreshed. Check your connection and try again.",
+                t(
+                    "The stage could not be refreshed. Check your connection and try again.",
+                ),
             );
             return false;
         },
@@ -138,14 +149,22 @@ function refreshStage() {
                 <button
                     type="button"
                     class="crm-tonal crm-control-sm crm-stage-bubble"
-                    :aria-label="`Change stage for ${recordName}; current stage: ${currentStage}`"
+                    :aria-label="
+                        t(
+                            'Change stage for {value0}; current stage: {value1}',
+                            {
+                                value0: String(recordName ?? ''),
+                                value1: currentStage,
+                            },
+                        )
+                    "
                     :aria-describedby="
                         error || feedback ? feedbackId : undefined
                     "
                     :aria-busy="form.processing"
                 >
                     <span class="crm-stage-name">{{
-                        form.processing ? "Saving…" : currentStage
+                        form.processing ? t("Saving…") : currentStage
                     }}</span>
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >expand_more</span
@@ -155,7 +174,11 @@ function refreshStage() {
             <DropdownMenuPortal>
                 <DropdownMenuContent
                     class="crm-material-menu"
-                    :aria-label="`Stage for ${recordName}`"
+                    :aria-label="
+                        t('Stage for {value0}', {
+                            value0: String(recordName ?? ''),
+                        })
+                    "
                     align="start"
                     :side-offset="4"
                     :collision-padding="12"
@@ -196,10 +219,14 @@ function refreshStage() {
             type="button"
             class="crm-ghost crm-control-sm"
             :disabled="refreshing"
-            :aria-label="`Refresh stage for ${recordName}`"
+            :aria-label="
+                t('Refresh stage for {value0}', {
+                    value0: String(recordName ?? ''),
+                })
+            "
             @click="refreshStage"
         >
-            {{ refreshing ? "Refreshing…" : "Refresh stage" }}
+            {{ refreshing ? t("Refreshing…") : t("Refresh stage") }}
         </button>
         <small
             v-if="feedback && !error"

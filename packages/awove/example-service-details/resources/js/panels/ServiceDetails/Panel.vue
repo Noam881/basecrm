@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { onMounted, ref, computed } from "vue";
 import { usePage } from "@inertiajs/vue3";
 const page = usePage();
@@ -17,7 +18,7 @@ onMounted(async () => {
         const r = await fetch(p.endpoint, {
             headers: { Accept: "application/json" },
         });
-        if (!r.ok) throw new Error("Service details could not be loaded.");
+        if (!r.ok) throw new Error(tr("Service details could not be loaded."));
         data.value = await r.json();
     } catch (e) {
         error.value = String(e);
@@ -47,7 +48,7 @@ async function save() {
         if (!r.ok) {
             const response = await r.json();
             throw new Error(
-                response.message ?? "Unable to save service details.",
+                response.message ?? tr("Unable to save service details."),
             );
         }
         saved.value = true;
@@ -57,21 +58,23 @@ async function save() {
 }
 </script>
 <template>
-    <p v-if="loading">Loading service details…</p>
+    <p v-if="loading">{{ tr("Loading service details…") }}</p>
     <form v-else class="crm-form" @submit.prevent="save">
         <label
-            ><span class="crm-field-label">Service reference</span
+            ><span class="crm-field-label">{{ tr("Service reference") }}</span
             ><input
                 v-model="data.service_reference"
                 :disabled="!canEdit" /></label
         ><label
-            ><span class="crm-field-label">Requested service</span
+            ><span class="crm-field-label">{{ tr("Requested service") }}</span
             ><textarea v-model="data.requested_service" :disabled="!canEdit" />
         </label>
         <p v-if="error" class="crm-notice" role="alert">{{ error }}</p>
         <p v-if="saved" class="crm-notice" role="status">
-            Service details saved.
+            {{ tr("Service details saved.") }}
         </p>
-        <button v-if="canEdit" class="crm-button">Save service details</button>
+        <button v-if="canEdit" class="crm-button">
+            {{ tr("Save service details") }}
+        </button>
     </form>
 </template>

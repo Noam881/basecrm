@@ -47,7 +47,7 @@ class MagicLoginController extends Controller
             }
         }, 200000);
 
-        return redirect()->route('login')->with('status', self::SENT_MESSAGE);
+        return redirect()->route('login')->with('status', __(self::SENT_MESSAGE));
     }
 
     public function show(Request $request, string $token): HttpResponse
@@ -95,6 +95,6 @@ class MagicLoginController extends Controller
 
     private function invalid(): RedirectResponse
     {
-        return redirect()->route('login')->withErrors(['email' => MagicLogin::INVALID_MESSAGE]);
+        return redirect()->route('login')->withErrors(['email' => __(MagicLogin::INVALID_MESSAGE)]);
     }
 }

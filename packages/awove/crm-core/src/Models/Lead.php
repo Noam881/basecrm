@@ -30,6 +30,7 @@ class Lead extends Model
         return $this->belongsTo(Company::class);
     }
 
+    /** @return BelongsTo<Status, $this> */
     public function status(): BelongsTo
     {
         return $this->belongsTo(Status::class);

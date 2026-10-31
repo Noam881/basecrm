@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import type { ContactFormData, ContactOptions, Person } from "../types";
 
 const props = defineProps<{
@@ -43,7 +44,7 @@ function errorFor(field: string) {
 
 <template>
     <label class="crm-field">
-        <span class="crm-field-label">Name</span>
+        <span class="crm-field-label">{{ t("Name") }}</span>
         <input
             v-model="form.name"
             required
@@ -56,7 +57,7 @@ function errorFor(field: string) {
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Email</span>
+        <span class="crm-field-label">{{ t("Email") }}</span>
         <input
             v-model="form.email"
             type="email"
@@ -69,7 +70,7 @@ function errorFor(field: string) {
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Phone</span>
+        <span class="crm-field-label">{{ t("Phone") }}</span>
         <input
             v-model="form.phone"
             type="tel"
@@ -82,13 +83,14 @@ function errorFor(field: string) {
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Company</span>
+        <span class="crm-field-label">{{ t("Company") }}</span>
         <select
             v-model="form.company_id"
             :aria-invalid="!!errorFor('company_id')"
         >
-            <option :value="null">Individual</option>
+            <option :value="null">{{ t("Individual") }}</option>
             <option
+                dir="auto"
                 v-for="company in companies"
                 :key="company.id"
                 :value="company.id"
@@ -104,7 +106,7 @@ function errorFor(field: string) {
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Secondary phone</span>
+        <span class="crm-field-label">{{ t("Secondary phone") }}</span>
         <input
             v-model="form.secondary_phone"
             type="tel"
@@ -119,18 +121,18 @@ function errorFor(field: string) {
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Secondary phone type</span>
+        <span class="crm-field-label">{{ t("Secondary phone type") }}</span>
         <select
             v-model="form.secondary_phone_label"
             :aria-invalid="!!errorFor('secondary_phone_label')"
         >
-            <option value="">Not specified</option>
+            <option value="">{{ t("Not specified") }}</option>
             <option
                 v-for="option in options.phone_labels"
                 :key="option.value"
                 :value="option.value"
             >
-                {{ option.label }}
+                {{ t(option.label) }}
             </option>
         </select>
         <small
@@ -141,18 +143,18 @@ function errorFor(field: string) {
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Preferred contact method</span>
+        <span class="crm-field-label">{{ t("Preferred contact method") }}</span>
         <select
             v-model="form.preferred_contact_method"
             :aria-invalid="!!errorFor('preferred_contact_method')"
         >
-            <option value="">Not specified</option>
+            <option value="">{{ t("Not specified") }}</option>
             <option
                 v-for="option in options.methods"
                 :key="option.value"
                 :value="option.value"
             >
-                {{ option.label }}
+                {{ t(option.label) }}
             </option>
         </select>
         <small
@@ -163,15 +165,17 @@ function errorFor(field: string) {
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">How did they hear about us?</span>
+        <span class="crm-field-label">{{
+            t("How did they hear about us?")
+        }}</span>
         <select v-model="form.source" :aria-invalid="!!errorFor('source')">
-            <option value="">Not specified</option>
+            <option value="">{{ t("Not specified") }}</option>
             <option
                 v-for="option in options.sources"
                 :key="option.value"
                 :value="option.value"
             >
-                {{ option.label }}
+                {{ t(option.label) }}
             </option>
         </select>
         <small v-if="errorFor('source')" data-slot="input-error" role="alert">{{
@@ -179,7 +183,7 @@ function errorFor(field: string) {
         }}</small>
     </label>
     <fieldset class="crm-choice-group crm-form-span">
-        <legend>Best contact time</legend>
+        <legend>{{ t("Best contact time") }}</legend>
         <div class="crm-choice-options">
             <label
                 v-for="option in options.times"
@@ -199,12 +203,12 @@ function errorFor(field: string) {
                         )
                     "
                 />
-                {{ option.label }}
+                {{ t(option.label) }}
             </label>
         </div>
-        <small class="crm-muted"
-            >Choose multiple time windows, or Anytime.</small
-        >
+        <small class="crm-muted">{{
+            t("Choose multiple time windows, or Anytime.")
+        }}</small>
         <small
             v-if="errorFor('preferred_contact_times')"
             data-slot="input-error"
@@ -213,7 +217,7 @@ function errorFor(field: string) {
         >
     </fieldset>
     <fieldset class="crm-choice-group crm-form-span">
-        <legend>Preferred contact days</legend>
+        <legend>{{ t("Preferred contact days") }}</legend>
         <div class="crm-choice-options">
             <label
                 v-for="option in options.days"
@@ -225,7 +229,7 @@ function errorFor(field: string) {
                     type="checkbox"
                     :value="option.value"
                 />
-                {{ option.label }}
+                {{ t(option.label) }}
             </label>
             <button
                 type="button"
@@ -236,13 +240,14 @@ function errorFor(field: string) {
                 "
                 @click="toggleWeekends"
             >
-                Weekends
+                {{ t("Weekends") }}
             </button>
         </div>
-        <small class="crm-muted"
-            >Leave all days unchecked for any day. You can combine weekends with
-            specific days.</small
-        >
+        <small class="crm-muted">{{
+            t(
+                "Leave all days unchecked for any day. You can combine weekends with specific days.",
+            )
+        }}</small>
         <small
             v-if="errorFor('preferred_contact_days')"
             data-slot="input-error"
@@ -251,7 +256,7 @@ function errorFor(field: string) {
         >
     </fieldset>
     <label class="crm-field crm-form-span">
-        <span class="crm-field-label">Address</span>
+        <span class="crm-field-label">{{ t("Address") }}</span>
         <textarea
             v-model="form.address"
             rows="2"
@@ -267,7 +272,7 @@ function errorFor(field: string) {
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">City</span>
+        <span class="crm-field-label">{{ t("City") }}</span>
         <input
             v-model="form.city"
             maxlength="120"
@@ -279,7 +284,7 @@ function errorFor(field: string) {
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Country</span>
+        <span class="crm-field-label">{{ t("Country") }}</span>
         <input
             v-model="form.country"
             maxlength="120"
@@ -294,12 +299,12 @@ function errorFor(field: string) {
         >
     </label>
     <label v-if="initialNotes" class="crm-field crm-form-span">
-        <span class="crm-field-label">Notes</span>
+        <span class="crm-field-label">{{ t("Notes") }}</span>
         <textarea
             v-model="form.notes"
             rows="3"
             maxlength="10000"
-            placeholder="Add background or the first conversation…"
+            :placeholder="t('Add background or the first conversation…')"
             :aria-invalid="!!errorFor('notes')"
         />
         <small v-if="errorFor('notes')" data-slot="input-error" role="alert">{{

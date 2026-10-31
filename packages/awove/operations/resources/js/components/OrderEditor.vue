@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { computed } from "vue";
 import {
@@ -40,12 +41,12 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Supplier</span
+            ><span class="crm-field-label">{{ tr("Supplier") }}</span
             ><select
                 v-model="form.supplier_relationship_id"
                 :required="!record"
             >
-                <option :value="null">Choose supplier</option>
+                <option :value="null">{{ tr("Choose supplier") }}</option>
                 <option
                     v-for="supplier in historicalClassification(
                         suppliers,
@@ -63,7 +64,7 @@ function save() {
                 >{{ form.errors.supplier_relationship_id }}</small
             ></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Reference</span
+            ><span class="crm-field-label">{{ tr("Reference") }}</span
             ><input v-model="form.reference" required maxlength="120" /><small
                 v-if="form.errors.reference"
                 role="alert"
@@ -71,7 +72,7 @@ function save() {
                 >{{ form.errors.reference }}</small
             ></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Description</span
+            ><span class="crm-field-label">{{ tr("Description") }}</span
             ><textarea
                 v-model="form.description"
                 required
@@ -84,11 +85,13 @@ function save() {
                 >{{ form.errors.description }}</small
             ></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Agreed quantity (optional)</span
+            ><span class="crm-field-label">{{
+                tr("Agreed quantity (optional)")
+            }}</span
             ><input
                 v-model="form.quantity"
                 inputmode="decimal"
-                placeholder="For example, 10.000"
+                :placeholder="tr('For example, 10.000')"
             /><small
                 v-if="form.errors.quantity"
                 role="alert"
@@ -97,7 +100,8 @@ function save() {
             ></label
         ><label class="crm-field"
             ><span class="crm-field-label"
-                >Agreed total ({{ record?.currency ?? currency }})</span
+                >{{ tr("Agreed total (")
+                }}{{ record?.currency ?? currency }})</span
             ><input
                 v-model="form.agreed_total"
                 inputmode="decimal"
@@ -110,9 +114,9 @@ function save() {
                 >{{ form.errors.agreed_total }}</small
             ></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ tr("Owner") }}</span
             ><select v-model="form.owner_id" :disabled="!canAssign">
-                <option :value="null">Unassigned</option>
+                <option :value="null">{{ tr("Unassigned") }}</option>
                 <option
                     v-for="owner in historicalOwner(owners, record?.owner)"
                     :key="owner.id"
@@ -127,7 +131,7 @@ function save() {
                 >{{ form.errors.owner_id }}</small
             ></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Status</span
+            ><span class="crm-field-label">{{ tr("Status") }}</span
             ><select v-model="form.status">
                 <option
                     v-for="(label, key) in orderStatuses"
@@ -140,9 +144,11 @@ function save() {
                 >
                     {{ label }}
                 </option></select
-            ><small
-                >Delivery receipts determine partial and complete receipt
-                states.</small
+            ><small>{{
+                tr(
+                    "Delivery receipts determine partial and complete receipt states.",
+                )
+            }}</small
             ><small
                 v-if="form.errors.status"
                 role="alert"
@@ -150,7 +156,7 @@ function save() {
                 >{{ form.errors.status }}</small
             ></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Order date</span
+            ><span class="crm-field-label">{{ tr("Order date") }}</span
             ><input v-model="form.ordered_on" type="date" required /><small
                 v-if="form.errors.ordered_on"
                 role="alert"
@@ -158,7 +164,9 @@ function save() {
                 >{{ form.errors.ordered_on }}</small
             ></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Expected delivery date</span
+            ><span class="crm-field-label">{{
+                tr("Expected delivery date")
+            }}</span
             ><input v-model="form.expected_on" type="date" /><small
                 v-if="form.errors.expected_on"
                 role="alert"
@@ -166,7 +174,7 @@ function save() {
                 >{{ form.errors.expected_on }}</small
             ></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Outstanding items</span
+            ><span class="crm-field-label">{{ tr("Outstanding items") }}</span
             ><textarea
                 v-model="form.outstanding_items"
                 rows="2"
@@ -178,11 +186,11 @@ function save() {
                 >{{ form.errors.outstanding_items }}</small
             ></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Document link</span
+            ><span class="crm-field-label">{{ tr("Document link") }}</span
             ><input
                 v-model="form.document_url"
                 type="url"
-                placeholder="https://"
+                :placeholder="tr('https://')"
                 maxlength="2048"
             /><small
                 v-if="form.errors.document_url"
@@ -201,10 +209,10 @@ function save() {
             >
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save order"
-                          : "Create order"
+                          ? tr("Save order")
+                          : tr("Create order")
                 }}
             </button>
         </div>

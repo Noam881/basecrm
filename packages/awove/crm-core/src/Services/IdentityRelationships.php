@@ -43,7 +43,7 @@ class IdentityRelationships
             ...$this->rules(),
         ])->validate();
         if (filled($data['contact_id'] ?? null) === filled($data['company_id'] ?? null)) {
-            throw ValidationException::withMessages(['contact_id' => 'Choose exactly one existing contact or company.']);
+            throw ValidationException::withMessages(['contact_id' => __('Choose exactly one existing contact or company.')]);
         }
 
         return DB::transaction(function () use ($user, $data) {
@@ -51,7 +51,7 @@ class IdentityRelationships
             $key = $type === Contact::class ? 'contact_id' : 'company_id';
             $identity = Access::identities($user, $type)->whereKey($data[$key])->lockForUpdate()->firstOrFail();
             if (IdentityRelationship::where($key, $identity->getKey())->where('role', $data['role'])->exists()) {
-                throw ValidationException::withMessages(['role' => 'This identity already has that classification. Edit the existing record, including archived records.']);
+                throw ValidationException::withMessages(['role' => __('This identity already has that classification. Edit the existing record, including archived records.')]);
             }
             $data = $this->normalize($user, [...$data, $key => $identity->getKey(), 'responsible_id' => array_key_exists('responsible_id', $data) ? $data['responsible_id'] : $user->id]);
             $record = IdentityRelationship::create([...$data, 'created_by' => $user->id]);
@@ -153,7 +153,7 @@ class IdentityRelationships
         if (! $record || $record->responsible_id !== ($data['responsible_id'] ?? null)) {
             abort_unless(($data['responsible_id'] ?? null) === $user->id || $user->can('identities.classifications.assign') || $user->can('users.manage'), 403);
             if (filled($data['responsible_id'] ?? null) && ! User::whereKey($data['responsible_id'])->where('active', true)->exists()) {
-                throw ValidationException::withMessages(['responsible_id' => 'Choose an active responsible person.']);
+                throw ValidationException::withMessages(['responsible_id' => __('Choose an active responsible person.')]);
             }
         }
         // A redacted DTO must not silently clear a hidden historical main contact on save.
@@ -164,11 +164,11 @@ class IdentityRelationships
         // Preserve a hidden historical main contact unless an explicitly visible replacement is supplied.
         if (filled($data['main_contact_id'] ?? null) && (! $record || $record->main_contact_id !== $data['main_contact_id'])) {
             if (empty($data['company_id'])) {
-                throw ValidationException::withMessages(['main_contact_id' => 'Main contact applies to a company classification.']);
+                throw ValidationException::withMessages(['main_contact_id' => __('Main contact applies to a company classification.')]);
             }
             $main = Access::identities($user, Contact::class)->whereKey($data['main_contact_id'])->firstOrFail();
             if ($main->getAttribute('company_id') !== $data['company_id']) {
-                throw ValidationException::withMessages(['main_contact_id' => 'Choose a contact belonging to this company.']);
+                throw ValidationException::withMessages(['main_contact_id' => __('Choose a contact belonging to this company.')]);
             }
         }
 
@@ -186,7 +186,7 @@ class IdentityRelationships
     private function checkVersion(IdentityRelationship $record, int $version): void
     {
         if ($record->version !== $version) {
-            throw ValidationException::withMessages(['version' => 'This classification changed. Reload it before saving.']);
+            throw ValidationException::withMessages(['version' => __('This classification changed. Reload it before saving.')]);
         }
     }
 

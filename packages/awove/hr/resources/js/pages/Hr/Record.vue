@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import RecordForm from "../../components/RecordForm.vue";
@@ -35,7 +36,7 @@ const title = computed(
         props.record.name ??
         props.record.employee?.name ??
         props.record.role_name ??
-        "HR record",
+        tr("HR record"),
 );
 const document = useForm({ name: "", url: "" });
 const complete = useForm({
@@ -79,7 +80,7 @@ function displayValue(field: string): string {
         return props.employmentStatuses[value] ?? value;
     if (field === "status") return props.vacancyStatuses[value] ?? value;
     if (field === "kind")
-        return value === "offboarding" ? "Offboarding" : "Onboarding";
+        return value === "offboarding" ? tr("Offboarding") : tr("Onboarding");
     return value;
 }
 function addDocument() {
@@ -93,8 +94,9 @@ function finish() {
         preserveScroll: true,
         onHttpException: (response) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "The case or employee reference changed. Reload before completing it.";
+                warning.value = tr(
+                    "The case or employee reference changed. Reload before completing it.",
+                );
                 return false;
             }
         },
@@ -117,25 +119,29 @@ function archive() {
     <Head :title="title" /><Link
         class="crm-back"
         :href="'/hr?section=' + section"
-        >← Back to {{ sectionLabels[section].toLowerCase() }}</Link
+        >{{ tr("← Back to") }}
+        {{ tr(sectionLabels[section]).toLowerCase() }}</Link
     >
     <div class="crm-heading">
         <h1>{{ title }}</h1>
         <button v-if="archivable" class="crm-secondary" @click="archive">
-            Archive record
+            {{ tr("Archive record") }}
         </button>
     </div>
     <div class="crm-flow">
         <p v-if="warning" class="crm-notice" role="alert">{{ warning }}</p>
         <section class="crm-card crm-flow">
-            <h2>Record details</h2>
-            <p>Responsible staff: {{ record.owner?.name ?? "Former staff" }}</p>
+            <h2>{{ tr("Record details") }}</h2>
+            <p>
+                {{ tr("Responsible staff:") }}
+                {{ record.owner?.name ?? tr("Former staff") }}
+            </p>
             <p v-if="record.archived_at" class="crm-muted">
-                Archived · Historical information retained
+                {{ tr("Archived · Historical information retained") }}
             </p>
             <p v-if="record.completed_on" class="crm-notice">
-                Case completed {{ record.completed_on }}. Checklist history is
-                retained.
+                {{ tr("Case completed") }} {{ record.completed_on
+                }}{{ tr(". Checklist history is retained.") }}
             </p>
             <RecordForm
                 v-if="editable"
@@ -146,10 +152,10 @@ function archive() {
             />
             <dl v-else class="crm-detail-grid">
                 <div v-if="record.employee">
-                    <dt>Employee</dt>
+                    <dt>{{ tr("Employee") }}</dt>
                     <dd>
                         {{ record.employee.name
-                        }}{{ record.employee.active ? "" : " · Inactive" }}
+                        }}{{ record.employee.active ? "" : tr(" · Inactive") }}
                     </dd>
                 </div>
                 <template v-for="(label, field) in fields" :key="field"
@@ -159,7 +165,7 @@ function archive() {
                             record[field as keyof HrRecord] !== null
                         "
                     >
-                        <dt>{{ label }}</dt>
+                        <dt>{{ tr(label) }}</dt>
                         <dd>
                             {{ displayValue(field) }}
                         </dd>
@@ -168,29 +174,33 @@ function archive() {
             </dl>
         </section>
         <section v-if="section === 'cases'" class="crm-card crm-flow">
-            <h2>Case checklist</h2>
+            <h2>{{ tr("Case checklist") }}</h2>
             <p class="crm-muted">
-                Only checklist work you can access is listed. Case completion
-                checks every required item. Access work and final-pay transfer
-                are manual records.
+                {{
+                    tr(
+                        "Only checklist work you can access is listed. Case completion checks every required item. Access work and final-pay transfer are manual records.",
+                    )
+                }}
             </p>
             <p v-if="!items.length" class="crm-muted">
-                No accessible checklist items yet.
+                {{ tr("No accessible checklist items yet.") }}
             </p>
             <article v-for="item in items" :key="item.id" class="crm-note">
                 <Link :href="item.href!">{{ item.title }}</Link>
                 <p>
-                    {{ categories[item.category] }} ·
-                    {{ item.required ? "Required" : "Optional" }} ·
+                    {{ tr(categories[item.category]) }} ·
+                    {{ item.required ? tr("Required") : tr("Optional") }} ·
                     {{ checklistStatuses[item.status] ?? item.status }}
-                    · Due {{ item.due_on
+                    {{ tr("· Due") }} {{ item.due_on
                     }}<span v-if="item.completed_on">
-                        · Completed {{ item.completed_on }}</span
-                    ><span v-if="item.archived_at"> · Archived</span>
+                        {{ tr("· Completed") }} {{ item.completed_on }}</span
+                    ><span v-if="item.archived_at">
+                        {{ tr("· Archived") }}</span
+                    >
                 </p>
             </article>
             <details v-if="editable && canCreate">
-                <summary>Add checklist item</summary>
+                <summary>{{ tr("Add checklist item") }}</summary>
                 <ChecklistForm :options="props" :case-id="record.id" />
             </details>
         </section>
@@ -198,14 +208,19 @@ function archive() {
             v-if="section === 'cases' && editable"
             class="crm-card crm-flow"
         >
-            <h2>Complete case</h2>
+            <h2>{{ tr("Complete case") }}</h2>
             <p>
-                Complete required work and complete or explicitly skip optional
-                work before recording a completion date.
+                {{
+                    tr(
+                        "Complete required work and complete or explicitly skip optional work before recording a completion date.",
+                    )
+                }}
             </p>
             <form class="crm-form-grid" @submit.prevent="finish">
                 <label class="crm-field"
-                    ><span class="crm-field-label">Case completion date</span
+                    ><span class="crm-field-label">{{
+                        tr("Case completion date")
+                    }}</span
                     ><input
                         v-model="complete.completed_on"
                         type="date"
@@ -216,11 +231,16 @@ function archive() {
                     ><input
                         v-model="complete.deactivate_employee"
                         type="checkbox"
-                    />Retain the employee reference as inactive</label
+                    />{{
+                        tr("Retain the employee reference as inactive")
+                    }}</label
                 >
                 <p v-if="record.kind === 'offboarding'" class="crm-muted">
-                    This changes only the employee reference if selected. It
-                    does not disable a login or revoke external access.
+                    {{
+                        tr(
+                            "This changes only the employee reference if selected. It does not disable a login or revoke external access.",
+                        )
+                    }}
                 </p>
                 <div
                     v-if="Object.keys(complete.errors).length"
@@ -236,7 +256,7 @@ function archive() {
                         class="crm-button"
                         :disabled="complete.processing || !!warning"
                     >
-                        Complete case
+                        {{ tr("Complete case") }}
                     </button>
                 </div>
             </form>
@@ -248,12 +268,12 @@ function archive() {
             <h2>
                 {{
                     section === "candidates"
-                        ? "CV and documents"
-                        : "Restricted documents"
+                        ? tr("CV and documents")
+                        : tr("Restricted documents")
                 }}
             </h2>
             <p v-if="!documents.length" class="crm-muted">
-                No document references yet.
+                {{ tr("No document references yet.") }}
             </p>
             <article
                 v-for="entry in documents"
@@ -265,7 +285,9 @@ function archive() {
                     target="_blank"
                     rel="noopener noreferrer"
                     >{{ entry.name }}</a
-                ><span v-if="entry.archived_at"> · Archived, retained</span>
+                ><span v-if="entry.archived_at">
+                    {{ tr("· Archived, retained") }}</span
+                >
                 <div
                     v-else-if="editable && canManageDocuments"
                     class="crm-form-action"
@@ -280,7 +302,7 @@ function archive() {
                             )
                         "
                     >
-                        Archive document reference
+                        {{ tr("Archive document reference") }}
                     </button>
                 </div>
             </article>
@@ -290,13 +312,17 @@ function archive() {
                 @submit.prevent="addDocument"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Document name</span
+                    ><span class="crm-field-label">{{
+                        tr("Document name")
+                    }}</span
                     ><input
                         v-model="document.name"
                         maxlength="180"
                         required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">HTTPS document link</span
+                    ><span class="crm-field-label">{{
+                        tr("HTTPS document link")
+                    }}</span
                     ><input
                         v-model="document.url"
                         type="url"
@@ -314,7 +340,7 @@ function archive() {
                 </div>
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="document.processing">
-                        Add document reference
+                        {{ tr("Add document reference") }}
                     </button>
                 </div>
             </form>

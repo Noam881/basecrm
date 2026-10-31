@@ -81,7 +81,7 @@ class Identities
             $data = validator($input, ['body' => 'required|string|max:10000'])->validate();
             $body = trim($data['body']);
             if ($body === '') {
-                throw ValidationException::withMessages(['body' => 'Enter a note.']);
+                throw ValidationException::withMessages(['body' => __('Enter a note.')]);
             }
 
             return $identity->notes()->create(['body' => $body, 'author_id' => $user->id]);
@@ -125,7 +125,7 @@ class Identities
         }
         $data = validator($input, $rules)->validate();
         if (in_array('anytime', $data['preferred_contact_times'] ?? [], true) && count($data['preferred_contact_times']) > 1) {
-            throw ValidationException::withMessages(['preferred_contact_times' => 'Choose Anytime or specific times of day.']);
+            throw ValidationException::withMessages(['preferred_contact_times' => __('Choose Anytime or specific times of day.')]);
         }
         $acceptDuplicate = $data['accept_duplicate'] ?? false;
         unset($data['accept_duplicate']);
@@ -138,7 +138,7 @@ class Identities
         $data = [...($identity?->only($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone']) ?? []), ...$data];
         $data['name'] = trim($data['name']);
         if ($data['name'] === '') {
-            throw ValidationException::withMessages(['name' => 'Enter a name.']);
+            throw ValidationException::withMessages(['name' => __('Enter a name.')]);
         }
         $data['email'] = ! empty($data['email']) ? mb_strtolower(trim($data['email'])) : null;
         foreach ($type === 'contacts' ? ['phone', 'secondary_phone', 'address', 'city', 'country', 'notes'] : ['phone', 'notes'] as $field) {
@@ -176,7 +176,7 @@ class Identities
             }
         })->exists();
         if ($duplicate && ! $acceptDuplicate) {
-            throw ValidationException::withMessages(['name' => 'Possible duplicate. Review existing records or confirm keeping a separate record.']);
+            throw ValidationException::withMessages(['name' => __('Possible duplicate. Review existing records or confirm keeping a separate record.')]);
         }
         $searchValues = array_filter($data, fn ($value, $key) => $key !== 'notes' && is_scalar($value), ARRAY_FILTER_USE_BOTH);
         $data['search_key'] = Str::substr(mb_strtolower(preg_replace('/[^\p{L}\p{N}@.]+/u', '', implode(' ', $searchValues))), 0, 255);

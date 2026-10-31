@@ -63,34 +63,34 @@ class Orders
             Access::edit($user, $order);
             $existing = OrderReceipt::where('order_id', $id)->where('submission_key', $data['submission_key'])->first();
             if ($existing) {
-                abort_unless(hash_equals($existing->submission_fingerprint, $fingerprint), 409, 'This receipt key already records different input.');
+                abort_unless(hash_equals($existing->submission_fingerprint, $fingerprint), 409, __('This receipt key already records different input.'));
 
                 return $existing;
             }
             $this->version($order, $data);
             if (in_array($order->status, ['draft', 'received', 'cancelled'])) {
-                throw ValidationException::withMessages(['received_on' => 'Record receipts only for an ordered or partially received order.']);
+                throw ValidationException::withMessages(['received_on' => __('Record receipts only for an ordered or partially received order.')]);
             }
             if ($data['received_on'] < $order->ordered_on->toDateString()) {
-                throw ValidationException::withMessages(['received_on' => 'Receipt date cannot be before the order date.']);
+                throw ValidationException::withMessages(['received_on' => __('Receipt date cannot be before the order date.')]);
             }
             $received = $this->receivedUnits($order);
             if ($order->quantity !== null) {
                 if ($data['quantity'] === null || Quantity::units($data['quantity']) <= 0) {
-                    throw ValidationException::withMessages(['quantity' => 'Enter the received quantity.']);
+                    throw ValidationException::withMessages(['quantity' => __('Enter the received quantity.')]);
                 }
                 $received += Quantity::units($data['quantity']);
                 if ($received > Quantity::units($order->quantity)) {
-                    throw ValidationException::withMessages(['quantity' => 'Received quantity exceeds the agreed outstanding quantity.']);
+                    throw ValidationException::withMessages(['quantity' => __('Received quantity exceeds the agreed outstanding quantity.')]);
                 }
                 $complete = $received === Quantity::units($order->quantity);
             } else {
                 if ($data['quantity'] !== null) {
-                    throw ValidationException::withMessages(['quantity' => 'This order has no agreed quantity. Describe the received items and choose partial or complete.']);
+                    throw ValidationException::withMessages(['quantity' => __('This order has no agreed quantity. Describe the received items and choose partial or complete.')]);
                 }
                 $complete = $data['complete'];
                 if (! $complete && ! filled($data['outstanding_items'] ?? null)) {
-                    throw ValidationException::withMessages(['outstanding_items' => 'Describe the outstanding items for a partial receipt.']);
+                    throw ValidationException::withMessages(['outstanding_items' => __('Describe the outstanding items for a partial receipt.')]);
                 }
             }
             $receipt = OrderReceipt::create(['order_id' => $id, 'actor_id' => $user->id, 'received_on' => $data['received_on'], 'quantity' => $data['quantity'], 'complete' => $complete, 'description' => $data['description'], 'submission_key' => $data['submission_key'], 'submission_fingerprint' => $fingerprint]);
@@ -167,7 +167,7 @@ class Orders
         $data = [...['supplier_relationship_id' => $order?->supplier_relationship_id, 'owner_id' => $order ? $order->owner_id : $user->id, 'quantity' => null, 'expected_on' => null, 'document_url' => null, 'outstanding_items' => null], ...$data];
         $data['supplier_relationship_id'] = filled($data['supplier_relationship_id']) ? (int) $data['supplier_relationship_id'] : $order?->supplier_relationship_id;
         if (! $data['supplier_relationship_id']) {
-            throw ValidationException::withMessages(['supplier_relationship_id' => 'Choose an existing active supplier classification.']);
+            throw ValidationException::withMessages(['supplier_relationship_id' => __('Choose an existing active supplier classification.')]);
         }
         Relations::authorize($user, $data['supplier_relationship_id'], 'supplier', $order?->supplier_relationship_id);
         $data['owner_id'] = filled($data['owner_id']) ? (int) $data['owner_id'] : null;
@@ -181,23 +181,23 @@ class Orders
         if ($data['quantity'] !== null) {
             $data['quantity'] = Quantity::format(Quantity::units((string) $data['quantity']));
             if (Quantity::units($data['quantity']) <= 0) {
-                throw ValidationException::withMessages(['quantity' => 'Agreed quantity must be greater than zero, or left blank.']);
+                throw ValidationException::withMessages(['quantity' => __('Agreed quantity must be greater than zero, or left blank.')]);
             }
         }
         $hasReceipts = $order && OrderReceipt::where('order_id', $order->id)->exists();
         if ($hasReceipts) {
             $firstReceiptDate = OrderReceipt::where('order_id', $order->id)->min('received_on');
             if ($data['ordered_on'] > $firstReceiptDate) {
-                throw ValidationException::withMessages(['ordered_on' => 'Order date cannot be after an already recorded receipt.']);
+                throw ValidationException::withMessages(['ordered_on' => __('Order date cannot be after an already recorded receipt.')]);
             }
             if ($data['supplier_relationship_id'] !== $order->supplier_relationship_id || $data['quantity'] !== $order->quantity) {
-                throw ValidationException::withMessages(['quantity' => 'Supplier and agreed quantity cannot be changed after recording receipts.']);
+                throw ValidationException::withMessages(['quantity' => __('Supplier and agreed quantity cannot be changed after recording receipts.')]);
             }
             if (! in_array($data['status'], [$order->status, 'cancelled'])) {
-                throw ValidationException::withMessages(['status' => 'Recorded receipts determine this order status. Receipt history cannot be reset.']);
+                throw ValidationException::withMessages(['status' => __('Recorded receipts determine this order status. Receipt history cannot be reset.')]);
             }
         } elseif (in_array($data['status'], ['part-received', 'received'])) {
-            throw ValidationException::withMessages(['status' => 'Use Record receipt to record partial or complete delivery.']);
+            throw ValidationException::withMessages(['status' => __('Use Record receipt to record partial or complete delivery.')]);
         }
         $data['document_url'] = app(DocumentLinks::class)->validate($data['document_url']);
 
@@ -207,7 +207,7 @@ class Orders
     private function version(SupplierOrder $order, array $input): void
     {
         $version = validator($input, ['version' => 'required|integer|min:1'])->validate()['version'];
-        abort_unless((int) $version === $order->version, 409, 'This order changed. Reload before saving.');
+        abort_unless((int) $version === $order->version, 409, __('This order changed. Reload before saving.'));
     }
 
     private function recordHistory(SupplierOrder $order, $user, string $event, array $details = []): void

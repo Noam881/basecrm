@@ -38,6 +38,6 @@ class ContentReminders implements ReminderSource
             return null;
         }$r = app(Work::class)->content($u)->where('owner_id', $recipientId)->whereNull('archived_at')->where('status', '<>', 'published')->where('planned_on', '<=', now(Installation::settings()['timezone'])->toDateString())->find($recordId);
 
-        return $r ? ['version' => $r->version, 'title' => 'Content due: '.$r->title, 'href' => '/marketing/content/'.$r->id] : null;
+        return $r ? ['version' => $r->version, 'title' => __('Content due: :title', ['title' => $r->title]), 'href' => '/marketing/content/'.$r->id] : null;
     }
 }

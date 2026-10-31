@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { router } from "@inertiajs/vue3";
 import { reactive } from "vue";
 const p = defineProps<{
@@ -23,43 +24,46 @@ const f = reactive({
         @submit.prevent="router.get(endpoint, f)"
     >
         <label v-if="reports && campaignOptions?.length" class="crm-field"
-            ><span class="crm-field-label">Campaign</span
+            ><span class="crm-field-label">{{ tr("Campaign") }}</span
             ><select v-model="f.campaign_id">
-                <option value="">All accessible campaigns</option>
+                <option value="">{{ tr("All accessible campaigns") }}</option>
                 <option v-for="c in campaignOptions" :key="c.id" :value="c.id">
                     {{ c.name }}
                 </option>
             </select></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ tr("Owner") }}</span
             ><select v-model="f.owner_id">
-                <option value="">All accessible owners</option>
+                <option value="">{{ tr("All accessible owners") }}</option>
                 <option v-for="o in owners" :key="o.id" :value="o.id">
                     {{ o.name }}
                 </option>
             </select></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Channel</span
+            ><span class="crm-field-label">{{ tr("Channel") }}</span
             ><select v-model="f.channel">
-                <option value="">All channels</option>
+                <option value="">{{ tr("All channels") }}</option>
                 <option v-for="c in channels" :key="c" :value="c">
-                    {{ c.charAt(0).toUpperCase() + c.slice(1) }}
+                    {{ tr(c.charAt(0).toUpperCase() + c.slice(1)) }}
                 </option>
             </select></label
         ><label class="crm-field"
-            ><span class="crm-field-label">From</span
+            ><span class="crm-field-label">{{ tr("From") }}</span
             ><input v-model="f.from" type="date" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Through</span
+            ><span class="crm-field-label">{{ tr("Through") }}</span
             ><input v-model="f.to" type="date"
         /></label>
         <div class="crm-form-action">
-            <button class="crm-secondary">Apply filters</button>
+            <button class="crm-secondary">{{ tr("Apply filters") }}</button>
         </div>
         <p v-if="reports" class="crm-muted crm-form-span">
-            Includes whole reporting periods within the selected dates. Spend
-            and leads are never prorated.
+            {{
+                tr(
+                    "Includes whole reporting periods within the selected dates. Spend and leads are never prorated.",
+                )
+            }}
         </p>
     </form>
 </template>

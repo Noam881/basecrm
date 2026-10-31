@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { ref, useId } from "vue";
 import type { Section, Options, KnowledgeRecord } from "../types";
@@ -86,8 +87,9 @@ function save() {
         preserveScroll: true,
         onHttpException: (response: { status: number }) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "This record or your access changed. Reload before saving.";
+                warning.value = tr(
+                    "This record or your access changed. Reload before saving.",
+                );
                 return false;
             }
         },
@@ -100,7 +102,7 @@ function save() {
     <form class="crm-form-grid" @submit.prevent="save">
         <template v-if="section === 'library'">
             <label class="crm-field"
-                ><span class="crm-field-label">Kind</span
+                ><span class="crm-field-label">{{ tr("Kind") }}</span
                 ><select v-model="form.kind" :disabled="!!record">
                     <option
                         v-for="(label, id) in options.kinds"
@@ -113,30 +115,32 @@ function save() {
             >
             <label class="crm-field"
                 ><span class="crm-field-label">{{
-                    form.kind === "training" ? "Topic" : "Title"
+                    form.kind === "training" ? tr("Topic") : tr("Title")
                 }}</span
                 ><input v-model="form.title" required maxlength="180"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Category</span
+                ><span class="crm-field-label">{{ tr("Category") }}</span
                 ><input v-model="form.category" maxlength="120"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Relevant role</span
+                ><span class="crm-field-label">{{ tr("Relevant role") }}</span
                 ><input
                     v-model="form.relevant_role"
                     :required="form.kind === 'training'"
                     maxlength="160"
             /></label>
             <label v-if="form.kind === 'material'" class="crm-field"
-                ><span class="crm-field-label">Use classification</span
+                ><span class="crm-field-label">{{
+                    tr("Use classification")
+                }}</span
                 ><input
                     v-model="form.use_classification"
                     maxlength="120"
                     required
             /></label>
             <label v-if="form.kind === 'material'" class="crm-field"
-                ><span class="crm-field-label">Purpose</span
+                ><span class="crm-field-label">{{ tr("Purpose") }}</span
                 ><textarea
                     v-model="form.purpose"
                     maxlength="10000"
@@ -146,18 +150,24 @@ function save() {
             </label>
             <template v-if="form.kind === 'procedure'"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Current version</span
+                    ><span class="crm-field-label">{{
+                        tr("Current version")
+                    }}</span
                     ><input v-model="form.revision" maxlength="120" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Revision date</span
+                    ><span class="crm-field-label">{{
+                        tr("Revision date")
+                    }}</span
                     ><input v-model="form.revised_on" type="date" /></label
             ></template>
             <label class="crm-field"
-                ><span class="crm-field-label">Updated document date</span
+                ><span class="crm-field-label">{{
+                    tr("Updated document date")
+                }}</span
                 ><input v-model="form.updated_on" type="date"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Status</span
+                ><span class="crm-field-label">{{ tr("Status") }}</span
                 ><select v-model="form.status">
                     <option
                         v-for="(label, id) in options.statuses"
@@ -172,23 +182,25 @@ function save() {
         </template>
         <template v-else-if="section === 'renewals'">
             <label class="crm-field"
-                ><span class="crm-field-label">License or insurance name</span
+                ><span class="crm-field-label">{{
+                    tr("License or insurance name")
+                }}</span
                 ><input v-model="form.name" required maxlength="180" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Provider</span
+                ><span class="crm-field-label">{{ tr("Provider") }}</span
                 ><input v-model="form.provider" required maxlength="180"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Expiry date</span
+                ><span class="crm-field-label">{{ tr("Expiry date") }}</span
                 ><input v-model="form.expires_on" type="date" required /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Reminder date</span
+                ><span class="crm-field-label">{{ tr("Reminder date") }}</span
                 ><input
                     v-model="form.remind_on"
                     type="date"
                     :max="form.expires_on || undefined" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Renewal status</span
+                ><span class="crm-field-label">{{ tr("Renewal status") }}</span
                 ><select v-model="form.status">
                     <option
                         v-for="(label, id) in options.renewalStatuses"
@@ -202,50 +214,55 @@ function save() {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Notes</span
+                ><span class="crm-field-label">{{ tr("Notes") }}</span
                 ><textarea v-model="form.notes" maxlength="10000" rows="3" />
             </label>
         </template>
         <template v-else
             ><label class="crm-field"
-                ><span class="crm-field-label">System name</span
+                ><span class="crm-field-label">{{ tr("System name") }}</span
                 ><input v-model="form.name" required maxlength="180" /></label
             ><template v-if="options.canEditSystemReferences"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Public HTTPS login page</span
+                    ><span class="crm-field-label">{{
+                        tr("Public HTTPS login page")
+                    }}</span
                     ><input
                         v-model="form.login_url"
-                        aria-label="Public HTTPS login page"
+                        :aria-label="tr('Public HTTPS login page')"
                         :aria-describedby="loginHelp"
                         type="url"
                         maxlength="2048"
-                    /><span :id="loginHelp" class="crm-help"
-                        >Use the public login page without credentials, query
-                        strings or fragments.</span
-                    ></label
+                    /><span :id="loginHelp" class="crm-help">{{
+                        tr(
+                            "Use the public login page without credentials, query strings or fragments.",
+                        )
+                    }}</span></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Password-manager item reference</span
+                    ><span class="crm-field-label">{{
+                        tr("Password-manager item reference")
+                    }}</span
                     ><input
                         v-model="form.password_manager_reference"
-                        aria-label="Password-manager item reference"
+                        :aria-label="tr('Password-manager item reference')"
                         :aria-describedby="referenceHelp"
                         maxlength="300"
                         autocomplete="off"
-                    /><span :id="referenceHelp" class="crm-help"
-                        >Item name or opaque item ID only. Never enter a
-                        password, secret key or recovery code.</span
-                    ></label
+                    /><span :id="referenceHelp" class="crm-help">{{
+                        tr(
+                            "Item name or opaque item ID only. Never enter a password, secret key or recovery code.",
+                        )
+                    }}</span></label
                 ></template
             ></template
         >
         <label class="crm-field"
             ><span class="crm-field-label">{{
-                section === "systems" ? "Access owner" : "Owner"
+                section === "systems" ? tr("Access owner") : tr("Owner")
             }}</span
             ><select v-model="form.owner_id" :disabled="!options.canAssign">
                 <option v-if="options.canAssign" :value="null">
-                    Unassigned
+                    {{ tr("Unassigned") }}
                 </option>
                 <option
                     v-for="owner in options.owners"
@@ -261,11 +278,14 @@ function save() {
                 !record && section !== 'systems' && options.canManageDocuments
             "
             ><label class="crm-field"
-                ><span class="crm-field-label">Document name (optional)</span
+                ><span class="crm-field-label">{{
+                    tr("Document name (optional)")
+                }}</span
                 ><input v-model="form.document_name" maxlength="180" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label"
-                    >HTTPS document link (optional)</span
+                ><span class="crm-field-label">{{
+                    tr("HTTPS document link (optional)")
+                }}</span
                 ><input
                     v-model="form.document_url"
                     type="url"
@@ -283,10 +303,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing || !!warning">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save record"
-                          : "Create record"
+                          ? tr("Save record")
+                          : tr("Create record")
                 }}
             </button>
         </div>

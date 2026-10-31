@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import type { Report } from "../types";
 const p = defineProps<{
@@ -31,20 +32,21 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Period start</span
+            ><span class="crm-field-label">{{ tr("Period start") }}</span
             ><input v-model="f.starts_on" type="date" required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Period end</span
+            ><span class="crm-field-label">{{ tr("Period end") }}</span
             ><input v-model="f.ends_on" type="date" required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Actual spend ({{ currency }})</span
+            ><span class="crm-field-label"
+                >{{ tr("Actual spend (") }}{{ currency }})</span
             ><input
                 v-model="f.actual_spend"
                 type="text"
                 inputmode="decimal"
                 required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Reported leads</span
+            ><span class="crm-field-label">{{ tr("Reported leads") }}</span
             ><input
                 v-model="f.reported_leads"
                 type="number"
@@ -53,7 +55,7 @@ function save() {
                 step="1"
                 required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Performance notes</span
+            ><span class="crm-field-label">{{ tr("Performance notes") }}</span
             ><textarea v-model="f.notes" />
         </label>
         <div v-if="Object.keys(f.errors).length" class="crm-error" role="alert">
@@ -64,7 +66,11 @@ function save() {
                 class="crm-button"
                 :disabled="f.processing || available === false"
             >
-                {{ report ? "Save performance" : "Add performance period" }}
+                {{
+                    report
+                        ? tr("Save performance")
+                        : tr("Add performance period")
+                }}
             </button>
         </div>
     </form>

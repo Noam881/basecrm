@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link } from "@inertiajs/vue3";
 import MarketingNav from "../../components/MarketingNav.vue";
 import MarketingFilters from "../../components/MarketingFilters.vue";
@@ -13,8 +14,10 @@ const p = defineProps<
 >();
 </script>
 <template>
-    <Head title="Marketing" />
-    <div class="crm-heading"><h1>Marketing</h1></div>
+    <Head :title="tr('Marketing')" />
+    <div class="crm-heading">
+        <h1>{{ tr("Marketing") }}</h1>
+    </div>
     <div class="crm-flow">
         <MarketingNav v-bind="p" /><MarketingFilters
             endpoint="/marketing"
@@ -22,34 +25,41 @@ const p = defineProps<
             v-bind="p"
         />
         <p v-if="!currencyConsistent" class="crm-notice" role="alert">
-            The configured currency differs from retained records. Restore it to
-            calculate totals.
+            {{
+                tr(
+                    "The configured currency differs from retained records. Restore it to calculate totals.",
+                )
+            }}
         </p>
         <section v-if="totals" class="crm-card crm-flow">
-            <h2>Performance</h2>
+            <h2>{{ tr("Performance") }}</h2>
             <dl class="crm-detail-grid">
                 <div class="crm-detail-item">
-                    <dt>Actual spend</dt>
+                    <dt>{{ tr("Actual spend") }}</dt>
                     <dd>{{ totals.actual_spend }} {{ currency }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Reported leads</dt>
+                    <dt>{{ tr("Reported leads") }}</dt>
                     <dd>{{ totals.reported_leads }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Cost per lead</dt>
-                    <dd>{{ totals.cost_per_lead ?? "Not available" }}</dd>
+                    <dt>{{ tr("Cost per lead") }}</dt>
+                    <dd>{{ totals.cost_per_lead ?? tr("Not available") }}</dd>
                 </div>
             </dl>
             <p>
-                Cost per lead uses total actual spend divided by total reported
-                leads, including spend from periods with no leads. Planned
-                budgets are separate.
+                {{
+                    tr(
+                        "Cost per lead uses total actual spend divided by total reported leads, including spend from periods with no leads. Planned budgets are separate.",
+                    )
+                }}
             </p>
         </section>
         <section v-if="canCampaigns" class="crm-card crm-flow">
-            <h2>Active campaigns</h2>
-            <p v-if="!campaigns.length">No active campaigns in this view.</p>
+            <h2>{{ tr("Active campaigns") }}</h2>
+            <p v-if="!campaigns.length">
+                {{ tr("No active campaigns in this view.") }}
+            </p>
             <article v-for="c in campaigns" :key="c.id" class="crm-note">
                 <Link
                     class="md-table-record"
@@ -60,8 +70,10 @@ const p = defineProps<
             </article>
         </section>
         <section v-if="canContent" class="crm-card crm-flow">
-            <h2>Upcoming content</h2>
-            <p v-if="!content.length">No pending content in this view.</p>
+            <h2>{{ tr("Upcoming content") }}</h2>
+            <p v-if="!content.length">
+                {{ tr("No pending content in this view.") }}
+            </p>
             <article v-for="c in content" :key="c.id" class="crm-note">
                 <Link
                     class="md-table-record"

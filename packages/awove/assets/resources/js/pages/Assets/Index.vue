@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
@@ -24,8 +25,8 @@ const sectionTitle = computed(() =>
     p.section === "register"
         ? p.moduleLabel
         : p.section === "assignments"
-          ? "Assignments"
-          : "Maintenance",
+          ? tr("Assignments")
+          : tr("Maintenance"),
 );
 const title = computed(() =>
     p.section === "register"
@@ -41,7 +42,7 @@ const title = computed(() =>
             v-if="canExport"
             class="crm-secondary"
             :href="exportUrl(section, filters, table.state)"
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
@@ -52,14 +53,14 @@ const title = computed(() =>
                 :key="metric.id"
                 class="crm-card"
                 :href="metric.href"
-                ><span>{{ metric.label }}</span
+                ><span>{{ tr(metric.label) }}</span
                 ><strong>{{ metric.value }}</strong></Link
             >
         </div>
         <AssetFilters v-bind="p" />
         <section v-if="section === 'register' && canCreate" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add asset</summary>
+                <summary>{{ tr("Add asset") }}</summary>
                 <AssetEditor v-bind="p" />
             </details>
         </section>

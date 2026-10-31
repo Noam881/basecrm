@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import EmployeeReferenceSelect from "../../../../crm-core/resources/js/components/EmployeeReferenceSelect.vue";
@@ -53,11 +54,14 @@ function reload() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Assignment target</span
-            ><select v-model="f.target_type" aria-label="Assignment target">
-                <option value="employee">Employee</option>
-                <option value="customer">Customer</option>
-                <option value="location">Location</option>
+            ><span class="crm-field-label">{{ tr("Assignment target") }}</span
+            ><select
+                v-model="f.target_type"
+                :aria-label="tr('Assignment target')"
+            >
+                <option value="employee">{{ tr("Employee") }}</option>
+                <option value="customer">{{ tr("Customer") }}</option>
+                <option value="location">{{ tr("Location") }}</option>
             </select></label
         ><EmployeeReferenceSelect
             v-if="f.target_type === 'employee'"
@@ -66,51 +70,57 @@ function reload() {
             :can-manage="canManageEmployees"
             :error="f.errors.employee_reference_id"
         /><label v-else-if="f.target_type === 'customer'" class="crm-field"
-            ><span class="crm-field-label">Customer</span
+            ><span class="crm-field-label">{{ tr("Customer") }}</span
             ><select
                 v-model="f.customer_relationship_id"
                 required
-                aria-label="Customer"
+                :aria-label="tr('Customer')"
             >
-                <option :value="null">Choose a customer</option>
+                <option :value="null">{{ tr("Choose a customer") }}</option>
                 <option v-for="c in customers" :key="c.id" :value="c.id">
                     {{ c.name }}
                 </option>
             </select></label
         ><label v-else class="crm-field"
-            ><span class="crm-field-label">Assignment location</span
+            ><span class="crm-field-label">{{ tr("Assignment location") }}</span
             ><input v-model="f.location" required maxlength="180" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Assignment date</span
+            ><span class="crm-field-label">{{ tr("Assignment date") }}</span
             ><input
                 v-model="f.assigned_on"
                 type="date"
                 required
                 :max="today" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Expected return date</span
+            ><span class="crm-field-label">{{
+                tr("Expected return date")
+            }}</span
             ><input
                 v-model="f.expected_return_on"
                 type="date"
                 :min="f.assigned_on || undefined" /></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Assignment notes</span
+            ><span class="crm-field-label">{{ tr("Assignment notes") }}</span
             ><textarea v-model="f.notes" rows="3" maxlength="10000" />
         </label>
         <p v-if="stale" class="crm-notice crm-form-span" role="alert">
-            The asset changed. Reload the assignment form before saving.
+            {{
+                tr(
+                    "The asset changed. Reload the assignment form before saving.",
+                )
+            }}
         </p>
         <FormErrors :errors="f.errors" />
         <div class="crm-form-action">
             <button class="crm-button" :disabled="f.processing || stale">
-                Assign asset</button
+                {{ tr("Assign asset") }}</button
             ><button
                 v-if="stale"
                 class="crm-secondary"
                 type="button"
                 @click="reload"
             >
-                Reload assignment form
+                {{ tr("Reload assignment form") }}
             </button>
         </div>
     </form>

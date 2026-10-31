@@ -60,6 +60,6 @@ class WorkReminderSource implements ReminderSource
             return null;
         }
 
-        return ['version' => $record->getAttribute('version'), 'title' => $type->label.': '.$record->getAttribute($this->routine ? 'name' : 'title'), 'href' => $type->href($record->id)];
+        return ['version' => $record->getAttribute('version'), 'title' => __($type->label).': '.$record->getAttribute($this->routine ? 'name' : 'title'), 'href' => $type->href($record->id)];
     }
 }

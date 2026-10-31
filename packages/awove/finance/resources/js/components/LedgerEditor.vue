@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { computed } from "vue";
 import type { Options, LedgerEntry } from "../types";
@@ -45,14 +46,16 @@ function save() {
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
             ><span class="crm-field-label">{{
-                cap === "collections" ? "Customer" : "Supplier"
+                cap === "collections" ? tr("Customer") : tr("Supplier")
             }}</span
             ><select
                 v-model="form.relationship_id"
                 :required="!record"
                 :disabled="paid"
             >
-                <option :value="null">Choose existing classification</option>
+                <option :value="null">
+                    {{ tr("Choose existing classification") }}
+                </option>
                 <option v-for="r in relationships" :key="r.id" :value="r.id">
                     {{ r.name }}
                 </option></select
@@ -65,7 +68,7 @@ function save() {
         >
         <label class="crm-field"
             ><span class="crm-field-label">{{
-                cap === "expenses" ? "Document reference" : "Reference"
+                cap === "expenses" ? tr("Document reference") : tr("Reference")
             }}</span
             ><input v-model="form.reference" required maxlength="120" /><small
                 v-if="form.errors.reference"
@@ -75,19 +78,23 @@ function save() {
             ></label
         >
         <label v-if="cap === 'expenses'" class="crm-field"
-            ><span class="crm-field-label">Category</span
+            ><span class="crm-field-label">{{ tr("Category") }}</span
             ><input
                 v-model="form.category"
                 required
                 maxlength="120"
                 list="finance-expense-categories"
             /><datalist id="finance-expense-categories">
-                <option>Office supplies</option>
-                <option>Software</option>
-                <option>Rent</option>
-                <option>Professional services</option>
-                <option>Travel</option>
-                <option>Other</option></datalist
+                <option value="Office supplies">
+                    {{ tr("Office supplies") }}
+                </option>
+                <option value="Software">{{ tr("Software") }}</option>
+                <option value="Rent">{{ tr("Rent") }}</option>
+                <option value="Professional services">
+                    {{ tr("Professional services") }}
+                </option>
+                <option value="Travel">{{ tr("Travel") }}</option>
+                <option value="Other">{{ tr("Other") }}</option></datalist
             ><small
                 v-if="form.errors.category"
                 role="alert"
@@ -96,7 +103,7 @@ function save() {
             ></label
         >
         <label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Description</span
+            ><span class="crm-field-label">{{ tr("Description") }}</span
             ><textarea
                 v-model="form.description"
                 required
@@ -111,7 +118,8 @@ function save() {
         >
         <label class="crm-field"
             ><span class="crm-field-label"
-                >Total payable ({{ record?.currency ?? currency }})</span
+                >{{ tr("Total payable (")
+                }}{{ record?.currency ?? currency }})</span
             ><input
                 v-model="form.total"
                 inputmode="decimal"
@@ -126,9 +134,9 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ tr("Owner") }}</span
             ><select v-model="form.owner_id" :disabled="!canAssign">
-                <option :value="null">Unassigned</option>
+                <option :value="null">{{ tr("Unassigned") }}</option>
                 <option
                     v-for="owner in owners"
                     :key="owner.id"
@@ -144,7 +152,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Due date</span
+            ><span class="crm-field-label">{{ tr("Due date") }}</span
             ><input v-model="form.due_on" type="date" required /><small
                 v-if="form.errors.due_on"
                 role="alert"
@@ -154,7 +162,9 @@ function save() {
         >
         <template v-if="cap === 'collections'"
             ><label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Next collection action</span
+                ><span class="crm-field-label">{{
+                    tr("Next collection action")
+                }}</span
                 ><textarea
                     v-model="form.next_action"
                     rows="2"
@@ -166,7 +176,9 @@ function save() {
                     >{{ form.errors.next_action }}</small
                 ></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Next action date</span
+                ><span class="crm-field-label">{{
+                    tr("Next action date")
+                }}</span
                 ><input v-model="form.next_action_on" type="date" /><small
                     v-if="form.errors.next_action_on"
                     role="alert"
@@ -178,14 +190,14 @@ function save() {
         <label class="crm-field crm-form-span"
             ><span class="crm-field-label">{{
                 cap === "expenses"
-                    ? "Invoice or receipt link"
-                    : "Supporting document link"
+                    ? tr("Invoice or receipt link")
+                    : tr("Supporting document link")
             }}</span
             ><input
                 v-model="form.document_url"
                 type="url"
                 maxlength="2048"
-                placeholder="https://"
+                :placeholder="tr('https://')"
             /><small
                 v-if="form.errors.document_url"
                 role="alert"
@@ -194,9 +206,11 @@ function save() {
             ></label
         >
         <p v-if="paid" class="crm-muted crm-form-span">
-            Recorded payments retain the agreed total and customer/supplier.
-            Refunds, credits and changes to that agreement need a separate
-            agreed policy.
+            {{
+                tr(
+                    "Recorded payments retain the agreed total and customer/supplier. Refunds, credits and changes to that agreement need a separate agreed policy.",
+                )
+            }}
         </p>
         <small
             v-if="page.props.errors.currency"
@@ -208,12 +222,12 @@ function save() {
             <button class="crm-button" :disabled="form.processing">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save record"
+                          ? tr("Save record")
                           : cap === "collections"
-                            ? "Create charge"
-                            : "Create expense"
+                            ? tr("Create charge")
+                            : tr("Create expense")
                 }}
             </button>
         </div>

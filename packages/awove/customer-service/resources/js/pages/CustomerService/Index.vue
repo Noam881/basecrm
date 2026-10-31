@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive } from "vue";
 import RequestEditor from "../../components/RequestEditor.vue";
@@ -53,38 +54,47 @@ function exportUrl(type = "requests") {
 }
 </script>
 <template>
-    <Head title="Customer service" />
+    <Head :title="tr('Customer service')" />
     <div class="crm-heading">
-        <h1>Customer service</h1>
-        <a v-if="canExport" class="crm-secondary" :href="exportUrl()"
-            >Export requests (CSV)</a
-        ><a v-if="canExport" class="crm-secondary" :href="exportUrl('feedback')"
-            >Export feedback (CSV)</a
+        <h1>{{ tr("Customer service") }}</h1>
+        <a v-if="canExport" class="crm-secondary" :href="exportUrl()">{{
+            tr("Export requests (CSV)")
+        }}</a
+        ><a
+            v-if="canExport"
+            class="crm-secondary"
+            :href="exportUrl('feedback')"
+            >{{ tr("Export feedback (CSV)") }}</a
         >
     </div>
     <div class="crm-flow">
         <div class="crm-tabs">
-            <Link href="/service">All requests</Link
-            ><Link href="/service?view=overdue">Overdue</Link
-            ><Link href="/service?view=waiting">Waiting for customer</Link
-            ><Link v-if="canViewAll" href="/service?view=unassigned"
-                >Unassigned</Link
-            ><Link href="/service?view=feedback-due">Feedback follow-up</Link
-            ><Link href="/service?view=archived">Archived</Link>
+            <Link href="/service">{{ tr("All requests") }}</Link
+            ><Link href="/service?view=overdue">{{ tr("Overdue") }}</Link
+            ><Link href="/service?view=waiting">{{
+                tr("Waiting for customer")
+            }}</Link
+            ><Link v-if="canViewAll" href="/service?view=unassigned">{{
+                tr("Unassigned")
+            }}</Link
+            ><Link href="/service?view=feedback-due">{{
+                tr("Feedback follow-up")
+            }}</Link
+            ><Link href="/service?view=archived">{{ tr("Archived") }}</Link>
         </div>
         <form class="crm-card crm-form-grid" @submit.prevent="apply">
             <label class="crm-field"
-                ><span class="crm-field-label">Search</span
+                ><span class="crm-field-label">{{ tr("Search") }}</span
                 ><input
                     v-model="filters.search"
                     type="search"
                     maxlength="180"
-                    placeholder="Subject, description or next action"
+                    :placeholder="tr('Subject, description or next action')"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Status</span
+                ><span class="crm-field-label">{{ tr("Status") }}</span
                 ><select v-model="filters.status">
-                    <option value="">All statuses</option>
+                    <option value="">{{ tr("All statuses") }}</option>
                     <option
                         v-for="(label, key) in statuses"
                         :key="key"
@@ -95,9 +105,9 @@ function exportUrl(type = "requests") {
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Owner</span
+                ><span class="crm-field-label">{{ tr("Owner") }}</span
                 ><select v-model="filters.owner_id">
-                    <option value="">All accessible owners</option>
+                    <option value="">{{ tr("All accessible owners") }}</option>
                     <option
                         v-for="owner in owners"
                         :key="owner.id"
@@ -108,18 +118,22 @@ function exportUrl(type = "requests") {
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Priority</span
+                ><span class="crm-field-label">{{ tr("Priority") }}</span
                 ><select v-model="filters.priority">
-                    <option value="">All priorities</option>
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
+                    <option value="">{{ tr("All priorities") }}</option>
+                    <option value="low">{{ tr("Low") }}</option>
+                    <option value="normal">{{ tr("Normal") }}</option>
+                    <option value="high">{{ tr("High") }}</option>
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Customer contact</span
+                ><span class="crm-field-label">{{
+                    tr("Customer contact")
+                }}</span
                 ><select v-model="filters.contact_id">
-                    <option value="">All accessible contacts</option>
+                    <option value="">
+                        {{ tr("All accessible contacts") }}
+                    </option>
                     <option
                         v-for="contact in contacts"
                         :key="contact.id"
@@ -130,9 +144,13 @@ function exportUrl(type = "requests") {
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Customer company</span
+                ><span class="crm-field-label">{{
+                    tr("Customer company")
+                }}</span
                 ><select v-model="filters.company_id">
-                    <option value="">All accessible companies</option>
+                    <option value="">
+                        {{ tr("All accessible companies") }}
+                    </option>
                     <option
                         v-for="company in companies"
                         :key="company.id"
@@ -143,93 +161,104 @@ function exportUrl(type = "requests") {
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">Date field</span
+                ><span class="crm-field-label">{{ tr("Date field") }}</span
                 ><select v-model="filters.date_field">
-                    <option value="received_on">Date received</option>
-                    <option value="resolved_on">Resolution date</option>
+                    <option value="received_on">
+                        {{ tr("Date received") }}
+                    </option>
+                    <option value="resolved_on">
+                        {{ tr("Resolution date") }}
+                    </option>
                 </select></label
             >
             <label class="crm-field"
-                ><span class="crm-field-label">From date</span
+                ><span class="crm-field-label">{{ tr("From date") }}</span
                 ><input v-model="filters.from" type="date"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">To date</span
+                ><span class="crm-field-label">{{ tr("To date") }}</span
                 ><input
                     v-model="filters.to"
                     type="date"
                     :min="filters.from || undefined"
             /></label>
             <div class="crm-form-action">
-                <button class="crm-button">Apply service filters</button
-                ><Link class="crm-secondary" href="/service"
-                    >Clear filters</Link
-                >
+                <button class="crm-button">
+                    {{ tr("Apply service filters") }}</button
+                ><Link class="crm-secondary" href="/service">{{
+                    tr("Clear filters")
+                }}</Link>
             </div>
             <p class="crm-muted crm-form-span">
-                Overview totals follow these overview filters. The request table
-                has its own column filters, which also apply to request CSV
-                exports. Choose Resolution date for resolutions by period.
-                Feedback dates use date received; request status and priority do
-                not apply to feedback.
+                {{
+                    tr(
+                        "Overview totals follow these overview filters. The request table has its own column filters, which also apply to request CSV exports. Choose Resolution date for resolutions by period. Feedback dates use date received; request status and priority do not apply to feedback.",
+                    )
+                }}
             </p>
         </form>
         <div class="crm-metrics">
             <div class="crm-card">
-                <span>Open requests</span><strong>{{ metrics.open }}</strong>
+                <span>{{ tr("Open requests") }}</span
+                ><strong>{{ metrics.open }}</strong>
             </div>
             <div class="crm-card">
-                <span>Overdue actions</span
+                <span>{{ tr("Overdue actions") }}</span
                 ><strong>{{ metrics.overdue }}</strong>
             </div>
             <div class="crm-card">
-                <span>Waiting for customer</span
+                <span>{{ tr("Waiting for customer") }}</span
                 ><strong>{{ metrics.awaiting }}</strong>
             </div>
             <div v-if="canViewAll" class="crm-card">
-                <span>Unassigned</span><strong>{{ metrics.unassigned }}</strong>
+                <span>{{ tr("Unassigned") }}</span
+                ><strong>{{ metrics.unassigned }}</strong>
             </div>
             <div class="crm-card">
-                <span>Resolved / closed</span
+                <span>{{ tr("Resolved / closed") }}</span
                 ><strong>{{ metrics.resolved }}</strong>
             </div>
             <div class="crm-card">
-                <span>Feedback needing action</span
+                <span>{{ tr("Feedback needing action") }}</span
                 ><strong>{{ metrics.feedback_due }}</strong>
             </div>
         </div>
         <section class="crm-card crm-flow">
-            <h2>Open work by owner</h2>
-            <p v-if="!byOwner.length">No open work matches these filters.</p>
-            <p v-for="(item, index) in byOwner" :key="index">
-                {{ item.owner?.name ?? "Unassigned" }} · {{ item.total }}
+            <h2>{{ tr("Open work by owner") }}</h2>
+            <p v-if="!byOwner.length">
+                {{ tr("No open work matches these filters.") }}
             </p>
-            <h3>Requests by status</h3>
+            <p v-for="(item, index) in byOwner" :key="index">
+                {{ item.owner?.name ?? tr("Unassigned") }} · {{ item.total }}
+            </p>
+            <h3>{{ tr("Requests by status") }}</h3>
             <p v-for="(total, status) in byStatus" :key="status">
                 {{ statuses[status] ?? status }} · {{ total }}
             </p>
         </section>
         <section v-if="canCreate" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add service request</summary>
+                <summary>{{ tr("Add service request") }}</summary>
                 <div class="crm-flow"><RequestEditor v-bind="props" /></div>
             </details>
         </section>
         <DataTable
             :payload="table"
             endpoint="/service"
-            title="Service requests"
+            :title="tr('Service requests')"
             :base-query="filters"
         />
         <section v-if="canCreate" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add customer feedback</summary>
+                <summary>{{ tr("Add customer feedback") }}</summary>
                 <div class="crm-flow"><FeedbackEditor v-bind="props" /></div>
             </details>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Customer feedback</h2>
-            <p v-if="!feedback.data.length">No matching feedback.</p>
+            <h2>{{ tr("Customer feedback") }}</h2>
+            <p v-if="!feedback.data.length">
+                {{ tr("No matching feedback.") }}
+            </p>
             <article
                 v-for="item in feedback.data"
                 :key="item.id"
@@ -239,7 +268,8 @@ function exportUrl(type = "requests") {
                     <Link :href="`/service/feedback/${item.id}`"
                         ><strong
                             >{{
-                                item.customer?.name ?? "Customer unavailable"
+                                item.customer?.name ??
+                                tr("Customer unavailable")
                             }}
                             · {{ item.rating }}/5</strong
                         ></Link
@@ -247,13 +277,17 @@ function exportUrl(type = "requests") {
                     <p>{{ item.comments }}</p>
                     <small
                         >{{ item.received_on }} ·
-                        {{ item.owner?.name ?? "Unassigned"
+                        {{ item.owner?.name ?? tr("Unassigned")
                         }}<template v-if="item.action_required">
                             ·
                             {{
                                 item.followed_up_on
-                                    ? `Completed ${item.followed_up_on}`
-                                    : `Follow up ${item.follow_up_on}`
+                                    ? tr("Completed {date}", {
+                                          date: item.followed_up_on,
+                                      })
+                                    : tr("Follow up {date}", {
+                                          date: item.follow_up_on ?? "—",
+                                      })
                             }}</template
                         ></small
                     >

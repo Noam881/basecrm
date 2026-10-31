@@ -48,7 +48,7 @@ class KnowledgeModule implements DashboardContributor, Module, RecordTableContri
 
     public function navigation(): array
     {
-        return [new NavigationItem(Installation::manifest()['module_labels']['knowledge'] ?? 'Knowledge', '/knowledge', 'knowledge.library.view.own', ['knowledge.library.view.all', 'knowledge.renewals.view.own', 'knowledge.renewals.view.all', 'knowledge.systems.view.own', 'knowledge.systems.view.all'])];
+        return [new NavigationItem(Installation::manifest()['module_labels']['knowledge'] ?? __('Knowledge'), '/knowledge', 'knowledge.library.view.own', ['knowledge.library.view.all', 'knowledge.renewals.view.own', 'knowledge.renewals.view.all', 'knowledge.systems.view.own', 'knowledge.systems.view.all'])];
     }
 
     public function panels(): array
@@ -85,9 +85,9 @@ class KnowledgeModule implements DashboardContributor, Module, RecordTableContri
     {
         $items = [];
         if (Access::available($u, 'library')) {
-            $items[] = ['id' => 'knowledge.current', 'label' => 'Current knowledge materials', 'value' => Access::query($u, 'library')->whereNull('archived_at')->where('status', 'current')->count(), 'href' => '/knowledge?section=library&view=current', 'permission' => 'knowledge.library.view.own', 'anyPermissions' => ['knowledge.library.view.all']];
+            $items[] = ['id' => 'knowledge.current', 'label' => __('Current knowledge materials'), 'value' => Access::query($u, 'library')->whereNull('archived_at')->where('status', 'current')->count(), 'href' => '/knowledge?section=library&view=current', 'permission' => 'knowledge.library.view.own', 'anyPermissions' => ['knowledge.library.view.all']];
         }if (Access::available($u, 'renewals')) {
-            $items[] = ['id' => 'knowledge.renewals', 'label' => 'Renewals due in the next 30 days', 'value' => Access::query($u, 'renewals')->whereNull('archived_at')->where('status', '!=', 'renewed')->whereBetween('expires_on', [now(Installation::settings()['timezone'])->toDateString(), now(Installation::settings()['timezone'])->addDays(30)->toDateString()])->count(), 'href' => '/knowledge?section=renewals&view=upcoming', 'permission' => 'knowledge.renewals.view.own', 'anyPermissions' => ['knowledge.renewals.view.all']];
+            $items[] = ['id' => 'knowledge.renewals', 'label' => __('Renewals due in the next 30 days'), 'value' => Access::query($u, 'renewals')->whereNull('archived_at')->where('status', '!=', 'renewed')->whereBetween('expires_on', [now(Installation::settings()['timezone'])->toDateString(), now(Installation::settings()['timezone'])->addDays(30)->toDateString()])->count(), 'href' => '/knowledge?section=renewals&view=upcoming', 'permission' => 'knowledge.renewals.view.own', 'anyPermissions' => ['knowledge.renewals.view.all']];
         }
 
         return $items;

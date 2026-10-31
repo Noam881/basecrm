@@ -80,7 +80,7 @@ class Controller
         $this->filters($request);
         $query = app(Query::class)->filtered($this->query($request, $service), 'finance.payroll', $request);
         if ((clone $query)->count() > 5000) {
-            throw ValidationException::withMessages(['export' => 'Export at most 5,000 filtered payroll preparations.']);
+            throw ValidationException::withMessages(['export' => __('Export at most 5,000 filtered payroll preparations.')]);
         }
         // Each row carries the actual schema snapshot; no reinterpretation under changed configuration.
         $rows = (function () use ($query, $user) {

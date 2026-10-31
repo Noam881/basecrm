@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import HistoryList from "../../../../../../crm-core/resources/js/components/HistoryList.vue";
 import type { HistoryEntry } from "../../../../../../crm-core/resources/js/components/HistoryList.vue";
@@ -31,13 +32,13 @@ function archive() {
     <Head :title="record.relationship.name" /><Link
         class="crm-back"
         href="/nonprofit/fundraising"
-        >← Fundraising</Link
+        >{{ tr("← Fundraising") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.relationship.name }}</h1>
         <span class="crm-badge">{{
             record.archived_at
-                ? "Archived"
+                ? tr("Archived")
                 : record.relationship.role.charAt(0).toUpperCase() +
                   record.relationship.role.slice(1)
         }}</span>
@@ -45,12 +46,14 @@ function archive() {
     <div class="crm-flow">
         <NonprofitNav :sections="sections" />
         <section class="crm-card crm-flow">
-            <h2>Fundraising details</h2>
+            <h2>{{ tr("Fundraising details") }}</h2>
             <ConstituentEditor v-bind="p" />
         </section>
         <section v-if="canViewPledges" class="crm-card crm-flow">
-            <h2>Pledges</h2>
-            <p v-if="!pledges.length" class="crm-muted">No pledges recorded.</p>
+            <h2>{{ tr("Pledges") }}</h2>
+            <p v-if="!pledges.length" class="crm-muted">
+                {{ tr("No pledges recorded.") }}
+            </p>
             <article
                 v-for="pledge in pledges"
                 :key="pledge.id"
@@ -59,19 +62,19 @@ function archive() {
                 <Link
                     class="crm-inline-link"
                     :href="`/nonprofit/fundraising/pledges/${pledge.id}`"
-                    >{{ pledge.reference ?? "Pledge #" + pledge.id }}</Link
+                    >{{ pledge.reference ?? tr("Pledge #") + pledge.id }}</Link
                 ><span
-                    >{{ pledge.amount }} {{ pledge.currency }} · Expected
-                    {{ pledge.expected_on
-                    }}{{ pledge.archived_at ? " · Archived" : "" }}</span
+                    >{{ pledge.amount }} {{ pledge.currency }}
+                    {{ tr("· Expected") }} {{ pledge.expected_on
+                    }}{{ pledge.archived_at ? tr(" · Archived") : "" }}</span
                 >
-                <p>{{ pledge.restrictions ?? "Unrestricted" }}</p>
+                <p>{{ pledge.restrictions ?? tr("Unrestricted") }}</p>
             </article>
             <details
                 v-if="editable && canCreate && canManagePledges"
                 class="crm-form-disclosure"
             >
-                <summary>Add pledge</summary>
+                <summary>{{ tr("Add pledge") }}</summary>
                 <PledgeEditor
                     v-bind="p"
                     :record="undefined"
@@ -81,8 +84,8 @@ function archive() {
         </section>
         <HistoryList
             :history="history"
-            :event-labels="events"
-            :field-labels="fields"
+            :event-labels="translateLabels(events)"
+            :field-labels="translateLabels(fields)"
         />
         <form
             v-if="editable && canArchive"
@@ -90,13 +93,16 @@ function archive() {
             @submit.prevent="archive"
         >
             <p>
-                Archiving retains pledges and receipt links, makes this context
-                read-only and stops its follow-up reminders.
+                {{
+                    tr(
+                        "Archiving retains pledges and receipt links, makes this context read-only and stops its follow-up reminders.",
+                    )
+                }}
             </p>
             <Errors :errors="archival.errors" />
             <div class="crm-form-action">
                 <button class="crm-secondary" :disabled="archival.processing">
-                    Archive fundraising context
+                    {{ tr("Archive fundraising context") }}
                 </button>
             </div>
         </form>

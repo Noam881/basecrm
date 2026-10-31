@@ -39,7 +39,7 @@ class Leads
         return DB::transaction(function () use ($user, $id, $data) {
             $lead = Lead::lockForUpdate()->findOrFail($id);
             Gate::forUser($user)->authorize('update', $lead);
-            abort_unless((int) $data['version'] === $lead->version, 409, 'This lead changed. Reload before saving.');
+            abort_unless((int) $data['version'] === $lead->version, 409, __('This lead changed. Reload before saving.'));
             unset($data['version']);
             $data = [...$data, ...validator($data, Sales::opportunityRules())->validate()];
             validator($data, ['attribution' => 'missing'])->validate();
@@ -96,7 +96,7 @@ class Leads
                 $selected[] = $identity->getAttribute('name');
             }
         }
-        abort_unless($selected !== [], 422, 'Choose a contact or company.');
+        abort_unless($selected !== [], 422, __('Choose a contact or company.'));
         $data['title'] = Str::substr(trim($selected[0]) ?: 'Lead', 0, 160);
 
         return $data;

@@ -29,7 +29,7 @@ class Capability implements NonprofitCapability
 
     public function navigation(): array
     {
-        return [new NavigationItem('Projects', '/nonprofit/projects', 'nonprofit.projects.view.own', ['nonprofit.projects.view.all'])];
+        return [new NavigationItem(__('Projects'), '/nonprofit/projects', 'nonprofit.projects.view.own', ['nonprofit.projects.view.all'])];
     }
 
     public function tableIds(): array
@@ -59,7 +59,7 @@ class Capability implements NonprofitCapability
         }
         $q = Access::query($user)->whereNull('archived_at')->whereNotIn('status', ['completed', 'cancelled']);
 
-        return [['id' => 'nonprofit.projects-open', 'label' => 'Open nonprofit projects', 'value' => $q->count(), 'href' => '/nonprofit/projects', 'permission' => 'nonprofit.projects.view.own', 'anyPermissions' => ['nonprofit.projects.view.all']]];
+        return [['id' => 'nonprofit.projects-open', 'label' => __('Open nonprofit projects'), 'value' => $q->count(), 'href' => '/nonprofit/projects', 'permission' => 'nonprofit.projects.view.own', 'anyPermissions' => ['nonprofit.projects.view.all']]];
     }
 
     public function workTypes(): array
@@ -67,7 +67,7 @@ class Capability implements NonprofitCapability
         if (! app(Modules::class)->enabled('nonprofit:projects')) {
             return [];
         }
-        $statuses = array_replace(['not-started' => 'Not started', 'in-progress' => 'In progress', 'blocked' => 'Blocked', 'done' => 'Completed', 'cancelled' => 'Cancelled'], array_intersect_key(Installation::manifest()['nonprofit_project_work_statuses'] ?? [], array_flip(['not-started', 'in-progress', 'blocked', 'done', 'cancelled'])));
+        $statuses = array_replace(array_map(fn ($label) => (string) __($label), ['not-started' => 'Not started', 'in-progress' => 'In progress', 'blocked' => 'Blocked', 'done' => 'Completed', 'cancelled' => 'Cancelled']), array_intersect_key(Installation::manifest()['nonprofit_project_work_statuses'] ?? [], array_flip(['not-started', 'in-progress', 'blocked', 'done', 'cancelled'])));
 
         return array_map(fn ($kind, $label) => new WorkType(module: 'nonprofit', kind: $kind, label: $label, permissionPrefix: 'nonprofit.projects', statuses: $statuses, defaultStatus: 'not-started', terminalStatuses: ['done', 'cancelled'], completedStatuses: ['done'], routePrefix: '/nonprofit/'.$kind, capability: 'projects'), ['project-tasks', 'project-milestones'], ['Project task', 'Project milestone']);
     }

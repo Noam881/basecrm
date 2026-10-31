@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import WorkBaseFields from "./WorkBaseFields.vue";
 export interface WorkDraft {
     title: string;
@@ -21,7 +22,11 @@ withDefaults(
         descriptionRequired?: boolean;
         dueRequired?: boolean;
     }>(),
-    { titleLabel: "Title", descriptionRequired: false, dueRequired: true },
+    {
+        titleLabel: () => t("Title"),
+        descriptionRequired: false,
+        dueRequired: true,
+    },
 );
 </script>
 <template>
@@ -39,7 +44,7 @@ withDefaults(
         :due-required="dueRequired"
     />
     <label class="crm-field">
-        <span class="crm-field-label">Status</span>
+        <span class="crm-field-label">{{ t("Status") }}</span>
         <select v-model="model.status">
             <option v-for="(label, key) in statuses" :key="key" :value="key">
                 {{ label }}
@@ -50,15 +55,15 @@ withDefaults(
         }}</small>
     </label>
     <label v-if="completedStatuses.includes(model.status)" class="crm-field">
-        <span class="crm-field-label">Completion date</span>
+        <span class="crm-field-label">{{ t("Completion date") }}</span>
         <input
             v-model="model.completed_on"
             type="date"
             :aria-invalid="!!errors.completed_on"
         />
-        <small class="crm-muted"
-            >Leave blank to use today in the installation timezone.</small
-        >
+        <small class="crm-muted">{{
+            t("Leave blank to use today in the installation timezone.")
+        }}</small>
         <small
             v-if="errors.completed_on"
             data-slot="input-error"

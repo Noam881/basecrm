@@ -69,7 +69,7 @@ class NonprofitModule implements CapabilityProvider, DashboardContributor, Modul
             }
         }
 
-        return $permissions ? [new NavigationItem(Installation::manifest()['module_labels']['nonprofit'] ?? 'Nonprofit', '/nonprofit', array_shift($permissions), array_values(array_unique($permissions)))] : [];
+        return $permissions ? [new NavigationItem(Installation::manifest()['module_labels']['nonprofit'] ?? __('Nonprofit'), '/nonprofit', array_shift($permissions), array_values(array_unique($permissions)))] : [];
     }
 
     public function sections($user): array

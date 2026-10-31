@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import WorkReferences, {
     type WorkReference,
 } from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
@@ -30,7 +31,7 @@ function complete() {
     });
 }
 function archive() {
-    if (confirm("Archive this routine and retain completion history?"))
+    if (confirm(tr("Archive this routine and retain completion history?")))
         router.post(`/operations/routines/${props.record.id}/archive`, {
             version: props.record.version,
         });
@@ -40,7 +41,7 @@ function archive() {
     <Head :title="record.name" /><Link
         class="crm-back"
         href="/operations/routines"
-        >← Operational routines</Link
+        >{{ tr("← Operational routines") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.name }}</h1>
@@ -48,28 +49,33 @@ function archive() {
     <div class="crm-flow">
         <OperationsNav :can-view-directory="canViewDirectory" />
         <section class="crm-card crm-flow">
-            <p>Owner: {{ record.owner?.name ?? "Unassigned" }}</p>
-            <p>Frequency: {{ record.frequency }}</p>
-            <p>Next occurrence: {{ record.next_due_on ?? "Not scheduled" }}</p>
+            <p>
+                {{ tr("Owner:") }} {{ record.owner?.name ?? tr("Unassigned") }}
+            </p>
+            <p>{{ tr("Frequency:") }} {{ record.frequency }}</p>
+            <p>
+                {{ tr("Next occurrence:") }}
+                {{ record.next_due_on ?? tr("Not scheduled") }}
+            </p>
             <p v-if="record.archived_at">
-                Archived · retained read-only record.
+                {{ tr("Archived · retained read-only record.") }}
             </p>
         </section>
         <section v-if="record.editable" class="crm-card crm-flow">
-            <h2>Edit routine</h2>
+            <h2>{{ tr("Edit routine") }}</h2>
             <RoutineEditor :key="record.version" v-bind="props" />
             <div v-if="canArchive" class="crm-form-action">
                 <button class="crm-secondary" @click="archive">
-                    Archive routine
+                    {{ tr("Archive routine") }}
                 </button>
             </div>
         </section>
         <section
             v-if="record.editable && record.next_due_on"
             class="crm-card crm-flow"
-            aria-label="Complete occurrence"
+            :aria-label="tr('Complete occurrence')"
         >
-            <h2>Complete occurrence</h2>
+            <h2>{{ tr("Complete occurrence") }}</h2>
             <form class="crm-form-grid" @submit.prevent="complete">
                 <RoutineCompletionFields
                     :model-value="completion"
@@ -83,20 +89,22 @@ function archive() {
                     >
                         {{
                             completion.processing
-                                ? "Saving…"
-                                : "Complete occurrence"
+                                ? tr("Saving…")
+                                : tr("Complete occurrence")
                         }}
                     </button>
                 </div>
             </form>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Completed occurrences</h2>
-            <p v-if="!completions.length">No occurrences completed.</p>
+            <h2>{{ tr("Completed occurrences") }}</h2>
+            <p v-if="!completions.length">
+                {{ tr("No occurrences completed.") }}
+            </p>
             <article v-for="entry in completions" :key="entry.id">
                 <strong
-                    >Due {{ entry.occurrence_due_on }} · completed
-                    {{ entry.completed_on }}</strong
+                    >{{ tr("Due") }} {{ entry.occurrence_due_on }}
+                    {{ tr("· completed") }} {{ entry.completed_on }}</strong
                 >
                 <ul v-if="entry.checklist_snapshot.length">
                     <li
@@ -106,7 +114,7 @@ function archive() {
                         {{ item.completed ? "✓" : "○" }} {{ item.label }}
                     </li>
                 </ul>
-                <small>{{ entry.actor?.name ?? "Former staff" }}</small>
+                <small>{{ entry.actor?.name ?? tr("Former staff") }}</small>
             </article>
         </section>
         <WorkReferences :links="instructionLinks" />

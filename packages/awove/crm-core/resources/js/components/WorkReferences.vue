@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Link } from "@inertiajs/vue3";
 import { useId } from "vue";
 export interface WorkReference {
@@ -15,7 +16,7 @@ const heading = useId();
         class="crm-card crm-flow"
         :aria-labelledby="heading"
     >
-        <h2 :id="heading">Instructions</h2>
+        <h2 :id="heading">{{ t("Instructions") }}</h2>
         <ul class="crm-flow">
             <li v-for="link in links" :key="link.id">
                 <Link :href="link.href">{{ link.label }}</Link>

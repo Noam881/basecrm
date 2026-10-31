@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive } from "vue";
 import DataTable from "../../../../../../crm-core/resources/js/components/table/DataTable.vue";
@@ -38,9 +39,9 @@ function apply() {
 }
 </script>
 <template>
-    <Head title="Fundraising" />
+    <Head :title="tr('Fundraising')" />
     <div class="crm-heading">
-        <h1>Fundraising</h1>
+        <h1>{{ tr("Fundraising") }}</h1>
         <a
             v-if="canExport"
             class="crm-secondary"
@@ -48,18 +49,19 @@ function apply() {
                 '/nonprofit/fundraising/export?' +
                 queryString({ ...filters, tab, ...table.state })
             "
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
         <NonprofitNav :sections="sections" />
-        <nav class="crm-tabs" aria-label="Fundraising sections">
-            <Link href="/nonprofit/fundraising"
-                >Donors, partners and prospects</Link
+        <nav class="crm-tabs" :aria-label="tr('Fundraising sections')">
+            <Link href="/nonprofit/fundraising">{{
+                tr("Donors, partners and prospects")
+            }}</Link
             ><Link
                 v-if="canViewPledges"
                 href="/nonprofit/fundraising?tab=pledges"
-                >Pledges</Link
+                >{{ tr("Pledges") }}</Link
             >
         </nav>
         <div class="crm-metrics">
@@ -72,7 +74,7 @@ function apply() {
                         role: filters.role,
                     })
                 "
-                ><span>Active fundraising contexts</span
+                ><span>{{ tr("Active fundraising contexts") }}</span
                 ><strong>{{ report.constituents }}</strong></Link
             ><Link
                 class="crm-card"
@@ -84,79 +86,87 @@ function apply() {
                         view: 'due',
                     })
                 "
-                ><span>Follow-ups due · all dates</span
+                ><span>{{ tr("Follow-ups due · all dates") }}</span
                 ><strong>{{ report.actions_due }}</strong></Link
             >
             <div v-if="canViewPledges" class="crm-card">
-                <span>Active pledges · expected date in period</span
+                <span>{{ tr("Active pledges · expected date in period") }}</span
                 ><strong
-                    >{{ report.pledged_amount ?? "Unavailable" }}
+                    >{{ report.pledged_amount ?? tr("Unavailable") }}
                     {{ report.pledged_amount !== null ? currency : "" }}</strong
                 >
             </div>
             <div v-if="canViewPledges && canViewReceipts" class="crm-card">
-                <span>Retained linked receipts · payment date in period</span
+                <span>{{
+                    tr("Retained linked receipts · payment date in period")
+                }}</span
                 ><strong>{{
                     report.receipts_available
                         ? report.received_amount + " " + currency
-                        : "Unavailable"
+                        : tr("Unavailable")
                 }}</strong>
             </div>
         </div>
         <p class="crm-muted">
-            Pledges and linked Finance payments are separate measures. Actuals
-            include distinct linked payments only; no receipting or automatic
-            Finance entry occurs.
+            {{
+                tr(
+                    "Pledges and linked Finance payments are separate measures. Actuals include distinct linked payments only; no receipting or automatic Finance entry occurs.",
+                )
+            }}
         </p>
         <form class="crm-card crm-form-grid" @submit.prevent="apply">
             <label class="crm-field"
-                ><span class="crm-field-label">Responsible person</span
+                ><span class="crm-field-label">{{
+                    tr("Responsible person")
+                }}</span
                 ><select v-model="f.owner_id">
-                    <option value="">Any visible owner</option>
+                    <option value="">{{ tr("Any visible owner") }}</option>
                     <option v-for="o in owners" :key="o.id" :value="o.id">
                         {{ o.name }}
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Classification</span
+                ><span class="crm-field-label">{{ tr("Classification") }}</span
                 ><select v-model="f.role">
-                    <option value="">All classifications</option>
+                    <option value="">{{ tr("All classifications") }}</option>
                     <option v-for="r in roles" :key="r" :value="r">
-                        {{ r.charAt(0).toUpperCase() + r.slice(1) }}
+                        {{ tr(r.charAt(0).toUpperCase() + r.slice(1)) }}
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">From</span
+                ><span class="crm-field-label">{{ tr("From") }}</span
                 ><input v-model="f.from" type="date" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">To</span
+                ><span class="crm-field-label">{{ tr("To") }}</span
                 ><input v-model="f.to" type="date" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">View</span
+                ><span class="crm-field-label">{{ tr("View") }}</span
                 ><select v-model="f.view">
-                    <option value="all">Active records</option>
-                    <option value="due">Date due</option>
-                    <option value="archived">Archived records</option>
+                    <option value="all">{{ tr("Active records") }}</option>
+                    <option value="due">{{ tr("Date due") }}</option>
+                    <option value="archived">
+                        {{ tr("Archived records") }}
+                    </option>
                 </select></label
             >
             <div class="crm-form-action">
-                <button class="crm-secondary">Apply filters</button>
+                <button class="crm-secondary">{{ tr("Apply filters") }}</button>
             </div>
         </form>
         <p class="crm-muted">
-            Table period:
+            {{ tr("Table period:") }}
             {{
                 tab === "pledges"
-                    ? "pledge expected donation date"
-                    : "next action date"
-            }}. Receipt reports use actual payment date.
+                    ? tr("pledge expected donation date")
+                    : tr("next action date")
+            }}{{ tr(". Receipt reports use actual payment date.") }}
         </p>
         <Classify v-bind="p" />
         <details
             v-if="canCreate && tab === 'constituents'"
             class="crm-card crm-form-disclosure"
         >
-            <summary>Add fundraising context</summary>
+            <summary>{{ tr("Add fundraising context") }}</summary>
             <ConstituentEditor v-bind="p" />
         </details>
         <DataTable
@@ -164,7 +174,9 @@ function apply() {
             endpoint="/nonprofit/fundraising"
             :base-query="{ ...filters, tab }"
             :title="
-                tab === 'pledges' ? 'Pledges' : 'Donors, partners and prospects'
+                tab === 'pledges'
+                    ? tr('Pledges')
+                    : tr('Donors, partners and prospects')
             "
         />
     </div>

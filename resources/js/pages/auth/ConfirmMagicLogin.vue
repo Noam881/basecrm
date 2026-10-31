@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, router } from "@inertiajs/vue3";
 import { onMounted, ref } from "vue";
 import TextLink from "@/components/TextLink.vue";
@@ -6,8 +7,8 @@ import { Spinner } from "@/components/ui/spinner";
 
 defineOptions({
     layout: {
-        title: "Sign in",
-        description: "Use your email link to access your workspace.",
+        title: t("Sign in"),
+        description: t("Use your email link to access your workspace."),
     },
 });
 
@@ -42,13 +43,13 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Sign in" />
+    <Head :title="t('Sign in')" />
 
     <div class="crm-stack">
         <template v-if="signingIn">
             <div role="status" class="crm-form-action">
                 <Spinner aria-hidden="true" />
-                <span>Signing you in…</span>
+                <span>{{ t("Signing you in…") }}</span>
             </div>
             <p v-if="email" class="break-all text-sm text-muted-foreground">
                 {{ email }}
@@ -57,11 +58,14 @@ onMounted(() => {
 
         <template v-else>
             <p role="status" class="crm-notice-panel text-sm">
-                This sign-in link is invalid or has expired. Request a new link
-                to continue.
+                {{
+                    t(
+                        "This sign-in link is invalid or has expired. Request a new link to continue.",
+                    )
+                }}
             </p>
             <TextLink href="/login" class="text-center text-sm">
-                Request a new sign-in link
+                {{ t("Request a new sign-in link") }}
             </TextLink>
         </template>
     </div>

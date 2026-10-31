@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Form, Head } from "@inertiajs/vue3";
 import InputError from "@/components/InputError.vue";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,8 @@ import { Spinner } from "@/components/ui/spinner";
 
 defineOptions({
     layout: {
-        title: "Sign in",
-        description: "Enter your email address to receive a sign-in link.",
+        title: t("Sign in"),
+        description: t("Enter your email address to receive a sign-in link."),
     },
 });
 
@@ -20,7 +21,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Sign in" />
+    <Head :title="t('Sign in')" />
 
     <div class="crm-stack">
         <p v-if="status" role="status" class="crm-notice-panel text-sm">
@@ -34,7 +35,7 @@ defineProps<{
             class="crm-form"
         >
             <div class="crm-field">
-                <Label for="email">Email address</Label>
+                <Label for="email">{{ t("Email address") }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -56,7 +57,7 @@ defineProps<{
                     data-test="login-button"
                 >
                     <Spinner v-if="processing" />
-                    Email me a sign-in link
+                    {{ t("Email me a sign-in link") }}
                 </Button>
             </div>
         </Form>

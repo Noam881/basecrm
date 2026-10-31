@@ -83,7 +83,7 @@ class WorkAccess
         if ($ownerId !== null) {
             $owner = config('auth.providers.users.model')::find($ownerId);
             if (! $this->available($owner, $type)) {
-                throw ValidationException::withMessages(['owner_id' => 'Choose an active owner who already has access to this module.']);
+                throw ValidationException::withMessages(['owner_id' => __('Choose an active owner who already has access to this module.')]);
             }
         }
     }
@@ -110,7 +110,7 @@ class WorkAccess
     public function version(array $input, WorkItem|Routine $record): void
     {
         $data = validator($input, ['version' => 'required|integer|min:1'])->validate();
-        abort_unless((int) $data['version'] === $record->getAttribute('version'), 409, 'This record changed. Reload before saving.');
+        abort_unless((int) $data['version'] === $record->getAttribute('version'), 409, __('This record changed. Reload before saving.'));
     }
 
     /** Related field names must be computed by trusted module code, never copied from a request. */

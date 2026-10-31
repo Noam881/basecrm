@@ -41,7 +41,7 @@ class ServiceDetailsModule implements LeadTableContributor, Module
 
     public function panels(): array
     {
-        return [new LeadPanel('service-details', 'Service details', 'ServiceDetails/Panel', '/modules/service-details/leads/{lead}', 'service-details.view')];
+        return [new LeadPanel('service-details', __('Service details'), 'ServiceDetails/Panel', '/modules/service-details/leads/{lead}', 'service-details.view')];
     }
 
     public function leadTableColumns($user): array

@@ -25,10 +25,13 @@ if not kept.issubset(optional):
 removed = [name for name in optional if name not in kept]
 with tempfile.TemporaryDirectory(prefix='base-crm-profile-build-') as tmp:
     target = Path(tmp) / 'app'
-    ignored_sources = shutil.ignore_patterns('.git', 'vendor', 'node_modules', '.env*', 'storage', 'public/build', 'test-results', 'playwright-report', '.local-fixtures.json')
+    ignored_sources = shutil.ignore_patterns('.git', '.env*', 'storage', 'public/build', 'test-results', 'playwright-report', '.local-fixtures.json')
 
     def source_ignores(directory, names):
         ignored = set(ignored_sources(directory, names))
+        # Dependency directories exist only at the app root. Keep Laravel's source-owned mail overrides.
+        if Path(directory).resolve() == root.resolve():
+            ignored.update({'vendor', 'node_modules'} & set(names))
         if Path(directory).resolve() == (root / 'public').resolve():
             ignored.add('build')
         return ignored

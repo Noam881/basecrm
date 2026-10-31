@@ -14,9 +14,9 @@ class Inputs
     public function configured(): array
     {
         $fields = Installation::manifest()['payroll_inputs'] ?? [
-            ['key' => 'reported_hours', 'label' => 'Reported hours', 'type' => 'decimal', 'unit' => 'hours', 'scale' => 2, 'required' => false],
-            ['key' => 'absence_days', 'label' => 'Absence days', 'type' => 'decimal', 'unit' => 'days', 'scale' => 2, 'required' => false],
-            ['key' => 'reimbursable_expenses', 'label' => 'Reimbursable expenses', 'type' => 'money', 'unit' => Installation::settings()['currency'], 'scale' => 2, 'required' => false],
+            ['key' => 'reported_hours', 'label' => __('Reported hours'), 'type' => 'decimal', 'unit' => 'hours', 'scale' => 2, 'required' => false],
+            ['key' => 'absence_days', 'label' => __('Absence days'), 'type' => 'decimal', 'unit' => 'days', 'scale' => 2, 'required' => false],
+            ['key' => 'reimbursable_expenses', 'label' => __('Reimbursable expenses'), 'type' => 'money', 'unit' => Installation::settings()['currency'], 'scale' => 2, 'required' => false],
         ];
         if (! is_array($fields) || ! array_is_list($fields) || count($fields) > 20) {
             throw new \RuntimeException('Configure at most 20 agreed payroll inputs.');
@@ -36,7 +36,7 @@ class Inputs
     public function validate(array $schema, mixed $values, bool $ready): array
     {
         if (! is_array($values) || array_diff(array_keys($values), array_column($schema, 'key'))) {
-            throw ValidationException::withMessages(['inputs' => 'Use only the agreed payroll input fields.']);
+            throw ValidationException::withMessages(['inputs' => __('Use only the agreed payroll input fields.')]);
         }
         $result = [];
         foreach ($schema as $field) {
@@ -48,7 +48,7 @@ class Inputs
             $path = 'inputs.'.$key;
             if ($value === null || $value === '') {
                 if ($ready && $field['required']) {
-                    throw ValidationException::withMessages([$path => 'Complete this agreed input before marking ready.']);
+                    throw ValidationException::withMessages([$path => __('Complete this agreed input before marking ready.')]);
                 }
                 $result[$key] = null;
 
@@ -60,7 +60,7 @@ class Inputs
                 $scale = $field['scale'];
                 $pattern = '/^\d{1,12}'.($scale > 0 ? '(?:\.\d{1,'.$scale.'})?' : '').'$/D';
                 if ((! is_string($value) && ! is_int($value)) || ! preg_match($pattern, (string) $value)) {
-                    throw ValidationException::withMessages([$path => 'Enter a nonnegative decimal with at most '.$scale.' decimal places.']);
+                    throw ValidationException::withMessages([$path => __('Enter a nonnegative decimal with at most :scale decimal places.', ['scale' => $scale])]);
                 }
                 $value = (string) BigDecimal::of((string) $value)->toScale($scale, RoundingMode::Unnecessary);
             } else {

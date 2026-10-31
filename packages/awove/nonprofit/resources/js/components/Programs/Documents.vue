@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { router, useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { ProgramRecord } from "./types";
@@ -44,8 +45,10 @@ function archive(id: number, version: number) {
 </script>
 <template>
     <section class="crm-card crm-flow">
-        <h2>Program documents</h2>
-        <p v-if="!documents.length" class="crm-muted">No documents linked.</p>
+        <h2>{{ tr("Program documents") }}</h2>
+        <p v-if="!documents.length" class="crm-muted">
+            {{ tr("No documents linked.") }}
+        </p>
         <article
             v-for="document in documents"
             :key="document.id"
@@ -57,7 +60,7 @@ function archive(id: number, version: number) {
                 target="_blank"
                 rel="noopener noreferrer"
                 >{{ document.name }}</a
-            ><span v-else>{{ document.name }} · Archived</span>
+            ><span v-else>{{ document.name }} {{ tr("· Archived") }}</span>
             <div
                 v-if="
                     canManageDocuments &&
@@ -71,7 +74,7 @@ function archive(id: number, version: number) {
                     class="crm-secondary"
                     @click="archive(document.id, document.version)"
                 >
-                    Archive document
+                    {{ tr("Archive document") }}
                 </button>
             </div>
         </article>
@@ -79,17 +82,21 @@ function archive(id: number, version: number) {
             v-if="canManageDocuments && program.editable"
             class="crm-form-disclosure"
         >
-            <summary>Add document link</summary>
+            <summary>{{ tr("Add document link") }}</summary>
             <form class="crm-form" @submit.prevent="save">
                 <div class="crm-form-grid">
                     <label class="crm-field"
-                        ><span class="crm-field-label">Document name</span
+                        ><span class="crm-field-label">{{
+                            tr("Document name")
+                        }}</span
                         ><input
                             v-model="f.name"
                             required
                             maxlength="180" /></label
                     ><label class="crm-field"
-                        ><span class="crm-field-label">Document URL</span
+                        ><span class="crm-field-label">{{
+                            tr("Document URL")
+                        }}</span
                         ><input
                             v-model="f.url"
                             required
@@ -98,7 +105,11 @@ function archive(id: number, version: number) {
                     /></label>
                 </div>
                 <p v-if="stale" class="crm-notice">
-                    The program changed. Reload current details before saving.
+                    {{
+                        tr(
+                            "The program changed. Reload current details before saving.",
+                        )
+                    }}
                 </p>
                 <Errors :errors="f.errors" />
                 <div class="crm-form-action">
@@ -106,14 +117,14 @@ function archive(id: number, version: number) {
                         class="crm-button"
                         :disabled="f.processing || stale"
                     >
-                        Add document</button
+                        {{ tr("Add document") }}</button
                     ><button
                         v-if="stale"
                         type="button"
                         class="crm-secondary"
                         @click="sync"
                     >
-                        Reload current details
+                        {{ tr("Reload current details") }}
                     </button>
                 </div>
             </form>

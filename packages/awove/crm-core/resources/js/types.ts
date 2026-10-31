@@ -1,3 +1,5 @@
+import { localeTag } from "@/lib/i18n";
+
 export interface Person {
     id: number;
     name: string;
@@ -130,7 +132,7 @@ export interface Field {
     options?: string[];
 }
 export const date = (value: string, zone?: string) =>
-    new Intl.DateTimeFormat("en", {
+    new Intl.DateTimeFormat(localeTag(), {
         dateStyle: "medium",
         timeStyle: "short",
         timeZone: zone,

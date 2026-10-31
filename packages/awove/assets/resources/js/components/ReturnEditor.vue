@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { AssetRecord, Assignment } from "../types";
@@ -53,7 +54,7 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Actual return date</span
+            ><span class="crm-field-label">{{ tr("Actual return date") }}</span
             ><input
                 v-model="f.returned_on"
                 type="date"
@@ -61,7 +62,7 @@ function save() {
                 :min="assignment.assigned_on"
                 :max="today" /></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Condition on return</span
+            ><span class="crm-field-label">{{ tr("Condition on return") }}</span
             ><textarea
                 v-model="f.return_condition"
                 required
@@ -70,24 +71,30 @@ function save() {
             />
         </label>
         <p class="crm-muted crm-form-span">
-            Recording a return closes this assignment. Maintenance still in
-            progress keeps the asset under maintenance.
+            {{
+                tr(
+                    "Recording a return closes this assignment. Maintenance still in progress keeps the asset under maintenance.",
+                )
+            }}
         </p>
         <p v-if="stale" class="crm-notice crm-form-span" role="alert">
-            The asset or assignment changed. Reload this form before recording
-            the return.
+            {{
+                tr(
+                    "The asset or assignment changed. Reload this form before recording the return.",
+                )
+            }}
         </p>
         <FormErrors :errors="f.errors" />
         <div class="crm-form-action">
             <button class="crm-button" :disabled="f.processing || stale">
-                Record return</button
+                {{ tr("Record return") }}</button
             ><button
                 v-if="stale"
                 class="crm-secondary"
                 type="button"
                 @click="reset"
             >
-                Reload return form
+                {{ tr("Reload return form") }}
             </button>
         </div>
     </form>

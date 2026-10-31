@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head } from "@inertiajs/vue3";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
 import type { TablePayload } from "../../../../../crm-core/resources/js/components/table/types";
@@ -16,10 +17,10 @@ const p = defineProps<
 >();
 const title =
     p.kind === "campaigns"
-        ? "Campaigns"
+        ? tr("Campaigns")
         : p.kind === "content"
-          ? "Content calendar"
-          : "Performance";
+          ? tr("Content calendar")
+          : tr("Performance");
 </script>
 <template>
     <Head :title="title" />
@@ -29,7 +30,7 @@ const title =
             v-if="canExport"
             class="crm-secondary"
             :href="`/marketing/${kind}/export?${queryString({ ...filters, ...table.state })}`"
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
@@ -39,18 +40,26 @@ const title =
             v-bind="p"
         />
         <p v-if="!currencyConsistent" class="crm-notice" role="alert">
-            The configured currency differs from retained records. Restore the
-            original currency before financial edits or totals.
+            {{
+                tr(
+                    "The configured currency differs from retained records. Restore the original currency before financial edits or totals.",
+                )
+            }}
         </p>
         <p v-if="totals" class="crm-notice" role="status">
-            Actual spend: {{ totals.actual_spend }} {{ currency }} · Reported
-            leads: {{ totals.reported_leads }} · Cost per lead:
-            {{ totals.cost_per_lead ?? "Not available" }}
+            {{ tr("Actual spend:") }} {{ totals.actual_spend }} {{ currency }}
+            {{ tr("· Reported leads:") }} {{ totals.reported_leads }}
+            {{ tr("· Cost per lead:") }}
+            {{ totals.cost_per_lead ?? tr("Not available") }}
         </p>
         <section v-if="canCreate && kind !== 'reports'" class="crm-card">
             <details class="crm-form-disclosure">
                 <summary>
-                    {{ kind === "campaigns" ? "Add campaign" : "Plan content" }}
+                    {{
+                        kind === "campaigns"
+                            ? tr("Add campaign")
+                            : tr("Plan content")
+                    }}
                 </summary>
                 <Editor v-bind="p" />
             </details>

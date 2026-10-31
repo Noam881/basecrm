@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { Options, AssetRecord } from "../types";
@@ -52,25 +53,27 @@ function save() {
     <form class="crm-form" @submit.prevent="save">
         <fieldset class="crm-form-grid" :disabled="disabled">
             <label class="crm-field"
-                ><span class="crm-field-label">Asset code</span
+                ><span class="crm-field-label">{{ tr("Asset code") }}</span
                 ><input v-model="f.code" required maxlength="80" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Asset name</span
+                ><span class="crm-field-label">{{ tr("Asset name") }}</span
                 ><input v-model="f.name" required maxlength="180" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Asset type</span
+                ><span class="crm-field-label">{{ tr("Asset type") }}</span
                 ><input v-model="f.type" required maxlength="120" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Location</span
+                ><span class="crm-field-label">{{ tr("Location") }}</span
                 ><input v-model="f.location" required maxlength="180" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Responsible staff member</span
+                ><span class="crm-field-label">{{
+                    tr("Responsible staff member")
+                }}</span
                 ><select
                     v-model="f.owner_id"
                     :disabled="!canAssign"
-                    aria-label="Responsible staff member"
+                    :aria-label="tr('Responsible staff member')"
                 >
-                    <option :value="null">Unassigned</option>
+                    <option :value="null">{{ tr("Unassigned") }}</option>
                     <option v-for="o in owners" :key="o.id" :value="o.id">
                         {{ o.name }}
                     </option>
@@ -81,12 +84,12 @@ function save() {
                         "
                         :value="f.owner_id"
                     >
-                        Current responsible staff member
+                        {{ tr("Current responsible staff member") }}
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Status</span
-                ><select v-model="f.status" aria-label="Status">
+                ><span class="crm-field-label">{{ tr("Status") }}</span
+                ><select v-model="f.status" :aria-label="tr('Status')">
                     <option
                         v-for="(label, key) in statuses"
                         :key="key"
@@ -96,30 +99,34 @@ function save() {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Purchase date</span
+                ><span class="crm-field-label">{{ tr("Purchase date") }}</span
                 ><input v-model="f.purchased_on" type="date" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Serial number</span
+                ><span class="crm-field-label">{{ tr("Serial number") }}</span
                 ><input v-model="f.serial_number" maxlength="180" /></label
             ><label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Notes</span
+                ><span class="crm-field-label">{{ tr("Notes") }}</span
                 ><textarea v-model="f.notes" rows="3" maxlength="10000" />
             </label>
         </fieldset>
         <p v-if="stale" class="crm-notice" role="alert">
-            The asset changed. Reload its latest details before saving.
+            {{
+                tr(
+                    "The asset changed. Reload its latest details before saving.",
+                )
+            }}
         </p>
         <FormErrors :errors="f.errors" />
         <div v-if="!disabled" class="crm-form-action">
             <button class="crm-button" :disabled="f.processing || stale">
-                {{ record ? "Save asset" : "Create asset" }}</button
+                {{ record ? tr("Save asset") : tr("Create asset") }}</button
             ><button
                 v-if="stale"
                 type="button"
                 class="crm-secondary"
                 @click="sync"
             >
-                Reload current asset
+                {{ tr("Reload current asset") }}
             </button>
         </div>
     </form>

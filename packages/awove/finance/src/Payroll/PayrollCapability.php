@@ -20,7 +20,7 @@ class PayrollCapability implements FinanceCapability
 
     public function navigation(): array
     {
-        return [new NavigationItem('Payroll preparation', '/finance/payroll', 'finance.payroll.view.own', ['finance.payroll.view.all'])];
+        return [new NavigationItem(__('Payroll preparation'), '/finance/payroll', 'finance.payroll.view.own', ['finance.payroll.view.all'])];
     }
 
     public function tableIds(): array
@@ -44,7 +44,7 @@ class PayrollCapability implements FinanceCapability
             return [];
         }
 
-        return [['id' => 'finance.payroll.pending', 'label' => 'Payroll preparations pending input', 'value' => app(Preparations::class)->query($user)->where('status', 'pending-input')->count(), 'href' => '/finance/payroll?status=pending-input', 'permission' => 'finance.payroll.view.own', 'anyPermissions' => ['finance.payroll.view.all']]];
+        return [['id' => 'finance.payroll.pending', 'label' => __('Payroll preparations pending input'), 'value' => app(Preparations::class)->query($user)->where('status', 'pending-input')->count(), 'href' => '/finance/payroll?status=pending-input', 'permission' => 'finance.payroll.view.own', 'anyPermissions' => ['finance.payroll.view.all']]];
     }
 
     public function reminderSources(): array

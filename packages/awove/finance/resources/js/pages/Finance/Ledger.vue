@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link } from "@inertiajs/vue3";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
 import type { TablePayload } from "../../../../../crm-core/resources/js/components/table/types";
@@ -11,7 +12,9 @@ const props = defineProps<
     Options & { table: TablePayload; filters: Record<string, string> }
 >();
 const title =
-    props.cap === "collections" ? "Customer charges" : "Supplier expenses";
+    props.cap === "collections"
+        ? tr("Customer charges")
+        : tr("Supplier expenses");
 </script>
 <template>
     <Head :title="title" />
@@ -21,19 +24,27 @@ const title =
             v-if="canExport"
             class="crm-secondary"
             :href="exportUrl(cap, filters, table.state)"
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
         <FinanceNav :sections="sections" />
         <div class="crm-tabs">
-            <Link :href="`/finance/${cap}`">All records</Link
-            ><Link :href="`/finance/${cap}?view=outstanding`">Outstanding</Link
-            ><Link :href="`/finance/${cap}?view=overdue`">Overdue</Link
-            ><Link :href="`/finance/${cap}?view=paid`">Paid</Link
-            ><Link :href="`/finance/${cap}?view=cancelled`">Cancelled</Link
-            ><Link v-if="canViewAll" :href="`/finance/${cap}?view=unassigned`"
-                >Unassigned</Link
+            <Link :href="`/finance/${cap}`">{{ tr("All records") }}</Link
+            ><Link :href="`/finance/${cap}?view=outstanding`">{{
+                tr("Outstanding")
+            }}</Link
+            ><Link :href="`/finance/${cap}?view=overdue`">{{
+                tr("Overdue")
+            }}</Link
+            ><Link :href="`/finance/${cap}?view=paid`">{{ tr("Paid") }}</Link
+            ><Link :href="`/finance/${cap}?view=cancelled`">{{
+                tr("Cancelled")
+            }}</Link
+            ><Link
+                v-if="canViewAll"
+                :href="`/finance/${cap}?view=unassigned`"
+                >{{ tr("Unassigned") }}</Link
             >
         </div>
         <LedgerFilters v-bind="props" />
@@ -45,8 +56,8 @@ const title =
                 <summary>
                     {{
                         cap === "collections"
-                            ? "Add customer charge"
-                            : "Add supplier expense"
+                            ? tr("Add customer charge")
+                            : tr("Add supplier expense")
                     }}
                 </summary>
                 <LedgerEditor v-bind="props" />

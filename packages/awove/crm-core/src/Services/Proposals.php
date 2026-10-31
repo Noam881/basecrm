@@ -45,7 +45,7 @@ class Proposals
         $file = $validated['file'];
         $extension = strtolower($file->getClientOriginalExtension());
         if ($file->guessExtension() !== $extension || $file->getSize() < 1) {
-            throw ValidationException::withMessages(['file' => 'Choose a valid PDF, DOC or DOCX document (up to 10 MB).']);
+            throw ValidationException::withMessages(['file' => __('Choose a valid PDF, DOC or DOCX document (up to 10 MB).')]);
         }
         $name = $this->safeName($file->getClientOriginalName(), $extension);
         $path = 'proposals/'.$lead->id.'/'.Str::uuid().'.'.$extension;
@@ -97,9 +97,9 @@ class Proposals
         Gate::forUser($user)->authorize('view', $lead);
         abort_unless($proposal->lead_id === $lead->id, 404);
         $disk = Storage::disk('local');
-        abort_unless($disk->exists($proposal->private_path), 404, 'This proposal file is unavailable.');
+        abort_unless($disk->exists($proposal->private_path), 404, __('This proposal file is unavailable.'));
         $stream = $disk->readStream($proposal->private_path);
-        abort_unless(is_resource($stream), 404, 'This proposal file is unavailable.');
+        abort_unless(is_resource($stream), 404, __('This proposal file is unavailable.'));
 
         return response()->streamDownload(function () use ($stream): void {
             try {

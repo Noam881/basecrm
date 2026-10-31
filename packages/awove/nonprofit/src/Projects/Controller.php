@@ -133,7 +133,7 @@ class Controller
         $f = $context->filters($r);
         $s = $f['section'] ?? 'projects';
         $q = app(Query::class)->filtered($context->query($r), 'nonprofit.'.$s, $r);
-        abort_if((clone $q)->count() > 5000, 422, 'Narrow the filters to at most 5,000 records.');
+        abort_if((clone $q)->count() > 5000, 422, __('Narrow the filters to at most 5,000 records.'));
         $headers = $s === 'projects' ? ['id', 'name', 'objective', 'owner', 'starts_on', 'ends_on', 'status', ...($u->can('nonprofit.projects.budgets.view') ? ['planned_budget', 'currency'] : [])] : ['id', 'title', 'project', 'description', 'owner', 'priority', 'status', 'due_on', 'completed_on'];
         $rows = (function () use ($q, $u, $headers) {
             foreach ($q->cursor() as $row) {

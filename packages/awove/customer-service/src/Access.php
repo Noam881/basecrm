@@ -39,7 +39,7 @@ class Access
     public static function edit($user, ServiceRequest|Feedback $record): void
     {
         self::view($user, $record);
-        abort_if($record->archived_at !== null, 403, 'Archived records are read only.');
+        abort_if($record->archived_at !== null, 403, __('Archived records are read only.'));
         abort_unless($user->can('customer-service.edit.all') || ($record->owner_id === $user->id && $user->can('customer-service.edit.own')), 403);
     }
 }

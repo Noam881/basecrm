@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { AssetRecord, Assignment } from "../types";
@@ -40,7 +41,9 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field">
-            <span class="crm-field-label">Expected return date</span>
+            <span class="crm-field-label">{{
+                tr("Expected return date")
+            }}</span>
             <input
                 v-model="form.expected_return_on"
                 type="date"
@@ -48,17 +51,20 @@ function save() {
             />
         </label>
         <label class="crm-field crm-form-span">
-            <span class="crm-field-label">Assignment notes</span>
+            <span class="crm-field-label">{{ tr("Assignment notes") }}</span>
             <textarea v-model="form.notes" rows="3" maxlength="10000" />
         </label>
         <p v-if="stale" class="crm-notice crm-form-span" role="alert">
-            The asset or assignment changed. Reload the latest details before
-            saving.
+            {{
+                tr(
+                    "The asset or assignment changed. Reload the latest details before saving.",
+                )
+            }}
         </p>
         <FormErrors :errors="form.errors" />
         <div class="crm-form-action">
             <button class="crm-button" :disabled="form.processing || stale">
-                Save assignment details
+                {{ tr("Save assignment details") }}
             </button>
             <button
                 v-if="stale"
@@ -66,7 +72,7 @@ function save() {
                 type="button"
                 @click="reset"
             >
-                Reload assignment details
+                {{ tr("Reload assignment details") }}
             </button>
         </div>
     </form>

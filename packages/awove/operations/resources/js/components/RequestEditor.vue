@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import WorkFields from "../../../../crm-core/resources/js/components/WorkFields.vue";
 import {
@@ -42,9 +43,9 @@ function save() {
             :errors="form.errors"
             :can-assign="canAssign"
         /><label class="crm-field"
-            ><span class="crm-field-label">Customer (optional)</span
+            ><span class="crm-field-label">{{ tr("Customer (optional)") }}</span
             ><select v-model="form.customer_relationship_id">
-                <option :value="null">No customer</option>
+                <option :value="null">{{ tr("No customer") }}</option>
                 <option
                     v-for="customer in historicalClassification(
                         customers,
@@ -62,7 +63,7 @@ function save() {
                 >{{ form.errors.customer_relationship_id }}</small
             ></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Notes</span
+            ><span class="crm-field-label">{{ tr("Notes") }}</span
             ><textarea v-model="form.notes" rows="3" maxlength="10000" /><small
                 v-if="form.errors.notes"
                 role="alert"
@@ -70,12 +71,12 @@ function save() {
                 >{{ form.errors.notes }}</small
             ></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Document link</span
+            ><span class="crm-field-label">{{ tr("Document link") }}</span
             ><input
                 v-model="form.document_url"
                 type="url"
                 maxlength="2048"
-                placeholder="https://"
+                :placeholder="tr('https://')"
             /><small
                 v-if="form.errors.document_url"
                 role="alert"
@@ -87,10 +88,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save request"
-                          : "Create request"
+                          ? tr("Save request")
+                          : tr("Create request")
                 }}
             </button>
         </div>

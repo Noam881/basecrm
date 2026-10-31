@@ -6,6 +6,7 @@ use Awove\Core\Access as IdentityAccess;
 use Awove\Core\Installation;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
+use Awove\Core\Services\Csv;
 use Awove\Core\Services\Spreadsheet;
 use Awove\Core\Tables\Query;
 use Awove\CustomerService\Models\Feedback;
@@ -215,7 +216,7 @@ class ServiceController
 
         return response()->streamDownload(function () use ($query, $request, $feedback) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, $feedback ? ['ID', 'Customer', 'Request ID', 'Owner', 'Received', 'Rating (1-5)', 'Comments', 'Action required', 'Follow-up date', 'Completed date'] : ['ID', 'Subject', 'Customer', 'Status', 'Priority', 'Owner', 'Received', 'Next action', 'Due', 'Resolution date'], escape: '');
+            fputcsv($out, array_map(fn ($heading) => Csv::heading($heading), $feedback ? ['ID', 'Customer', 'Request ID', 'Owner', 'Received', 'Rating (1-5)', 'Comments', 'Action required', 'Follow-up date', 'Completed date'] : ['ID', 'Subject', 'Customer', 'Status', 'Priority', 'Owner', 'Received', 'Next action', 'Due', 'Resolution date']), escape: '');
             foreach ($query->cursor() as $record) {
                 $data = $this->serialize($record, $request->user());
                 $row = $feedback ? [$data['id'], $data['customer']['name'] ?? '', $data['request_id'] ?? '', $data['owner']['name'] ?? '', $data['received_on'], $data['rating'], $data['comments'], $data['action_required'] ? 'Yes' : 'No', $data['follow_up_on'] ?? '', $data['followed_up_on'] ?? ''] : [$data['id'], $data['subject'], $data['customer']['name'] ?? '', $this->statuses()[$data['status']] ?? $data['status'], $data['priority'], $data['owner']['name'] ?? '', $data['received_on'], $data['next_action'] ?? '', $data['due_on'] ?? '', $data['resolved_on'] ?? ''];
@@ -246,7 +247,7 @@ class ServiceController
         if (in_array($data['status'], ['resolved', 'closed'])) {
             $data['resolution'] = $data['resolution'] ?? $record?->resolution;
             if (! trim($data['resolution'] ?? '')) {
-                throw ValidationException::withMessages(['resolution' => 'Describe the resolution before resolving or closing this request.']);
+                throw ValidationException::withMessages(['resolution' => __('Describe the resolution before resolving or closing this request.')]);
             }
             $data['resolved_on'] = $data['resolved_on'] ?? $record?->resolved_on?->toDateString() ?? $this->today();
         } elseif (! $record) {
@@ -288,11 +289,11 @@ class ServiceController
                 Access::view($request->user(), $related);
             }
             if ($related->contact_id !== $data['contact_id'] || $related->company_id !== $data['company_id']) {
-                throw ValidationException::withMessages(['request_id' => 'Feedback must use the same customer as the linked request.']);
+                throw ValidationException::withMessages(['request_id' => __('Feedback must use the same customer as the linked request.')]);
             }
         }
         if ($data['action_required'] && (! $data['owner_id'] || ! $data['follow_up_on'])) {
-            throw ValidationException::withMessages(['follow_up_on' => 'Choose an owner and follow-up date when action is needed.']);
+            throw ValidationException::withMessages(['follow_up_on' => __('Choose an owner and follow-up date when action is needed.')]);
         }
 
         return $data;
@@ -306,7 +307,7 @@ class ServiceController
             }
         }
         if (! $data['contact_id'] && ! $data['company_id']) {
-            throw ValidationException::withMessages(['contact_id' => 'Select a contact or company.']);
+            throw ValidationException::withMessages(['contact_id' => __('Select a contact or company.')]);
         }
         foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $field => $model) {
             if ($data[$field] && (! $record || (int) $data[$field] !== $record->$field)) {
@@ -354,7 +355,7 @@ class ServiceController
     private function options($user): array
     {
         return [
-            'statuses' => $this->statuses(), 'channels' => self::CHANNELS,
+            'statuses' => $this->statuses(), 'channels' => array_map(fn ($label) => (string) __($label), self::CHANNELS),
             'contacts' => IdentityAccess::identities($user, Contact::class)->orderBy('name')->get(['id', 'name']),
             'companies' => IdentityAccess::identities($user, Company::class)->orderBy('name')->get(['id', 'name']),
             'owners' => config('auth.providers.users.model')::where('active', true)->get(['id', 'name'])->filter(fn ($owner) => $owner->can('customer-service.view.own') || $owner->can('customer-service.view.all'))->values(),
@@ -434,7 +435,7 @@ class ServiceController
     private function version(Request $request, ServiceRequest|Feedback $record): void
     {
         $request->validate(['version' => 'required|integer|min:1']);
-        abort_unless($request->integer('version') === $record->version, 409, 'This record changed. Reload before saving.');
+        abort_unless($request->integer('version') === $record->version, 409, __('This record changed. Reload before saving.'));
     }
 
     private function history(ServiceRequest $record, $user, string $event, string $summary, array $details = []): void
@@ -454,7 +455,7 @@ class ServiceController
 
     private function statuses(): array
     {
-        return array_replace(self::STATUSES, array_intersect_key(Installation::manifest()['customer_service_statuses'] ?? [], self::STATUSES));
+        return array_replace(array_map(fn ($label) => (string) __($label), self::STATUSES), array_intersect_key(Installation::manifest()['customer_service_statuses'] ?? [], self::STATUSES));
     }
 
     private function today(): string
@@ -466,7 +467,7 @@ class ServiceController
     {
         $parts = parse_url($url);
         if (! $parts || ($parts['scheme'] ?? '') !== 'https' || empty($parts['host']) || isset($parts['user']) || isset($parts['pass'])) {
-            throw ValidationException::withMessages(['document_url' => 'Use an HTTPS document link without embedded credentials.']);
+            throw ValidationException::withMessages(['document_url' => __('Use an HTTPS document link without embedded credentials.')]);
         }
     }
 }

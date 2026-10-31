@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import GoalEditor from "../../components/GoalEditor.vue";
 import HistoryList from "../../components/History.vue";
@@ -11,7 +12,7 @@ const props = defineProps<
     <Head :title="record.name" /><Link
         href="/executive?section=goals"
         class="crm-back"
-        >← Back to goals</Link
+        >{{ tr("← Back to goals") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.name }}</h1>
@@ -24,22 +25,22 @@ const props = defineProps<
                 })
             "
         >
-            Archive goal
+            {{ tr("Archive goal") }}
         </button>
     </div>
     <div class="crm-stack">
         <section class="crm-card crm-flow">
-            <h2>Goal details</h2>
+            <h2>{{ tr("Goal details") }}</h2>
             <p>
-                Responsible person:
+                {{ tr("Responsible person:") }}
                 {{
                     owners.find((owner) => owner.id === record.owner_id)
-                        ?.name ?? "Unassigned"
+                        ?.name ?? tr("Unassigned")
                 }}
             </p>
             <p class="crm-muted">
                 {{ goalStatuses[record.status]
-                }}<span v-if="record.archived_at"> · Archived</span>
+                }}<span v-if="record.archived_at"> {{ tr("· Archived") }}</span>
             </p>
             <GoalEditor
                 v-if="editable"
@@ -49,19 +50,19 @@ const props = defineProps<
             />
             <dl v-else class="crm-detail-grid">
                 <div>
-                    <dt>Success criterion</dt>
+                    <dt>{{ tr("Success criterion") }}</dt>
                     <dd>{{ record.success_criterion }}</dd>
                 </div>
                 <div>
-                    <dt>Target date</dt>
+                    <dt>{{ tr("Target date") }}</dt>
                     <dd>{{ record.target_on }}</dd>
                 </div>
                 <div>
-                    <dt>Target result</dt>
+                    <dt>{{ tr("Target result") }}</dt>
                     <dd>{{ record.target_value }} {{ record.unit }}</dd>
                 </div>
                 <div>
-                    <dt>Current result</dt>
+                    <dt>{{ tr("Current result") }}</dt>
                     <dd>{{ record.current_value }} {{ record.unit }}</dd>
                 </div>
             </dl>

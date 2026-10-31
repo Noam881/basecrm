@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
@@ -11,18 +12,18 @@ import type { NavItem } from "@/types";
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: "Profile",
+        title: t("Profile"),
         href: editProfile(),
     },
     {
-        title: "Sign-in method",
+        title: t("Sign-in method"),
         href: editSecurity(),
     },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
 const title = computed(() =>
-    isCurrentOrParentUrl(editSecurity()) ? "Account settings" : "Profile",
+    isCurrentOrParentUrl(editSecurity()) ? t("Account settings") : t("Profile"),
 );
 </script>
 
@@ -36,7 +37,7 @@ const title = computed(() =>
             <aside class="w-full max-w-xl lg:w-48">
                 <nav
                     class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
+                    :aria-label="t('Settings')"
                 >
                     <Button
                         v-for="item in sidebarNavItems"
