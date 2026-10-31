@@ -705,5 +705,6 @@
     "quotation draft": "נוצרה טיוטת הצעת מחיר",
     "quotation sent": "הצעת המחיר נשלחה",
     "quotation accepted": "הצעת המחיר אושרה",
-    "quotation rejected": "הצעת המחיר נדחתה"
+    "quotation rejected": "הצעת המחיר נדחתה",
+    "Checklist item {number}": "פריט ברשימת הבדיקה {number}"
 }

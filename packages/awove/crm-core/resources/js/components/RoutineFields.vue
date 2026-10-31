@@ -90,10 +90,14 @@ withDefaults(
             :key="index"
             class="crm-field"
         >
-            <span class="crm-field-label"
-                >{{ t("Checklist item") }} {{ index + 1 }}</span
+            <span class="crm-field-label">{{
+                t("Checklist item {number}", { number: index + 1 })
+            }}</span
             ><input
                 v-model="model.checklist[index]"
+                :aria-label="
+                    t('Checklist item {number}', { number: index + 1 })
+                "
                 required
                 maxlength="200"
                 :aria-invalid="!!errors[`checklist.${index}`]"
