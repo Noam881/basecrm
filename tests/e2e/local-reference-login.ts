@@ -6,14 +6,15 @@ export async function signInLocalFixture(
     email: string,
     origin: string,
 ) {
-    const family =
-        origin === "http://127.0.0.1:8096"
-            ? "employees"
-            : origin === "http://127.0.0.1:8100"
-              ? "payroll"
-              : origin === "http://127.0.0.1:8103"
-                ? "assets"
-                : null;
+    const families: Record<string, string> = {
+        "http://127.0.0.1:8096": "employees",
+        "http://127.0.0.1:8100": "payroll",
+        "http://127.0.0.1:8103": "assets",
+        "http://127.0.0.1:8104": "nonprofit-programs",
+        "http://127.0.0.1:8105": "nonprofit-fundraising",
+        "http://127.0.0.1:8106": "nonprofit-projects",
+    };
+    const family = families[origin];
     if (
         !family ||
         !["desktop", "mobile"].some(
@@ -21,7 +22,7 @@ export async function signInLocalFixture(
         )
     )
         throw new Error(
-            "Only reserved fictional employee/payroll/assets accounts and local proof origins are permitted.",
+            "Only reserved fictional fixture accounts and exact local proof origins are permitted.",
         );
     const prior = (
         await (await page.request.get(`${mailpit}/api/v1/messages`)).json()

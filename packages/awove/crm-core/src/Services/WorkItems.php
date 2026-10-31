@@ -21,11 +21,11 @@ class WorkItems
     }
 
     /** @return Builder<WorkItem> Includes archived records for explicit archived views. */
-    public function query($user, string $module, string $kind): Builder
+    public function query($user, string $module, string $kind, bool $activeOnly = false): Builder
     {
         $type = $this->types->work($module, $kind);
 
-        return $type ? $this->access->query($user, $type, WorkItem::class) : WorkItem::whereRaw('1=0');
+        return $type ? $this->access->query($user, $type, WorkItem::class, $activeOnly) : WorkItem::whereRaw('1=0');
     }
 
     public function find($user, string $module, string $kind, int $id): WorkItem

@@ -50,7 +50,7 @@ class WorkReminderSource implements ReminderSource
             return null;
         }
         $user = config('auth.providers.users.model')::find($recipientId);
-        $query = $this->routine ? app(Routines::class)->query($user, $this->moduleId, $this->kind) : app(WorkItems::class)->query($user, $this->moduleId, $this->kind);
+        $query = $this->routine ? app(Routines::class)->query($user, $this->moduleId, $this->kind, true) : app(WorkItems::class)->query($user, $this->moduleId, $this->kind, true);
         $record = $query->where('owner_id', $recipientId)->whereNull('archived_at')->find($recordId);
         if (! $record) {
             return null;

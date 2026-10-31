@@ -27,7 +27,8 @@
         "awove/finance": "1.0.0",
         "awove/knowledge": "1.0.0",
         "awove/marketing": "1.0.0",
-        "awove/assets": "1.0.0"
+        "awove/assets": "1.0.0",
+        "awove/nonprofit": "1.0.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

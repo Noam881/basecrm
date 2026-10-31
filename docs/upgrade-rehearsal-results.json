@@ -23,12 +23,15 @@
       "2026_10_25_001000_create_knowledge",
       "2026_10_25_001100_create_marketing",
       "2026_10_25_001110_extract_legacy_attribution",
+      "2026_10_31_001300_create_nonprofit_programs",
+      "2026_10_31_001310_create_nonprofit_fundraising",
+      "2026_10_31_001320_create_nonprofit_projects",
       "2026_10_24_000750_create_operations"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "6e22edc178da5139f5e2f0f8c8d990744b04bdabe2569f483e3d59ef3ddfd289"
+    "fingerprint": "139a42819711d2e8eb061d654019215e81710a19807e5af052ff693ed2c4a06a"
   },
   {
     "installation": "beta",
@@ -54,11 +57,14 @@
       "2026_10_25_001000_create_knowledge",
       "2026_10_25_001100_create_marketing",
       "2026_10_25_001110_extract_legacy_attribution",
+      "2026_10_31_001300_create_nonprofit_programs",
+      "2026_10_31_001310_create_nonprofit_fundraising",
+      "2026_10_31_001320_create_nonprofit_projects",
       "2026_10_24_000750_create_operations"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "e848b0d5bc47e5702a1f8b584db2b1f886659e93ddc61d884c9ff3cd4d39479b"
+    "fingerprint": "8a58bc9b09b03dd1457afac6fdad31477ba6d90484d2c7a44f97e9c6d0b50123"
   }
 ]

@@ -21,11 +21,11 @@ class Routines
     }
 
     /** @return Builder<Routine> Includes archived records for explicit archived views. */
-    public function query($user, string $module, string $kind): Builder
+    public function query($user, string $module, string $kind, bool $activeOnly = false): Builder
     {
         $type = $this->types->routine($module, $kind);
 
-        return $type ? $this->access->query($user, $type, Routine::class) : Routine::whereRaw('1=0');
+        return $type ? $this->access->query($user, $type, Routine::class, $activeOnly) : Routine::whereRaw('1=0');
     }
 
     public function find($user, string $module, string $kind, int $id): Routine

@@ -2,6 +2,7 @@
 
 namespace Awove\Core\Services;
 
+use Awove\Core\Contracts\CapabilityProvider;
 use Awove\Core\Contracts\ReminderSource;
 use Awove\Core\Contracts\WorkContributor;
 use Awove\Core\Modules;
@@ -41,7 +42,7 @@ class WorkTypes
         $types = $contributor?->workTypes() ?? [];
         $this->validateTypes($module, $types);
 
-        return $types;
+        return array_values(array_filter($types, fn ($type) => $type->capability === null || app(Modules::class)->enabled($module.':'.$type->capability)));
     }
 
     /** @return list<RoutineType> */
@@ -51,7 +52,7 @@ class WorkTypes
         $types = $contributor?->routineTypes() ?? [];
         $this->validateTypes($module, $types);
 
-        return $types;
+        return array_values(array_filter($types, fn ($type) => $type->capability === null || app(Modules::class)->enabled($module.':'.$type->capability)));
     }
 
     private function contributor(string $module): ?WorkContributor
@@ -70,7 +71,11 @@ class WorkTypes
                 throw new \RuntimeException('Work definitions must have unique kinds in their declaring module.');
             }
             $keys[$type->kind] = true;
-            $declared = app(Modules::class)->installed()[$module]->permissions();
+            $owner = app(Modules::class)->installed()[$module];
+            if ($type->capability !== null && (! $owner instanceof CapabilityProvider || ! in_array($type->capability, $owner->capabilities(), true))) {
+                throw new \RuntimeException('Work definitions must use a declared capability from their module.');
+            }
+            $declared = $owner->permissions();
             if (array_diff($type->permissions(), $declared)) {
                 throw new \RuntimeException('Work definitions must use explicitly declared module permissions.');
             }

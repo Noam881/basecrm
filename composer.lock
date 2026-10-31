@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ffefa9938afe78b901797e6e4dfeeb11",
+    "content-hash": "b457ade3fcb186e4420e426af5599b27",
     "packages": [
         {
             "name": "awove/assets",
@@ -12,7 +12,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/awove/assets",
-                "reference": "b02948becd1d045c0627b41d481f3581f8df1219"
+                "reference": "8be75d7f84df08abeb3b5b866e5adbe42b2ba52e"
             },
             "require": {
                 "awove/crm-core": "^1.1",
@@ -276,6 +276,36 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\Marketing\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/nonprofit",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/nonprofit",
+                "reference": "f9e122ef38c32a62430784a98fb6e08858b3c353"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Nonprofit\\NonprofitProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Nonprofit\\": "src/"
                 }
             },
             "transport-options": {

@@ -2,6 +2,7 @@
 
 namespace Awove\Core\Services;
 
+use Awove\Core\Contracts\WorkScopeContributor;
 use Awove\Core\Installation;
 use Awove\Core\Models\Routine;
 use Awove\Core\Models\WorkHistory;
@@ -17,28 +18,46 @@ class WorkAccess
 {
     public function available($user, Definition $type): bool
     {
-        return $user && $user->active && app(Modules::class)->enabled($type->module) && ($user->can($type->permission('view.all')) || $user->can($type->permission('view.own')));
+        $user = $user?->fresh();
+
+        return $user && $user->active && app(Modules::class)->enabled($type->module.($type->capability === null ? '' : ':'.$type->capability)) && ($user->can($type->permission('view.all')) || $user->can($type->permission('view.own')));
     }
 
     /** @template TModel of Model
      * @param  class-string<TModel>  $model
      * @return Builder<TModel>
      */
-    public function query($user, Definition $type, string $model): Builder
+    public function query($user, Definition $type, string $model, bool $activeOnly = false): Builder
     {
+        $user = $user?->fresh();
         $query = (new $model)->newQuery()->where('module', $type->module)->where('kind', $type->kind);
         if (! $this->available($user, $type)) {
             return $query->whereRaw('1=0');
         }
 
-        return $user->can($type->permission('view.all')) ? $query : $query->where('owner_id', $user->id);
+        if (! $user->can($type->permission('view.all'))) {
+            $query->where('owner_id', $user->id);
+        }
+        if ($activeOnly) {
+            $query->whereNull('archived_at');
+        }
+        $module = app(Modules::class)->installed()[$type->module] ?? null;
+        if ($module instanceof WorkScopeContributor) {
+            $module->scopeWork($user, $type, $query, $activeOnly);
+        }
+
+        return $query;
     }
 
     public function editable($user, Definition $type, WorkItem|Routine $record): bool
     {
-        return $this->available($user, $type) && $record->getAttribute('module') === $type->module && $record->getAttribute('kind') === $type->kind
-            && ! $record->getAttribute('archived_at') && ($user->can($type->permission('view.all')) || $record->getAttribute('owner_id') === $user->id)
-            && ($user->can($type->permission('edit.all')) || ($record->getAttribute('owner_id') === $user->id && $user->can($type->permission('edit.own'))));
+        $user = $user?->fresh();
+        if (! $this->available($user, $type) || $record->getAttribute('module') !== $type->module || $record->getAttribute('kind') !== $type->kind) {
+            return false;
+        }
+        $current = $this->query($user, $type, $record::class, true)->find($record->getKey());
+
+        return $current && ($user->can($type->permission('edit.all')) || ($current->getAttribute('owner_id') === $user->id && $user->can($type->permission('edit.own'))));
     }
 
     public function fresh($user)
@@ -71,6 +90,7 @@ class WorkAccess
 
     public function owners($user, Definition $type): array
     {
+        $user = $user?->fresh();
         if (! $this->available($user, $type)) {
             return [];
         }

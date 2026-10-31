@@ -1,0 +1,23 @@
+{
+  "optional_package_absent": true,
+  "kept_packages": [
+    "awove/assets",
+    "awove/finance",
+    "awove/nonprofit",
+    "awove/operations"
+  ],
+  "removed_packages": [
+    "awove/example-service-details",
+    "awove/customer-service",
+    "awove/executive",
+    "awove/hr",
+    "awove/knowledge",
+    "awove/marketing"
+  ],
+  "php_package_discovery": "passed",
+  "backend_core_workflow": "passed",
+  "backend_filter": "NonprofitProgramsTest|NonprofitFundraisingTest|NonprofitProjectsTest|WorkCapabilityScopeTest",
+  "frontend_production_build": "passed",
+  "core_version": "1.1.0",
+  "mirrored_path_packages": true
+}

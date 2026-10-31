@@ -1,8 +1,8 @@
 # Modular CRM delivery status
 
-Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance/Knowledge/Marketing/Assets1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
+Branch: `codex/modular-crm-implementation`, based on `3278c2e` (the existing deployed B-logo baseline). Local release candidate: shared host/core 1.1.0, core contract1, Customer Service/Executive/Operations/HR/Finance/Knowledge/Marketing/Assets/Nonprofit1.0.0. Local implementation only: no pushes, deployment, real messages, integrations or customer imports are authorized by this request.
 
-The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–5 complete; Checkpoint 6 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
+The complete seven-checkpoint build is **incomplete**. Current checkpoint: **Checkpoints 1–6 complete; Checkpoint 7 next**. Do not infer later module completion from this document or navigation placeholders; unbuilt modules are not registered or displayed.
 
 ## Baseline, before edits
 
@@ -129,3 +129,24 @@ Checkpoint 5 integrated verification:
 - Assets-only copied discovery/assets and full20/353 acceptance passed with Finance/HR/Operations and every other optional package physically removed. The first run exposed two test-only assumptions that Finance tables existed; snapshot assertions now require unchanged counts or continued schema absence. The two corrected installed-package cases passed2/46. Old56 browser regression:54 passed in the complete run (7.1m); Service and Finance desktop cases initially failed during root-owned preview restart/origin corrections. Both unchanged workflows then passed2/2 (35.3s) after fixing those local settings. All56 old +2 new distinct cases passed across these coordinated runs; this is not a claim of a single clean58-case run.
 - Additive Alpha/Beta first-build migration and database/private-file backup/restore passed through Assets001200; retained synthetic data fingerprints match. This is not an upgrade from a historical release.
 - Final container image ca862456be2962fcc6ffa84d5c7adcbb57e73609978ec8c8a2b0f06f6ed1f2ea built and started; /up200, /login200, Alpha brand and all ten mirrored Awove package copies verified. Invocation-owned smoke container removed. No push or remote deployment.
+
+
+## Checkpoint 6 working changes
+
+Optional Nonprofit has independently selected Programs, Fundraising and Projects capabilities. Programs owns restricted private participants, locations/groups, sessions, unique recorded attendance, scoped period summaries and feedback/actions. Minimal participant-specific channels and optional live shared Contact details remain separate; private roster data never enters general search.
+
+Fundraising reuses shared donor/partner/prospect IDs, with contextual ownership/actions, exact pledges/restrictions and optional existing Finance Payment links. New owners need current identity scope. Actuals use payment dates and retain still-linked receipts under archived expectations; active expected pledges remain separate. No Finance records are created or changed.
+
+Projects adds manual annual plans, optional entered immutable budget revisions, parent-scoped Core tasks/milestones, meetings/decisions and explicit Core follow-ups. Optional Operations/Assets links use existing records; whole Finance Payments are unique per active project association, with receipts/outgoings separate from budget. Hidden/disabled source coverage is unavailable, never fabricated zero/complete partial totals. Nonfinancial planning creates no monetary snapshot.
+
+Core work descriptors now accept optional declared capability keys. WorkAccess refreshes actors and rechecks cached descriptors; an optional WorkScopeContributor applies current parent subqueries to shared reads/edits/instructions/reminders. Closed history remains readable while active-parent scope suppresses edits/notices. Existing constructor signatures remain valid and Core imports no optional models.
+
+Checkpoint 6 integrated verification:
+
+- Full PostgreSQL regression passed462 tests /7,427 assertions (326.3s), before the final table-default/archive-list/cells corrections. The final connected copied profile then passed61/897 (44.6s): all55 current Nonprofit cases plus6 shared capability/parent-scope cases, with Finance/Operations/Assets kept and every unrelated optional package physically absent.
+- Standalone copied Nonprofit discovery/production assets passed with all other optional packages physically absent:40 passed /674 assertions (26.3s),3 explicitly skipped counterpart-only integrations. This includes all18 Programs,15 standalone Projects, one persisted standalone Fundraising pledge case and6 shared-work cases. It does not claim all19 Fundraising cases ran without Finance; the full connected profile covers them.
+- Desktop/mobile persisted workflows passed6/6: Fundraising2/2 (28.2s), final Programs2/2 (1.0m), Projects2/2 (1.3m). Strict synthetic before/after cleanup passed. Final screenshots visually checked on both sizes. Native select/Completion date test locators were corrected to actual accessible labels; business assertions remained intact.
+- Review found and fixed useful first-use Program table defaults, archived-parent historical lists/CSV, and Project serializers losing trusted table cells; final copied tests and populated browser tables cover these fixes. A shared crm-back class fixes mobile backlink overlap; final production assets and Programs recapture include it. No page-local CSS was added.
+- Full PHPStan0, fresh-cache Pint, final frontend types/format/production build, Node5 and Compose configuration passed.
+- Exact additive Alpha migrations001300/1310/1320 passed with the entire existing Lead-row fingerprint unchanged. Alpha/Beta synthetic first-build additive-update and database/private-file restore rehearsal passed; this is not an upgrade from a historical release.
+- Core-only copied discovery/assets passed with all ten optional packages physically absent:50/523 including Foundation, Currency and shared capability/parent/reference/routine coverage. Final container and full cross-module verification remain Checkpoint7. No push/deployment, real messages, live integrations or customer imports.

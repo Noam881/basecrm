@@ -4,11 +4,12 @@ namespace Awove\Core\Work;
 
 abstract readonly class Definition
 {
-    public function __construct(public string $module, public string $kind, public string $label, public string $permissionPrefix, public string $routePrefix)
+    public function __construct(public string $module, public string $kind, public string $label, public string $permissionPrefix, public string $routePrefix, public ?string $capability = null)
     {
         if (! preg_match('/^[a-z][a-z0-9-]{0,79}$/D', $module) || ! preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $kind)
             || ($permissionPrefix !== $module && ! str_starts_with($permissionPrefix, $module.'.'))
             || ! preg_match('/^[a-z][a-z0-9.-]{0,119}$/D', $permissionPrefix)
+            || ($capability !== null && ! preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $capability))
             || trim($label) === '' || mb_strlen($label) > 120
             || ! preg_match('~^/(?!/)[a-zA-Z0-9/_-]+$~D', $routePrefix)) {
             throw new \InvalidArgumentException('Invalid namespaced work definition.');
