@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 export interface EmployeeReferenceDraft {
     name: string;
     active: boolean;
@@ -21,7 +22,7 @@ defineProps<{
 </script>
 <template>
     <label class="crm-field">
-        <span class="crm-field-label">Employee name</span>
+        <span class="crm-field-label">{{ t("Employee name") }}</span>
         <input
             v-model="model.name"
             required
@@ -34,37 +35,45 @@ defineProps<{
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Reference status</span>
+        <span class="crm-field-label">{{ t("Reference status") }}</span>
         <select v-model="model.active">
-            <option :value="true">Active</option>
-            <option :value="false">Inactive</option>
+            <option :value="true">{{ t("Active") }}</option>
+            <option :value="false">{{ t("Inactive") }}</option>
         </select>
         <small v-if="errors.active" data-slot="input-error" role="alert">{{
             errors.active
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Contact link</span>
+        <span class="crm-field-label">{{ t("Contact link") }}</span>
         <select v-model="model.contact_action" :disabled="hiddenContact">
             <option value="keep">
-                {{ editing ? "Keep current contact link" : "No contact link" }}
+                {{
+                    editing
+                        ? t("Keep current contact link")
+                        : t("No contact link")
+                }}
             </option>
-            <option value="set">Choose an existing contact</option>
-            <option v-if="editing" value="clear">Remove contact link</option>
+            <option value="set">{{ t("Choose an existing contact") }}</option>
+            <option v-if="editing" value="clear">
+                {{ t("Remove contact link") }}
+            </option>
         </select>
-        <small v-if="hiddenContact" class="crm-muted"
-            >The existing contact is unavailable and its link will be
-            retained.</small
-        >
+        <small v-if="hiddenContact" class="crm-muted">{{
+            t(
+                "The existing contact is unavailable and its link will be retained.",
+            )
+        }}</small>
         <small v-else-if="currentContact" class="crm-muted"
-            >Current: {{ currentContact }}</small
+            >{{ t("Current:") }} {{ currentContact }}</small
         >
     </label>
     <label v-if="model.contact_action === 'set'" class="crm-field">
-        <span class="crm-field-label">Existing contact</span>
+        <span class="crm-field-label">{{ t("Existing contact") }}</span>
         <select v-model="model.contact_id" required>
-            <option :value="null">Choose contact</option>
+            <option :value="null">{{ t("Choose contact") }}</option>
             <option
+                dir="auto"
                 v-for="contact in contacts"
                 :key="contact.id"
                 :value="contact.id"
@@ -77,27 +86,35 @@ defineProps<{
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Login account link</span>
+        <span class="crm-field-label">{{ t("Login account link") }}</span>
         <select v-model="model.user_action" :disabled="hiddenAccount">
             <option value="keep">
-                {{ editing ? "Keep current account link" : "No account link" }}
+                {{
+                    editing
+                        ? t("Keep current account link")
+                        : t("No account link")
+                }}
             </option>
-            <option value="set">Choose an existing account</option>
-            <option v-if="editing" value="clear">Remove account link</option>
+            <option value="set">{{ t("Choose an existing account") }}</option>
+            <option v-if="editing" value="clear">
+                {{ t("Remove account link") }}
+            </option>
         </select>
-        <small v-if="hiddenAccount" class="crm-muted"
-            >The existing account is unavailable and its link will be
-            retained.</small
-        >
+        <small v-if="hiddenAccount" class="crm-muted">{{
+            t(
+                "The existing account is unavailable and its link will be retained.",
+            )
+        }}</small>
         <small v-else-if="currentAccount" class="crm-muted"
-            >Current: {{ currentAccount }}</small
+            >{{ t("Current:") }} {{ currentAccount }}</small
         >
     </label>
     <label v-if="model.user_action === 'set'" class="crm-field">
-        <span class="crm-field-label">Existing account</span>
+        <span class="crm-field-label">{{ t("Existing account") }}</span>
         <select v-model="model.user_id" required>
-            <option :value="null">Choose account</option>
+            <option :value="null">{{ t("Choose account") }}</option>
             <option
+                dir="auto"
                 v-for="account in accounts"
                 :key="account.id"
                 :value="account.id"
@@ -110,7 +127,10 @@ defineProps<{
         }}</small>
     </label>
     <p class="crm-form-span crm-muted">
-        A reference can be used without a login account or contact link. Private
-        employment details belong in the relevant module.
+        {{
+            t(
+                "A reference can be used without a login account or contact link. Private employment details belong in the relevant module.",
+            )
+        }}
     </p>
 </template>

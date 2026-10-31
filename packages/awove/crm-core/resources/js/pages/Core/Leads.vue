@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
 import type { Lead, Page, Person, Stage, Field } from "../../types";
@@ -40,50 +41,66 @@ const form = useForm({
             v-if="capabilities.includes('leads.create')"
             class="crm-form-action"
         >
-            <Link href="/people" class="crm-secondary">Add new contact</Link>
+            <Link href="/people" class="crm-secondary">{{
+                t("Add new contact")
+            }}</Link>
             <button class="crm-button" @click="showCreate = !showCreate">
-                {{ showCreate ? "Close form" : "+ Create lead" }}
+                {{ showCreate ? t("Close form") : t("+ Create lead") }}
             </button>
         </div>
     </div>
     <section v-if="showCreate" class="crm-card">
-        <h2>New lead</h2>
+        <h2>{{ t("New lead") }}</h2>
         <p v-if="!contacts.length && !companies.length">
-            Start by <Link href="/people">adding a new contact</Link>.
+            {{ t("Start by") }}
+            <Link href="/people">{{ t("adding a new contact") }}</Link
+            >.
         </p>
         <form class="crm-form-grid" @submit.prevent="form.post('/leads')">
             <div class="crm-field">
                 <label
-                    ><span class="crm-field-label">Contact</span>
+                    ><span class="crm-field-label">{{ t("Contact") }}</span>
                     <select v-model="form.contact_id">
-                        <option :value="null">No contact</option>
-                        <option v-for="p in contacts" :key="p.id" :value="p.id">
+                        <option :value="null">{{ t("No contact") }}</option>
+                        <option
+                            dir="auto"
+                            v-for="p in contacts"
+                            :key="p.id"
+                            :value="p.id"
+                        >
                             {{ p.name }}
                         </option>
                     </select>
                 </label>
-                <Link href="/people" class="crm-field-supporting-action"
-                    >Create a contact</Link
-                >
+                <Link href="/people" class="crm-field-supporting-action">{{
+                    t("Create a contact")
+                }}</Link>
             </div>
             <label
-                ><span class="crm-field-label">Company</span
+                ><span class="crm-field-label">{{ t("Company") }}</span
                 ><select v-model="form.company_id">
-                    <option :value="null">No company</option>
-                    <option v-for="p in companies" :key="p.id" :value="p.id">
+                    <option :value="null">{{ t("No company") }}</option>
+                    <option
+                        dir="auto"
+                        v-for="p in companies"
+                        :key="p.id"
+                        :value="p.id"
+                    >
                         {{ p.name }}
                     </option>
                 </select></label
             ><label
-                ><span class="crm-field-label">Enquiry title (optional)</span
+                ><span class="crm-field-label">{{
+                    t("Enquiry title (optional)")
+                }}</span
                 ><input v-model="form.title" maxlength="160" /></label
             ><label
-                ><span class="crm-field-label">Needs</span
+                ><span class="crm-field-label">{{ t("Needs") }}</span
                 ><textarea v-model="form.needs" maxlength="10000" rows="3" />
             </label>
             <label
                 ><span class="crm-field-label"
-                    >Estimated value ({{ brand.currency }})</span
+                    >{{ t("Estimated value (") }}{{ brand.currency }})</span
                 ><input
                     v-model="form.estimated_value"
                     type="text"
@@ -92,34 +109,39 @@ const form = useForm({
                     maxlength="15"
             /></label>
             <label
-                ><span class="crm-field-label">Owner</span
+                ><span class="crm-field-label">{{ t("Owner") }}</span
                 ><select v-model="form.owner_id">
                     <option
                         v-if="capabilities.includes('leads.assign')"
                         :value="null"
                     >
-                        Unassigned
+                        {{ t("Unassigned") }}
                     </option>
-                    <option v-for="p in owners" :key="p.id" :value="p.id">
+                    <option
+                        dir="auto"
+                        v-for="p in owners"
+                        :key="p.id"
+                        :value="p.id"
+                    >
                         {{ p.name }}
                     </option>
                 </select></label
             ><label
-                ><span class="crm-field-label">Status</span
+                ><span class="crm-field-label">{{ t("Status") }}</span
                 ><select v-model="form.status_id">
                     <option v-for="s in statuses" :key="s.id" :value="s.id">
                         {{ s.name }}
                     </option>
                 </select></label
             ><label
-                ><span class="crm-field-label">Source</span
+                ><span class="crm-field-label">{{ t("Source") }}</span
                 ><input v-model="form.source" required /></label
             ><label
-                ><span class="crm-field-label">Priority</span
+                ><span class="crm-field-label">{{ t("Priority") }}</span
                 ><select v-model="form.priority">
-                    <option>low</option>
-                    <option>normal</option>
-                    <option>high</option>
+                    <option value="low">{{ t("low") }}</option>
+                    <option value="normal">{{ t("normal") }}</option>
+                    <option value="high">{{ t("high") }}</option>
                 </select></label
             ><label v-for="(field, key) in fields" :key="key"
                 ><span class="crm-field-label">{{ field.label }}</span
@@ -127,7 +149,7 @@ const form = useForm({
                     v-if="field.type === 'select'"
                     v-model="form.custom_fields[key]"
                 >
-                    <option v-for="o in field.options" :key="o">
+                    <option v-for="o in field.options" :key="o" :value="o">
                         {{ o }}
                     </option></select
                 ><input
@@ -139,31 +161,33 @@ const form = useForm({
                     :type="field.type"
             /></label>
             <details class="crm-form-disclosure">
-                <summary>Source details</summary>
+                <summary>{{ t("Source details") }}</summary>
             </details>
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">
-                    Create lead
+                    {{ t("Create lead") }}
                 </button>
             </div>
         </form>
     </section>
-    <div class="crm-tabs md-quick-views" aria-label="Lead quick views">
-        <Link href="/leads" :aria-current="!filters.view ? 'page' : undefined"
-            >All leads</Link
+    <div class="crm-tabs md-quick-views" :aria-label="t('Lead quick views')">
+        <Link
+            href="/leads"
+            :aria-current="!filters.view ? 'page' : undefined"
+            >{{ t("All leads") }}</Link
         ><Link
             href="/leads?view=missing"
             :aria-current="filters.view === 'missing' ? 'page' : undefined"
-            >Missing follow-up</Link
+            >{{ t("Missing follow-up") }}</Link
         ><Link
             v-if="capabilities.includes('leads.view.all')"
             href="/leads?view=unassigned"
             :aria-current="filters.view === 'unassigned' ? 'page' : undefined"
-            >Unassigned</Link
+            >{{ t("Unassigned") }}</Link
         ><Link
             href="/leads?view=archived"
             :aria-current="filters.view === 'archived' ? 'page' : undefined"
-            >Archived</Link
+            >{{ t("Archived") }}</Link
         >
     </div>
     <DataTable
@@ -190,7 +214,9 @@ const form = useForm({
                         row.cells.contact ??
                             row.cells.company ??
                             row.title ??
-                            `Lead ${row.id}`,
+                            t('Lead {value0}', {
+                                value0: String(row.id ?? ''),
+                            }),
                     )
                 "
                 :status-id="row.status_id"

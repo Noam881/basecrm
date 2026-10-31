@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { Options, AssetRecord, MaintenanceRecord } from "../types";
@@ -109,17 +110,24 @@ function save() {
         <fieldset class="crm-form-grid" :disabled="disabled">
             <template v-if="!completed"
                 ><label class="crm-field crm-form-span"
-                    ><span class="crm-field-label">Maintenance action</span
+                    ><span class="crm-field-label">{{
+                        tr("Maintenance action")
+                    }}</span
                     ><input
                         v-model="f.action"
                         required
                         maxlength="180" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Due date</span
+                    ><span class="crm-field-label">{{ tr("Due date") }}</span
                     ><input v-model="f.due_on" type="date" required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Maintenance status</span
-                    ><select v-model="f.status" aria-label="Maintenance status">
+                    ><span class="crm-field-label">{{
+                        tr("Maintenance status")
+                    }}</span
+                    ><select
+                        v-model="f.status"
+                        :aria-label="tr('Maintenance status')"
+                    >
                         <option
                             v-for="(label, key) in openStatuses"
                             :key="key"
@@ -129,17 +137,17 @@ function save() {
                         </option>
                     </select></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Supplier</span
+                    ><span class="crm-field-label">{{ tr("Supplier") }}</span
                     ><select
                         v-model="f.supplier_relationship_id"
                         :disabled="record?.supplier_restricted"
-                        aria-label="Supplier"
+                        :aria-label="tr('Supplier')"
                     >
                         <option :value="null">
                             {{
                                 record?.supplier_restricted
-                                    ? "Existing supplier restricted"
-                                    : "No supplier"
+                                    ? tr("Existing supplier restricted")
+                                    : tr("No supplier")
                             }}
                         </option>
                         <option
@@ -148,20 +156,22 @@ function save() {
                             :value="s.id"
                         >
                             {{ s.name
-                            }}{{ s.active === false ? " (inactive)" : "" }}
+                            }}{{ s.active === false ? tr(" (inactive)") : "" }}
                         </option>
                     </select></label
                 ></template
             ><label class="crm-field"
-                ><span class="crm-field-label">Responsible staff member</span
+                ><span class="crm-field-label">{{
+                    tr("Responsible staff member")
+                }}</span
                 ><select
                     v-model="f.owner_id"
                     :disabled="!canAssign"
                     required
-                    aria-label="Responsible staff member"
+                    :aria-label="tr('Responsible staff member')"
                 >
                     <option :value="null">
-                        Choose responsible staff member
+                        {{ tr("Choose responsible staff member") }}
                     </option>
                     <option v-for="o in owners" :key="o.id" :value="o.id">
                         {{ o.name }}
@@ -173,36 +183,48 @@ function save() {
                         "
                         :value="f.owner_id"
                     >
-                        Current responsible staff member
+                        {{ tr("Current responsible staff member") }}
                     </option>
                 </select></label
             ><label v-if="completed" class="crm-field"
-                ><span class="crm-field-label">Manual next due date</span
+                ><span class="crm-field-label">{{
+                    tr("Manual next due date")
+                }}</span
                 ><input v-model="f.next_due_on" type="date" /></label
             ><label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Maintenance notes</span
+                ><span class="crm-field-label">{{
+                    tr("Maintenance notes")
+                }}</span
                 ><textarea v-model="f.description" rows="3" maxlength="10000" />
             </label>
         </fieldset>
         <p v-if="completed" class="crm-muted">
-            Completion details stay unchanged. A manual next due date is a
-            reminder and does not create another maintenance action.
+            {{
+                tr(
+                    "Completion details stay unchanged. A manual next due date is a reminder and does not create another maintenance action.",
+                )
+            }}
         </p>
         <p v-if="stale" class="crm-notice" role="alert">
-            The asset or maintenance action changed. Reload the latest details
-            before saving.
+            {{
+                tr(
+                    "The asset or maintenance action changed. Reload the latest details before saving.",
+                )
+            }}
         </p>
         <FormErrors :errors="f.errors" />
         <div v-if="!disabled" class="crm-form-action">
             <button class="crm-button" :disabled="f.processing || stale">
-                {{ record ? "Save maintenance" : "Plan maintenance" }}</button
+                {{
+                    record ? tr("Save maintenance") : tr("Plan maintenance")
+                }}</button
             ><button
                 v-if="stale"
                 class="crm-secondary"
                 type="button"
                 @click="reset"
             >
-                Reload maintenance form
+                {{ tr("Reload maintenance form") }}
             </button>
         </div>
     </form>

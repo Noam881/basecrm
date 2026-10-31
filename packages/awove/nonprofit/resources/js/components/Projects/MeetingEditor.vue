@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import WorkFields from "../../../../../crm-core/resources/js/components/WorkFields.vue";
@@ -50,10 +51,10 @@ function save() {
 <template>
     <form class="crm-form" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Meeting date</span
+            ><span class="crm-field-label">{{ tr("Meeting date") }}</span
             ><input v-model="form.held_on" type="date" required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Meeting summary</span
+            ><span class="crm-field-label">{{ tr("Meeting summary") }}</span
             ><textarea
                 v-model="form.summary"
                 required
@@ -61,7 +62,7 @@ function save() {
                 maxlength="20000"
             /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Decisions</span
+            ><span class="crm-field-label">{{ tr("Decisions") }}</span
             ><textarea
                 v-model="form.decisions"
                 rows="3"
@@ -74,14 +75,14 @@ function save() {
                 canCreate
             "
             class="crm-check-label"
-            ><input v-model="addFollow" type="checkbox" /> Create a follow-up
-            task</label
+            ><input v-model="addFollow" type="checkbox" />
+            {{ tr("Create a follow-up task") }}</label
         >
         <fieldset v-if="addFollow" class="crm-form-grid">
-            <legend>Meeting follow-up</legend>
+            <legend>{{ tr("Meeting follow-up") }}</legend>
             <WorkFields
                 v-model="form.follow_up"
-                title-label="Follow-up title"
+                :title-label="tr('Follow-up title')"
                 :owners="workOwners"
                 :statuses="workStatuses"
                 :completed-statuses="['done']"
@@ -91,18 +92,24 @@ function save() {
         </fieldset>
         <Errors :errors="form.errors" />
         <p v-if="stale" class="crm-notice">
-            The project changed. Reload these meeting fields before saving.
+            {{
+                tr(
+                    "The project changed. Reload these meeting fields before saving.",
+                )
+            }}
         </p>
         <div class="crm-form-action">
             <button class="crm-button" :disabled="form.processing || stale">
-                {{ meeting ? "Save meeting" : "Record meeting" }}</button
+                {{
+                    meeting ? tr("Save meeting") : tr("Record meeting")
+                }}</button
             ><button
                 v-if="stale"
                 type="button"
                 class="crm-secondary"
                 @click="reset"
             >
-                Reload meeting fields
+                {{ tr("Reload meeting fields") }}
             </button>
         </div>
     </form>

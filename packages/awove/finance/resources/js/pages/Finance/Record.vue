@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import FinanceNav from "../../components/FinanceNav.vue";
 import LedgerEditor from "../../components/LedgerEditor.vue";
@@ -43,7 +44,9 @@ function cancel() {
         :href="`/finance/${cap}`"
         >←
         {{
-            cap === "collections" ? "Customer charges" : "Supplier expenses"
+            cap === "collections"
+                ? tr("Customer charges")
+                : tr("Supplier expenses")
         }}</Link
     >
     <div class="crm-heading">
@@ -56,43 +59,47 @@ function cancel() {
             <dl class="crm-detail-grid">
                 <div class="crm-detail-item">
                     <dt>
-                        {{ cap === "collections" ? "Customer" : "Supplier" }}
+                        {{
+                            cap === "collections"
+                                ? tr("Customer")
+                                : tr("Supplier")
+                        }}
                     </dt>
                     <dd>
                         {{
                             record.relationship?.name ??
-                            "Classification unavailable"
+                            tr("Classification unavailable")
                         }}
                     </dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Owner</dt>
-                    <dd>{{ record.owner?.name ?? "Unassigned" }}</dd>
+                    <dt>{{ tr("Owner") }}</dt>
+                    <dd>{{ record.owner?.name ?? tr("Unassigned") }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Total payable</dt>
+                    <dt>{{ tr("Total payable") }}</dt>
                     <dd>{{ record.total }} {{ record.currency }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Recorded payments</dt>
+                    <dt>{{ tr("Recorded payments") }}</dt>
                     <dd>{{ record.paid_amount }} {{ record.currency }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Remaining balance</dt>
+                    <dt>{{ tr("Remaining balance") }}</dt>
                     <dd>{{ record.remaining_amount }} {{ record.currency }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Due date</dt>
+                    <dt>{{ tr("Due date") }}</dt>
                     <dd>{{ record.due_on }}</dd>
                 </div>
                 <div v-if="record.category" class="crm-detail-item">
-                    <dt>Category</dt>
+                    <dt>{{ tr("Category") }}</dt>
                     <dd>{{ record.category }}</dd>
                 </div>
             </dl>
             <p>{{ record.description }}</p>
             <p v-if="record.next_action">
-                Next action: {{ record.next_action }} ·
+                {{ tr("Next action:") }} {{ record.next_action }} ·
                 {{ record.next_action_on }}
             </p>
             <a
@@ -101,15 +108,17 @@ function cancel() {
                 :href="record.document_link"
                 target="_blank"
                 rel="noopener noreferrer"
-                >Open document</a
+                >{{ tr("Open document") }}</a
             >
             <p v-if="record.cancelled_at">
-                Cancelled · {{ record.cancellation_reason }}. Retained balance
-                is excluded from expected payments.
+                {{ tr("Cancelled ·") }} {{ record.cancellation_reason
+                }}{{
+                    tr(". Retained balance is excluded from expected payments.")
+                }}
             </p>
         </section>
         <section v-if="record.editable" class="crm-card crm-flow">
-            <h2>Edit record</h2>
+            <h2>{{ tr("Edit record") }}</h2>
             <LedgerEditor :key="record.version" v-bind="props" />
         </section>
         <section
@@ -119,19 +128,20 @@ function cancel() {
                 record.remaining_amount !== '0.00'
             "
             class="crm-card crm-flow"
-            aria-label="Record payment"
+            :aria-label="tr('Record payment')"
         >
             <h2>
                 {{
                     cap === "collections"
-                        ? "Record received payment"
-                        : "Record supplier payment"
+                        ? tr("Record received payment")
+                        : tr("Record supplier payment")
                 }}
             </h2>
             <form class="crm-form-grid" @submit.prevent="recordPayment">
                 <label class="crm-field"
                     ><span class="crm-field-label"
-                        >Payment amount ({{ record.currency }})</span
+                        >{{ tr("Payment amount (")
+                        }}{{ record.currency }})</span
                     ><input
                         v-model="payment.amount"
                         inputmode="decimal"
@@ -144,7 +154,9 @@ function cancel() {
                         >{{ payment.errors.amount }}</small
                     ></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Payment date</span
+                    ><span class="crm-field-label">{{
+                        tr("Payment date")
+                    }}</span
                     ><input
                         v-model="payment.paid_on"
                         type="date"
@@ -156,13 +168,16 @@ function cancel() {
                         >{{ payment.errors.paid_on }}</small
                     ></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Payment reference (optional)</span
+                    ><span class="crm-field-label">{{
+                        tr("Payment reference (optional)")
+                    }}</span
                     ><input
                         v-model="payment.reference"
                         maxlength="120" /></label
                 ><label class="crm-field crm-form-span"
-                    ><span class="crm-field-label">Payment notes</span
+                    ><span class="crm-field-label">{{
+                        tr("Payment notes")
+                    }}</span
                     ><textarea
                         v-model="payment.notes"
                         rows="2"
@@ -176,7 +191,11 @@ function cancel() {
                 >
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="payment.processing">
-                        {{ payment.processing ? "Saving…" : "Record payment" }}
+                        {{
+                            payment.processing
+                                ? tr("Saving…")
+                                : tr("Record payment")
+                        }}
                     </button>
                 </div>
             </form>
@@ -186,10 +205,12 @@ function cancel() {
             class="crm-card crm-flow"
         >
             <details class="crm-form-disclosure">
-                <summary>Cancel unpaid record</summary>
+                <summary>{{ tr("Cancel unpaid record") }}</summary>
                 <form class="crm-form-grid" @submit.prevent="cancel">
                     <label class="crm-field crm-form-span"
-                        ><span class="crm-field-label">Cancellation reason</span
+                        ><span class="crm-field-label">{{
+                            tr("Cancellation reason")
+                        }}</span
                         ><textarea
                             v-model="cancellation.cancellation_reason"
                             rows="2"
@@ -211,15 +232,15 @@ function cancel() {
                             class="crm-secondary"
                             :disabled="cancellation.processing"
                         >
-                            Cancel record
+                            {{ tr("Cancel record") }}
                         </button>
                     </div>
                 </form>
             </details>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Recorded payments</h2>
-            <p v-if="!payments.length">No payments recorded.</p>
+            <h2>{{ tr("Recorded payments") }}</h2>
+            <p v-if="!payments.length">{{ tr("No payments recorded.") }}</p>
             <article v-for="entry in payments" :key="entry.id">
                 <strong
                     >{{ entry.amount }} {{ record.currency }} ·
@@ -227,7 +248,7 @@ function cancel() {
                 >
                 <p v-if="entry.reference">{{ entry.reference }}</p>
                 <p v-if="entry.notes">{{ entry.notes }}</p>
-                <small>{{ entry.actor?.name ?? "Former staff" }}</small>
+                <small>{{ entry.actor?.name ?? tr("Former staff") }}</small>
             </article>
         </section>
         <LedgerHistory :history="history" />

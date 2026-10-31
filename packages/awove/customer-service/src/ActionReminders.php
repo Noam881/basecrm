@@ -46,6 +46,6 @@ class ActionReminders implements ReminderSource
             return null;
         }
 
-        return ['version' => $record->version, 'title' => $this->source === 'requests' ? 'Service action: '.$record->subject : 'Customer feedback follow-up #'.$record->id, 'href' => $this->source === 'requests' ? '/service/requests/'.$record->id : '/service/feedback/'.$record->id];
+        return ['version' => $record->version, 'title' => $this->source === 'requests' ? __('Service action: :subject', ['subject' => $record->subject]) : __('Customer feedback follow-up #:id', ['id' => $record->id]), 'href' => $this->source === 'requests' ? '/service/requests/'.$record->id : '/service/feedback/'.$record->id];
     }
 }

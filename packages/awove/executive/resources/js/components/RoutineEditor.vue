@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import RoutineFields, {
@@ -29,8 +30,9 @@ function save() {
         preserveScroll: true,
         onHttpException: (response: { status: number }) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "This routine changed or your access changed. Your edits are kept. Reload before saving.";
+                warning.value = tr(
+                    "This routine changed or your access changed. Your edits are kept. Reload before saving.",
+                );
                 return false;
             }
         },
@@ -62,10 +64,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing || !!warning">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save routine"
-                          : "Create routine"
+                          ? tr("Save routine")
+                          : tr("Create routine")
                 }}
             </button>
         </div>

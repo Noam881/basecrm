@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 
@@ -42,9 +43,9 @@ const singularNames: Record<RecordType, string> = {
     leads: "lead / opportunity",
 };
 const names: Record<RecordType, string> = {
-    contacts: "Contacts",
-    companies: "Companies",
-    leads: "Leads / opportunities",
+    contacts: t("Contacts"),
+    companies: t("Companies"),
+    leads: t("Leads / opportunities"),
 };
 watch(type, clearPreview);
 function clearPreview() {
@@ -82,11 +83,13 @@ async function post(url: string, body: FormData | string) {
             ? Object.values(data.errors).flat().map(String)
             : [
                   response.status === 403
-                      ? "You no longer have permission for this action."
+                      ? t("You no longer have permission for this action.")
                       : response.status === 419
-                        ? "Your session expired. Reload this page and try again."
+                        ? t(
+                              "Your session expired. Reload this page and try again.",
+                          )
                         : (data.message ??
-                          "The request could not be completed."),
+                          t("The request could not be completed.")),
               ];
         errors.value = messages;
         if ([403, 404, 409].includes(response.status)) preview.value = null;
@@ -104,7 +107,9 @@ async function previewFile() {
         body.append("file", file.value);
         preview.value = await post("/spreadsheets/preview", body);
     } catch {
-        errors.value = ["Could not preview the file. Check your connection."];
+        errors.value = [
+            t("Could not preview the file. Check your connection."),
+        ];
     } finally {
         processing.value = false;
     }
@@ -122,14 +127,18 @@ async function confirmImport() {
             }),
         );
         if (result) {
-            saved.value = `${result.count} ${result.count === 1 ? singularNames[result.type as RecordType] : names[result.type as RecordType].toLocaleLowerCase()} imported.`;
+            saved.value = t("Imported {count} records.", {
+                count: result.count,
+            });
             preview.value = null;
             file.value = null;
             if (fileInput.value) fileInput.value.value = "";
         }
     } catch {
         errors.value = [
-            "The connection was interrupted. Reload before importing again to check whether the records were saved.",
+            t(
+                "The connection was interrupted. Reload before importing again to check whether the records were saved.",
+            ),
         ];
     } finally {
         processing.value = false;
@@ -141,13 +150,17 @@ function display(value: unknown): string {
 </script>
 
 <template>
-    <Head title="Import and export" />
-    <Link href="/dashboard" class="crm-back">← Back to overview</Link>
-    <div class="crm-heading"><h1>Import and export</h1></div>
+    <Head :title="t('Import and export')" />
+    <Link href="/dashboard" class="crm-back">{{
+        t("← Back to overview")
+    }}</Link>
+    <div class="crm-heading">
+        <h1>{{ t("Import and export") }}</h1>
+    </div>
     <div class="crm-stack">
         <section class="crm-card crm-flow">
             <label class="crm-field">
-                <span class="crm-field-label">Record type</span>
+                <span class="crm-field-label">{{ t("Record type") }}</span>
                 <select v-model="type" :disabled="processing">
                     <option
                         v-for="(_, key) in definitions"
@@ -159,39 +172,49 @@ function display(value: unknown): string {
                 </select>
             </label>
             <p class="crm-muted">
-                CSV files only. Exports include records you can access and omit
-                archived leads. Import creates separate records and never
-                updates or merges existing ones.
+                {{
+                    t(
+                        "CSV files only. Exports include records you can access and omit archived leads. Import creates separate records and never updates or merges existing ones.",
+                    )
+                }}
             </p>
             <div v-if="canExport" class="crm-form-action">
-                <a class="crm-secondary" :href="`/spreadsheets/export/${type}`"
-                    >Download {{ names[type].toLocaleLowerCase() }} CSV</a
+                <a
+                    class="crm-secondary"
+                    :href="`/spreadsheets/export/${type}`"
+                    >{{ t("Download {type} CSV", { type: names[type] }) }}</a
                 >
             </div>
         </section>
         <section v-if="canImport" class="crm-card crm-flow">
-            <h2>Import {{ names[type].toLocaleLowerCase() }}</h2>
+            <h2>{{ t("Import {type}", { type: names[type] }) }}</h2>
             <p class="crm-muted">
-                Use UTF-8, comma-separated CSV with a header row, up to 1 MB and
-                500 records. Preview validates every record before anything is
-                saved. A preview expires after 15 minutes.
+                {{
+                    t(
+                        "Use UTF-8, comma-separated CSV with a header row, up to 1 MB and 500 records. Preview validates every record before anything is saved. A preview expires after 15 minutes.",
+                    )
+                }}
             </p>
             <p>
                 {{
                     type === "leads"
-                        ? "Required: status_id and an accessible contact_id or company_id. Owner defaults to you. Use stable status identifiers listed below. Dates use YYYY-MM-DD; money uses decimal values without currency symbols."
-                        : "Required: name. Related company_id values must refer to companies you can access."
+                        ? t(
+                              "Required: status_id and an accessible contact_id or company_id. Owner defaults to you. Use stable status identifiers listed below. Dates use YYYY-MM-DD; money uses decimal values without currency symbols.",
+                          )
+                        : t(
+                              "Required: name. Related company_id values must refer to companies you can access.",
+                          )
                 }}
             </p>
             <p v-if="type === 'contacts'" class="crm-muted">
-                Use | between preferred contact days or times, for example
-                sunday|monday or mornings|afternoons. Use the same internal
-                option values as the contact form; Anytime cannot be combined
-                with other times. Import companies first when linking existing
-                company IDs.
+                {{
+                    t(
+                        "Use | between preferred contact days or times, for example sunday|monday or mornings|afternoons. Use the same internal option values as the contact form; Anytime cannot be combined with other times. Import companies first when linking existing company IDs.",
+                    )
+                }}
             </p>
             <details>
-                <summary>Supported columns</summary>
+                <summary>{{ t("Supported columns") }}</summary>
                 <p>{{ columns.join(", ") }}</p>
                 <p
                     v-for="(choices, field) in options"
@@ -206,20 +229,23 @@ function display(value: unknown): string {
                     }}
                 </p>
                 <p class="crm-muted">
-                    Export-only fields such as id and created_at must be removed
-                    before import. The template contains only supported columns.
+                    {{
+                        t(
+                            "Export-only fields such as id and created_at must be removed before import. The template contains only supported columns.",
+                        )
+                    }}
                 </p>
             </details>
             <div class="crm-form-action">
                 <a
                     class="crm-secondary"
                     :href="`/spreadsheets/template/${type}`"
-                    >Download import template</a
+                    >{{ t("Download import template") }}</a
                 >
             </div>
             <form class="crm-form" @submit.prevent="previewFile">
                 <label class="crm-field">
-                    <span class="crm-field-label">CSV file</span>
+                    <span class="crm-field-label">{{ t("CSV file") }}</span>
                     <input
                         ref="fileInput"
                         type="file"
@@ -231,7 +257,9 @@ function display(value: unknown): string {
                 </label>
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="processing || !file">
-                        {{ processing ? "Processing…" : "Preview import" }}
+                        {{
+                            processing ? t("Processing…") : t("Preview import")
+                        }}
                     </button>
                 </div>
             </form>
@@ -242,16 +270,20 @@ function display(value: unknown): string {
         <p v-if="saved" class="crm-notice" role="status">{{ saved }}</p>
         <section v-if="preview" class="crm-card crm-flow">
             <h2>
-                Preview: {{ preview.count }}
-                {{ preview.count === 1 ? "record" : "records" }}
+                {{ t("Preview:") }} {{ preview.count }}
+                {{ preview.count === 1 ? t("record") : t("records") }}
             </h2>
             <p v-if="preview.errors.length" class="crm-error" role="alert">
-                Fix the errors below, save the CSV, and preview it again. No
-                records have been saved.
+                {{
+                    t(
+                        "Fix the errors below, save the CSV, and preview it again. No records have been saved.",
+                    )
+                }}
             </p>
             <ul v-if="preview.errors.length">
                 <li v-for="error in preview.errors" :key="error.line">
-                    Record {{ error.line }}: {{ error.messages.join(" ") }}
+                    {{ t("Record") }} {{ error.line }}:
+                    {{ error.messages.join(" ") }}
                 </li>
             </ul>
             <div
@@ -259,26 +291,31 @@ function display(value: unknown): string {
                 class="crm-notice"
                 role="status"
             >
-                <p>Review possible duplicates before importing.</p>
+                <p>{{ t("Review possible duplicates before importing.") }}</p>
                 <ul>
                     <li v-for="warning in preview.warnings" :key="warning.line">
-                        Record {{ warning.line }}: {{ warning.message }}
+                        {{ t("Record") }} {{ warning.line }}:
+                        {{ warning.message }}
                     </li>
                 </ul>
             </div>
             <p class="crm-muted">
-                Showing the first {{ Math.min(20, preview.rows.length) }} valid
-                {{ preview.rows.length === 1 ? "record" : "records" }}. All
-                {{ preview.count }}
-                {{ preview.count === 1 ? "record was" : "records were" }}
-                checked.
+                {{
+                    t(
+                        "Showing the first {shown} valid records. All {count} records were checked.",
+                        {
+                            shown: Math.min(20, preview.rows.length),
+                            count: preview.count,
+                        },
+                    )
+                }}
             </p>
             <div v-if="preview.rows.length" class="md-table">
                 <div
                     class="md-data-scroll"
                     tabindex="0"
                     role="region"
-                    aria-label="CSV import preview"
+                    :aria-label="t('CSV import preview')"
                 >
                     <table :style="{ width: `${64 + columns.length * 200}px` }">
                         <colgroup>
@@ -291,7 +328,7 @@ function display(value: unknown): string {
                         </colgroup>
                         <thead>
                             <tr>
-                                <th scope="col">Row</th>
+                                <th scope="col">{{ t("Row") }}</th>
                                 <th
                                     v-for="column in columns"
                                     :key="column"
@@ -334,8 +371,11 @@ function display(value: unknown): string {
                         type="checkbox"
                         :disabled="processing"
                     />
-                    Keep separate records for the possible duplicates listed
-                    above
+                    {{
+                        t(
+                            "Keep separate records for the possible duplicates listed above",
+                        )
+                    }}
                 </label>
                 <div class="crm-form-action">
                     <button
@@ -347,8 +387,10 @@ function display(value: unknown): string {
                     >
                         {{
                             processing
-                                ? "Importing…"
-                                : `Import ${preview.count} ${preview.count === 1 ? "record" : "records"}`
+                                ? t("Importing…")
+                                : t("Import {count} records", {
+                                      count: preview.count,
+                                  })
                         }}
                     </button>
                 </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import {
@@ -37,9 +38,9 @@ const form = useForm({
 });
 const note = useForm({ body: "" });
 function optionLabel(category: keyof ContactOptions, value?: string | null) {
-    return (
+    return t(
         props.contactOptions[category].find((option) => option.value === value)
-            ?.label ?? "Not specified"
+            ?.label ?? t("Not specified"),
     );
 }
 const contactTimes = computed(
@@ -48,8 +49,8 @@ const contactTimes = computed(
             .filter((option) =>
                 props.identity.preferred_contact_times?.includes(option.value),
             )
-            .map((option) => option.label)
-            .join(", ") || "Not specified",
+            .map((option) => t(option.label))
+            .join(", ") || t("Not specified"),
 );
 const contactDays = computed(
     () =>
@@ -57,8 +58,8 @@ const contactDays = computed(
             .filter((option) =>
                 props.identity.preferred_contact_days?.includes(option.value),
             )
-            .map((option) => option.label)
-            .join(", ") || "Any day",
+            .map((option) => t(option.label))
+            .join(", ") || t("Any day"),
 );
 function save() {
     form.transform((data) =>
@@ -99,9 +100,11 @@ function addNote() {
 </script>
 <template>
     <Head :title="identity.name" />
-    <Link :href="returnTo" class="crm-back">← Back</Link>
+    <Link :href="returnTo" class="crm-back">{{ t("← Back") }}</Link>
     <div class="crm-heading">
-        <h1>{{ identity.name }}</h1>
+        <h1>
+            <bdi>{{ identity.name }}</bdi>
+        </h1>
     </div>
     <div :class="type === 'contacts' ? 'crm-contact-sections' : 'crm-stack'">
         <section class="crm-card crm-flow">
@@ -109,8 +112,8 @@ function addNote() {
                 <h2>
                     {{
                         type === "contacts"
-                            ? "Contact details"
-                            : "Company details"
+                            ? t("Contact details")
+                            : t("Company details")
                     }}
                 </h2>
                 <button
@@ -121,55 +124,59 @@ function addNote() {
                 >
                     {{
                         type === "contacts"
-                            ? "Edit contact details"
-                            : "Edit company details"
+                            ? t("Edit contact details")
+                            : t("Edit company details")
                     }}
                 </button>
             </div>
             <p v-if="!editable" class="crm-muted">
-                Your account has view access to this record.
+                {{ t("Your account has view access to this record.") }}
             </p>
             <template v-if="!editing">
                 <dl class="crm-detail-grid">
                     <div class="crm-detail-item">
-                        <dt>Name</dt>
-                        <dd>{{ identity.name }}</dd>
+                        <dt>{{ t("Name") }}</dt>
+                        <dd>
+                            <bdi>{{ identity.name }}</bdi>
+                        </dd>
                     </div>
                     <div class="crm-detail-item">
-                        <dt>Email</dt>
+                        <dt>{{ t("Email") }}</dt>
                         <dd>
                             <a
                                 v-if="identity.email"
                                 :href="`mailto:${identity.email}`"
                                 >{{ identity.email }}</a
-                            ><template v-else>Not provided</template>
+                            ><template v-else>{{ t("Not provided") }}</template>
                         </dd>
                     </div>
                     <div class="crm-detail-item">
-                        <dt>Phone</dt>
+                        <dt>{{ t("Phone") }}</dt>
                         <dd>
                             <a
                                 v-if="identity.phone"
                                 :href="`tel:${identity.phone}`"
                                 >{{ identity.phone }}</a
-                            ><template v-else>Not provided</template>
+                            ><template v-else>{{ t("Not provided") }}</template>
                         </dd>
                     </div>
                     <template v-if="type === 'contacts'">
                         <div class="crm-detail-item">
-                            <dt>Company</dt>
+                            <dt>{{ t("Company") }}</dt>
                             <dd>
-                                {{ identity.company?.name ?? "Individual" }}
+                                {{ identity.company?.name ?? t("Individual") }}
                             </dd>
                         </div>
                         <div class="crm-detail-item">
-                            <dt>Secondary phone</dt>
+                            <dt>{{ t("Secondary phone") }}</dt>
                             <dd>
                                 <a
                                     v-if="identity.secondary_phone"
                                     :href="`tel:${identity.secondary_phone}`"
                                     >{{ identity.secondary_phone }}</a
-                                ><template v-else>Not provided</template
+                                ><template v-else>{{
+                                    t("Not provided")
+                                }}</template
                                 ><span
                                     v-if="
                                         identity.secondary_phone &&
@@ -187,7 +194,7 @@ function addNote() {
                             </dd>
                         </div>
                         <div class="crm-detail-item">
-                            <dt>Preferred contact method</dt>
+                            <dt>{{ t("Preferred contact method") }}</dt>
                             <dd>
                                 {{
                                     optionLabel(
@@ -198,27 +205,27 @@ function addNote() {
                             </dd>
                         </div>
                         <div class="crm-detail-item">
-                            <dt>Best contact time</dt>
+                            <dt>{{ t("Best contact time") }}</dt>
                             <dd>{{ contactTimes }}</dd>
                         </div>
                         <div class="crm-detail-item">
-                            <dt>Preferred contact days</dt>
+                            <dt>{{ t("Preferred contact days") }}</dt>
                             <dd>{{ contactDays }}</dd>
                         </div>
                         <div class="crm-detail-item crm-form-span">
-                            <dt>Address</dt>
-                            <dd>{{ identity.address || "Not provided" }}</dd>
+                            <dt>{{ t("Address") }}</dt>
+                            <dd>{{ identity.address || t("Not provided") }}</dd>
                         </div>
                         <div class="crm-detail-item">
-                            <dt>City</dt>
-                            <dd>{{ identity.city || "Not provided" }}</dd>
+                            <dt>{{ t("City") }}</dt>
+                            <dd>{{ identity.city || t("Not provided") }}</dd>
                         </div>
                         <div class="crm-detail-item">
-                            <dt>Country</dt>
-                            <dd>{{ identity.country || "Not provided" }}</dd>
+                            <dt>{{ t("Country") }}</dt>
+                            <dd>{{ identity.country || t("Not provided") }}</dd>
                         </div>
                         <div class="crm-detail-item crm-form-span">
-                            <dt>How did they hear about us?</dt>
+                            <dt>{{ t("How did they hear about us?") }}</dt>
                             <dd>
                                 {{ optionLabel("sources", identity.source) }}
                             </dd>
@@ -236,7 +243,7 @@ function addNote() {
                 />
                 <template v-else>
                     <label class="crm-field"
-                        ><span class="crm-field-label">Name</span
+                        ><span class="crm-field-label">{{ t("Name") }}</span
                         ><input
                             v-model="form.name"
                             required
@@ -250,7 +257,7 @@ function addNote() {
                         ></label
                     >
                     <label class="crm-field"
-                        ><span class="crm-field-label">Email</span
+                        ><span class="crm-field-label">{{ t("Email") }}</span
                         ><input
                             v-model="form.email"
                             type="email"
@@ -264,7 +271,7 @@ function addNote() {
                         ></label
                     >
                     <label class="crm-field"
-                        ><span class="crm-field-label">Phone</span
+                        ><span class="crm-field-label">{{ t("Phone") }}</span
                         ><input
                             v-model="form.phone"
                             type="tel"
@@ -279,14 +286,13 @@ function addNote() {
                     >
                 </template>
                 <label class="crm-checkbox crm-form-span"
-                    ><input
-                        v-model="form.accept_duplicate"
-                        type="checkbox"
-                    />Keep a separate record if a duplicate is found</label
+                    ><input v-model="form.accept_duplicate" type="checkbox" />{{
+                        t("Keep a separate record if a duplicate is found")
+                    }}</label
                 >
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="form.processing">
-                        Save changes
+                        {{ t("Save changes") }}
                     </button>
                     <Link
                         v-if="
@@ -295,7 +301,7 @@ function addNote() {
                         "
                         :href="returnTo"
                         class="crm-secondary"
-                        >Cancel</Link
+                        >{{ t("Cancel") }}</Link
                     >
                     <button
                         v-else
@@ -303,7 +309,7 @@ function addNote() {
                         class="crm-secondary"
                         @click="cancelEdit"
                     >
-                        Cancel
+                        {{ t("Cancel") }}
                     </button>
                 </div>
             </form>
@@ -312,14 +318,14 @@ function addNote() {
             class="crm-card crm-flow"
             aria-labelledby="identity-notes-title"
         >
-            <h2 id="identity-notes-title">Notes</h2>
+            <h2 id="identity-notes-title">{{ t("Notes") }}</h2>
             <form
                 v-if="editable && noteUrl"
                 class="crm-form"
                 @submit.prevent="addNote"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Add a note</span
+                    ><span class="crm-field-label">{{ t("Add a note") }}</span
                     ><textarea
                         v-model="note.body"
                         rows="4"
@@ -338,7 +344,7 @@ function addNote() {
                         class="crm-button"
                         :disabled="note.processing || !note.body.trim()"
                     >
-                        Add note
+                        {{ t("Add note") }}
                     </button>
                 </div>
                 <p
@@ -346,7 +352,7 @@ function addNote() {
                     class="crm-notice"
                     role="status"
                 >
-                    Note added.
+                    {{ t("Note added.") }}
                 </p>
             </form>
             <div v-if="identity.notes?.length" class="crm-note-history">
@@ -355,22 +361,22 @@ function addNote() {
                     :key="entry.id"
                     class="crm-note"
                 >
-                    <p>{{ entry.body }}</p>
+                    <p dir="auto">{{ entry.body }}</p>
                     <small
-                        >{{ entry.author?.name ?? "Former team member" }} ·
+                        >{{ entry.author?.name ?? t("Former team member") }} ·
                         {{ date(entry.created_at, zone) }}</small
                     >
                 </article>
             </div>
-            <p v-else class="crm-muted">No notes yet.</p>
+            <p v-else class="crm-muted">{{ t("No notes yet.") }}</p>
         </section>
         <section
             class="crm-card crm-flow crm-form-span"
             aria-labelledby="identity-history-title"
         >
-            <h2 id="identity-history-title">Change history</h2>
+            <h2 id="identity-history-title">{{ t("Change history") }}</h2>
             <p v-if="!identityHistory.length" class="crm-muted">
-                No changes recorded yet.
+                {{ t("No changes recorded yet.") }}
             </p>
             <article
                 v-for="entry in identityHistory"
@@ -379,23 +385,27 @@ function addNote() {
             >
                 <strong>{{
                     entry.event === "identity.created"
-                        ? "Record created"
-                        : "Record updated"
+                        ? t("Record created")
+                        : t("Record updated")
                 }}</strong>
                 <p>
                     {{
                         entry.changed_fields
                             .map((field) =>
                                 field === "company_id"
-                                    ? "Company"
-                                    : field.charAt(0).toUpperCase() +
-                                      field.slice(1).replaceAll("_", " "),
+                                    ? t("Company")
+                                    : t(
+                                          field.charAt(0).toUpperCase() +
+                                              field
+                                                  .slice(1)
+                                                  .replaceAll("_", " "),
+                                      ),
                             )
                             .join(", ")
                     }}
                 </p>
                 <small
-                    >{{ entry.actor?.name ?? "Former team member" }} ·
+                    >{{ entry.actor?.name ?? t("Former team member") }} ·
                     {{ date(entry.created_at, zone) }}</small
                 >
             </article>

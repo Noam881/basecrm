@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { MaintenanceRecord, Options } from "../types";
@@ -41,7 +42,8 @@ function save() {
     <form class="crm-form" @submit.prevent="save">
         <label class="crm-field">
             <span class="crm-field-label"
-                >Recorded cost ({{ record.currency ?? currency }})</span
+                >{{ tr("Recorded cost (")
+                }}{{ record.currency ?? currency }})</span
             >
             <input
                 v-model="form.cost"
@@ -52,12 +54,18 @@ function save() {
             />
         </label>
         <p class="crm-muted">
-            Recording or correcting a cost retains each previous value. It
-            creates no financial transaction.
+            {{
+                tr(
+                    "Recording or correcting a cost retains each previous value. It creates no financial transaction.",
+                )
+            }}
         </p>
         <p v-if="stale" class="crm-notice" role="alert">
-            The asset or maintenance action changed. Reload the latest cost
-            before saving.
+            {{
+                tr(
+                    "The asset or maintenance action changed. Reload the latest cost before saving.",
+                )
+            }}
         </p>
         <FormErrors :errors="form.errors" :notice="currencyError" />
         <div class="crm-form-action">
@@ -67,8 +75,8 @@ function save() {
             >
                 {{
                     record.cost === null || record.cost === undefined
-                        ? "Record cost"
-                        : "Correct recorded cost"
+                        ? tr("Record cost")
+                        : tr("Correct recorded cost")
                 }}
             </button>
             <button
@@ -77,7 +85,7 @@ function save() {
                 type="button"
                 @click="reset"
             >
-                Reload recorded cost
+                {{ tr("Reload recorded cost") }}
             </button>
         </div>
     </form>

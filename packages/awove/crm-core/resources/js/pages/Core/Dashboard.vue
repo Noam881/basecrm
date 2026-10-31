@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link, router, usePage } from "@inertiajs/vue3";
 import { reactive, ref } from "vue";
 import { type Person, type Task } from "../../types";
@@ -39,9 +40,9 @@ function apply() {
 }
 </script>
 <template>
-    <Head title="Overview" />
+    <Head :title="t('Overview')" />
     <div class="crm-heading">
-        <h1>Overview</h1>
+        <h1>{{ t("Overview") }}</h1>
         <div class="crm-form-action">
             <button
                 type="button"
@@ -50,10 +51,10 @@ function apply() {
                 aria-controls="overview-filters"
                 @click="filtersOpen = !filtersOpen"
             >
-                Filters
+                {{ t("Filters") }}
             </button>
             <Link class="crm-button" href="/leads"
-                >View leads <span aria-hidden="true">↗</span></Link
+                >{{ t("View leads") }} <span aria-hidden="true">↗</span></Link
             >
         </div>
     </div>
@@ -62,14 +63,15 @@ function apply() {
         id="overview-filters"
         v-show="filtersOpen"
         class="crm-card crm-form-grid"
-        aria-label="Overview filters"
+        :aria-label="t('Overview filters')"
         @submit.prevent="apply"
     >
         <label
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ t("Owner") }}</span
             ><select v-model="filters.owner">
-                <option value="">All accessible owners</option>
+                <option value="">{{ t("All accessible owners") }}</option>
                 <option
+                    dir="auto"
                     v-for="owner in owners"
                     :key="owner.id"
                     :value="owner.id"
@@ -79,40 +81,44 @@ function apply() {
             </select></label
         >
         <label
-            ><span class="crm-field-label">From date</span
+            ><span class="crm-field-label">{{ t("From date") }}</span
             ><input v-model="filters.from" type="date"
         /></label>
         <label
-            ><span class="crm-field-label">To date</span
+            ><span class="crm-field-label">{{ t("To date") }}</span
             ><input
                 v-model="filters.to"
                 type="date"
                 :min="filters.from || undefined"
         /></label>
         <div class="crm-form-action">
-            <button class="crm-button">Apply overview filters</button
-            ><Link href="/dashboard" class="crm-secondary">Clear filters</Link>
+            <button class="crm-button">{{ t("Apply overview filters") }}</button
+            ><Link href="/dashboard" class="crm-secondary">{{
+                t("Clear filters")
+            }}</Link>
         </div>
         <p class="crm-muted">
-            Pipeline and follow-ups use opportunity creation dates. Won deals
-            use the recorded closing date. Only records you can access are
-            included.
+            {{
+                t(
+                    "Pipeline and follow-ups use opportunity creation dates. Won deals use the recorded closing date. Only records you can access are included.",
+                )
+            }}
         </p>
     </form>
     <div class="crm-metrics">
         <div class="crm-card">
-            <span>Estimated open pipeline ({{ currency }})</span
+            <span>{{ t("Estimated open pipeline (") }}{{ currency }})</span
             ><strong>{{
-                salesOverview.estimated_pipeline ?? "Not recorded"
+                salesOverview.estimated_pipeline ?? t("Not recorded")
             }}</strong>
         </div>
         <div class="crm-card">
-            <span>Won deals in period</span
+            <span>{{ t("Won deals in period") }}</span
             ><strong>{{ salesOverview.won_count }}</strong>
         </div>
         <div class="crm-card">
-            <span>Recorded final deal value ({{ currency }})</span
-            ><strong>{{ salesOverview.won_value ?? "Not recorded" }}</strong>
+            <span>{{ t("Recorded final deal value (") }}{{ currency }})</span
+            ><strong>{{ salesOverview.won_value ?? t("Not recorded") }}</strong>
         </div>
     </div>
     <p
@@ -122,31 +128,40 @@ function apply() {
         "
         class="crm-muted"
     >
-        Won deals in the selected period missing a final value:
-        {{ salesOverview.won_missing_value }}. Accessible won deals without a
-        closing date, regardless of the selected period:
-        {{ salesOverview.won_missing_closing_date }}. Missing amounts are
-        excluded from the recorded total; undated deals cannot be assigned to a
-        closing period.
+        {{ t("Won deals in the selected period missing a final value:") }}
+        {{ salesOverview.won_missing_value
+        }}{{
+            t(
+                ". Accessible won deals without a closing date, regardless of the selected period:",
+            )
+        }}
+        {{ salesOverview.won_missing_closing_date
+        }}{{
+            t(
+                ". Missing amounts are excluded from the recorded total; undated deals cannot be assigned to a closing period.",
+            )
+        }}
     </p>
     <div class="crm-metrics">
         <Link href="/leads" class="crm-card"
-            ><span>Active leads</span
+            ><span>{{ t("Active leads") }}</span
             ><strong>{{ metrics.active }}</strong></Link
         ><Link href="/tasks?view=today" class="crm-card"
-            ><span>Due today</span><strong>{{ metrics.due }}</strong></Link
+            ><span>{{ t("Due today") }}</span
+            ><strong>{{ metrics.due }}</strong></Link
         ><Link href="/tasks?view=overdue" class="crm-card"
-            ><span>Overdue</span><strong>{{ metrics.overdue }}</strong></Link
+            ><span>{{ t("Overdue") }}</span
+            ><strong>{{ metrics.overdue }}</strong></Link
         ><Link href="/leads?view=missing" class="crm-card"
-            ><span>Without a next action</span
+            ><span>{{ t("Without a next action") }}</span
             ><strong>{{ metrics.missing }}</strong></Link
         >
     </div>
     <div class="crm-dashboard-grid">
         <section class="crm-card">
             <div class="crm-section-title">
-                <h2>Pipeline</h2>
-                <Link href="/leads">Explore →</Link>
+                <h2>{{ t("Pipeline") }}</h2>
+                <Link href="/leads">{{ t("Explore →") }}</Link>
             </div>
             <Link
                 v-for="stage in stages"
@@ -156,25 +171,32 @@ function apply() {
                 ><span><i />{{ stage.name }}</span
                 ><strong>{{ stage.count }}</strong></Link
             ><Link class="crm-stage-row" href="/leads?status=new"
-                ><span>New leads</span><strong>{{ metrics.new }}</strong></Link
+                ><span>{{ t("New leads") }}</span
+                ><strong>{{ metrics.new }}</strong></Link
             ><Link
                 v-if="metrics.unassigned !== null"
                 class="crm-stage-row"
                 href="/leads?view=unassigned"
-                ><span>Unassigned queue</span
+                ><span>{{ t("Unassigned queue") }}</span
                 ><strong>{{ metrics.unassigned }}</strong></Link
             >
         </section>
         <section class="crm-card">
             <div class="crm-section-title">
-                <h2>Upcoming follow-ups</h2>
-                <Link href="/tasks">All follow-ups →</Link>
+                <h2>{{ t("Upcoming follow-ups") }}</h2>
+                <Link href="/tasks">{{ t("All follow-ups →") }}</Link>
             </div>
             <div v-if="!tasks.length" class="crm-empty">
                 <span class="crm-empty-icon">✓</span>
-                <h3>No open follow-ups</h3>
-                <p>Create a follow-up from a lead to plan your next step.</p>
-                <Link href="/leads">Open your leads →</Link>
+                <h3>{{ t("No open follow-ups") }}</h3>
+                <p>
+                    {{
+                        t(
+                            "Create a follow-up from a lead to plan your next step.",
+                        )
+                    }}
+                </p>
+                <Link href="/leads">{{ t("Open your leads →") }}</Link>
             </div>
             <Link
                 v-for="task in tasks"
@@ -183,7 +205,7 @@ function apply() {
                 class="crm-task-row"
                 ><span class="crm-task-dot" />
                 <div>
-                    <strong>{{ task.title }}</strong>
+                    <strong dir="auto">{{ task.title }}</strong>
                     <p>{{ task.lead?.title }}</p>
                 </div>
                 <span class="crm-badge">{{ task.priority }}</span></Link

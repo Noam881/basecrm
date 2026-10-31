@@ -10,7 +10,7 @@ final readonly class Column
 
     public function metadata(): array
     {
-        return ['id' => $this->id, 'label' => Str::ucfirst(ltrim($this->label)), 'type' => $this->type, 'group' => $this->group, 'options' => $this->options, 'width' => $this->width];
+        return ['id' => $this->id, 'label' => str_starts_with($this->id, 'custom:') ? Str::ucfirst(ltrim($this->label)) : (string) __(Str::ucfirst(ltrim($this->label))), 'type' => $this->type, 'group' => str_starts_with($this->id, 'custom:') ? $this->group : (string) __($this->group), 'options' => $this->options, 'width' => $this->width];
     }
 
     public function operators(): array

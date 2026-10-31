@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { usePage } from "@inertiajs/vue3";
 import { date } from "../../../../crm-core/resources/js/types";
 import type { History } from "../types";
@@ -34,21 +35,22 @@ function fieldName(field: string) {
         document_url: "Document link",
         next_due_on: "Next occurrence",
     };
-    if (labels[key]) return labels[key];
+    if (labels[key]) return tr(labels[key]);
     const value = key.replaceAll("_", " ");
     return value[0].toUpperCase() + value.slice(1);
 }
 </script>
 <template>
-    <section class="crm-card crm-flow" aria-label="Change history">
-        <h2>History</h2>
+    <section class="crm-card crm-flow" :aria-label="tr('Change history')">
+        <h2>{{ tr("History") }}</h2>
         <article v-for="entry in history" :key="entry.id">
-            <strong>{{ labels[entry.event] ?? entry.event }}</strong>
+            <strong>{{ tr(labels[entry.event] ?? entry.event) }}</strong>
             <p v-if="entry.changed_fields?.length">
                 {{ entry.changed_fields.map(fieldName).join(", ") }}
             </p>
             <p v-if="entry.details?.previous_completed_on">
-                Previous completion: {{ entry.details.previous_completed_on }}
+                {{ tr("Previous completion:") }}
+                {{ entry.details.previous_completed_on }}
             </p>
             <p
                 v-if="
@@ -56,10 +58,10 @@ function fieldName(field: string) {
                     entry.details?.received_on
                 "
             >
-                Received {{ entry.details.received_on }} ·
+                {{ tr("Received") }} {{ entry.details.received_on }} ·
                 {{
                     entry.details.quantity ??
-                    (entry.details.complete ? "Complete" : "Partial")
+                    (entry.details.complete ? tr("Complete") : tr("Partial"))
                 }}
             </p>
             <p
@@ -68,11 +70,11 @@ function fieldName(field: string) {
                     entry.details?.outstanding_items
                 "
             >
-                Outstanding at this receipt:
+                {{ tr("Outstanding at this receipt:") }}
                 {{ entry.details.outstanding_items }}
             </p>
             <small
-                >{{ entry.actor?.name ?? "Former staff" }} ·
+                >{{ entry.actor?.name ?? tr("Former staff") }} ·
                 {{ date(entry.created_at, zone) }}</small
             >
         </article>

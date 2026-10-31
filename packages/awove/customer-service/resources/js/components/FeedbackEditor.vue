@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import type { Feedback, Options } from "../types";
 defineOptions({ inheritAttrs: false });
@@ -38,13 +39,18 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <p class="crm-form-span">
-            Rating scale: 1 = Very dissatisfied, 2 = Dissatisfied, 3 = Neutral,
-            4 = Satisfied, 5 = Very satisfied.
+            {{
+                tr(
+                    "Rating scale: 1 = Very dissatisfied, 2 = Dissatisfied, 3 = Neutral, 4 = Satisfied, 5 = Very satisfied.",
+                )
+            }}
         </p>
         <label class="crm-field"
-            ><span class="crm-field-label">Related request (optional)</span
+            ><span class="crm-field-label">{{
+                tr("Related request (optional)")
+            }}</span
             ><select v-model="form.request_id" @change="selectRequest">
-                <option :value="null">No request</option>
+                <option :value="null">{{ tr("No request") }}</option>
                 <option
                     v-for="request in relatedRequests"
                     :key="request.id"
@@ -60,7 +66,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Date received</span
+            ><span class="crm-field-label">{{ tr("Date received") }}</span
             ><input v-model="form.received_on" type="date" required /><small
                 v-if="form.errors.received_on"
                 role="alert"
@@ -69,9 +75,9 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Contact</span
+            ><span class="crm-field-label">{{ tr("Contact") }}</span
             ><select v-model="form.contact_id">
-                <option :value="null">Choose contact</option>
+                <option :value="null">{{ tr("Choose contact") }}</option>
                 <option
                     v-for="contact in contacts"
                     :key="contact.id"
@@ -87,9 +93,9 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Company</span
+            ><span class="crm-field-label">{{ tr("Company") }}</span
             ><select v-model="form.company_id">
-                <option :value="null">Choose company</option>
+                <option :value="null">{{ tr("Choose company") }}</option>
                 <option
                     v-for="company in companies"
                     :key="company.id"
@@ -105,7 +111,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Rating (1–5)</span
+            ><span class="crm-field-label">{{ tr("Rating (1–5)") }}</span
             ><select v-model="form.rating">
                 <option v-for="rating in 5" :key="rating" :value="rating">
                     {{ rating }}
@@ -118,9 +124,9 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ tr("Owner") }}</span
             ><select v-model="form.owner_id" :disabled="!canAssign">
-                <option :value="null">Unassigned</option>
+                <option :value="null">{{ tr("Unassigned") }}</option>
                 <option
                     v-for="owner in owners"
                     :key="owner.id"
@@ -131,7 +137,7 @@ function save() {
             </select></label
         >
         <label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Comments</span
+            ><span class="crm-field-label">{{ tr("Comments") }}</span
             ><textarea
                 v-model="form.comments"
                 required
@@ -147,12 +153,12 @@ function save() {
         <label class="crm-field crm-form-span"
             ><span
                 ><input v-model="form.action_required" type="checkbox" />
-                Follow-up action needed</span
+                {{ tr("Follow-up action needed") }}</span
             ></label
         >
         <template v-if="form.action_required"
             ><label class="crm-field"
-                ><span class="crm-field-label">Follow-up date</span
+                ><span class="crm-field-label">{{ tr("Follow-up date") }}</span
                 ><input
                     v-model="form.follow_up_on"
                     type="date"
@@ -164,17 +170,19 @@ function save() {
                     >{{ form.errors.follow_up_on }}</small
                 ></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Follow-up completed on</span
+                ><span class="crm-field-label">{{
+                    tr("Follow-up completed on")
+                }}</span
                 ><input v-model="form.followed_up_on" type="date" /></label
         ></template>
         <div class="crm-form-action">
             <button class="crm-button" :disabled="form.processing">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save feedback"
-                          : "Add feedback"
+                          ? tr("Save feedback")
+                          : tr("Add feedback")
                 }}
             </button>
         </div>

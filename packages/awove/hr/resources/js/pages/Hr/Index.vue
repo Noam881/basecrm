@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive, ref } from "vue";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
@@ -37,9 +38,9 @@ const metricLabels: Record<string, string> = {
 };
 </script>
 <template>
-    <Head title="Human resources" />
+    <Head :title="tr('Human resources')" />
     <div class="crm-heading">
-        <h1>Human resources</h1>
+        <h1>{{ tr("Human resources") }}</h1>
         <div class="crm-form-action">
             <a
                 v-if="canExport"
@@ -48,24 +49,24 @@ const metricLabels: Record<string, string> = {
                     '/hr/export?' +
                     queryString({ ...props.filters, section, ...table.state })
                 "
-                >Export {{ section }} (CSV)</a
+                >{{ tr("Export") }} {{ tr(section) }} {{ tr("(CSV)") }}</a
             ><button
                 v-if="canCreate"
                 class="crm-button"
                 @click="create = !create"
             >
-                {{ create ? "Close form" : "Add record" }}
+                {{ create ? tr("Close form") : tr("Add record") }}
             </button>
         </div>
     </div>
     <div class="crm-flow">
-        <nav class="crm-tabs" aria-label="HR sections">
+        <nav class="crm-tabs" :aria-label="tr('HR sections')">
             <Link
                 v-for="s in sections"
                 :key="s"
                 :href="'/hr?section=' + s"
                 :aria-current="section === s ? 'page' : undefined"
-                >{{ sectionLabels[s] }}</Link
+                >{{ tr(sectionLabels[s]) }}</Link
             >
         </nav>
         <div class="crm-metrics">
@@ -74,15 +75,15 @@ const metricLabels: Record<string, string> = {
                 :key="key"
                 class="crm-card"
                 :href="'/hr?section=' + key + '&view=open'"
-                ><span>{{ metricLabels[key] }}</span
+                ><span>{{ tr(metricLabels[key]) }}</span
                 ><strong>{{ value }}</strong></Link
             >
         </div>
         <form class="crm-card crm-form-grid" @submit.prevent="apply">
             <label class="crm-field"
-                ><span class="crm-field-label">Owner filter</span
+                ><span class="crm-field-label">{{ tr("Owner filter") }}</span
                 ><select v-model="filters.owner_id">
-                    <option value="">All accessible owners</option>
+                    <option value="">{{ tr("All accessible owners") }}</option>
                     <option
                         v-for="owner in filterOwners"
                         :key="owner.id"
@@ -92,56 +93,63 @@ const metricLabels: Record<string, string> = {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">View</span
+                ><span class="crm-field-label">{{ tr("View") }}</span
                 ><select v-model="filters.view">
-                    <option value="">All active records</option>
-                    <option value="open">Open</option>
+                    <option value="">{{ tr("All active records") }}</option>
+                    <option value="open">{{ tr("Open") }}</option>
                     <option
                         v-if="section === 'candidates' || section === 'cases'"
                         value="overdue"
                     >
-                        Overdue
+                        {{ tr("Overdue") }}
                     </option>
-                    <option value="archived">Archived</option>
+                    <option value="archived">{{ tr("Archived") }}</option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">From date</span
+                ><span class="crm-field-label">{{ tr("From date") }}</span
                 ><input v-model="filters.from" type="date" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">To date</span
+                ><span class="crm-field-label">{{ tr("To date") }}</span
                 ><input
                     v-model="filters.to"
                     type="date"
                     :min="filters.from || undefined" /></label
             ><label v-if="section === 'cases'" class="crm-field"
-                ><span class="crm-field-label">Purpose filter</span
+                ><span class="crm-field-label">{{ tr("Purpose filter") }}</span
                 ><select v-model="filters.kind">
-                    <option value="">Onboarding and offboarding</option>
-                    <option value="onboarding">Onboarding</option>
-                    <option value="offboarding">Offboarding</option>
+                    <option value="">
+                        {{ tr("Onboarding and offboarding") }}
+                    </option>
+                    <option value="onboarding">{{ tr("Onboarding") }}</option>
+                    <option value="offboarding">{{ tr("Offboarding") }}</option>
                 </select></label
             >
             <p class="crm-muted">
-                Periods use employment start, vacancy opening, candidate
-                next-action and case due dates. Only records within your
-                permissions are shown.
+                {{
+                    tr(
+                        "Periods use employment start, vacancy opening, candidate next-action and case due dates. Only records within your permissions are shown.",
+                    )
+                }}
             </p>
             <div class="crm-form-action">
-                <button class="crm-button">Apply filters</button
-                ><Link :href="'/hr?section=' + section" class="crm-secondary"
-                    >Clear filters</Link
-                >
+                <button class="crm-button">{{ tr("Apply filters") }}</button
+                ><Link :href="'/hr?section=' + section" class="crm-secondary">{{
+                    tr("Clear filters")
+                }}</Link>
             </div>
         </form>
         <section v-if="create && canCreate" class="crm-card crm-flow">
-            <h2>New {{ sectionLabels[section].toLowerCase() }} record</h2>
+            <h2>
+                {{ tr("New") }} {{ tr(sectionLabels[section]).toLowerCase() }}
+                {{ tr("record") }}
+            </h2>
             <RecordForm :section="section" :options="props" />
         </section>
         <DataTable
             :payload="table"
             endpoint="/hr"
             :base-query="{ ...props.filters, section }"
-            :title="sectionLabels[section]"
+            :title="tr(sectionLabels[section])"
         />
     </div>
 </template>

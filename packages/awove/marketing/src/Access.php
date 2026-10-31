@@ -48,7 +48,7 @@ class Access
     {
         $u = self::actor($user);
         self::view($u, $record, $kind);
-        abort_if($record->getAttribute('archived_at') !== null, 403, 'Archived records are read only.');
+        abort_if($record->getAttribute('archived_at') !== null, 403, __('Archived records are read only.'));
         abort_unless($u->can('marketing.'.$kind.'.edit.all') || ($record->getAttribute('owner_id') === $u->id && $u->can('marketing.'.$kind.'.edit.own')), 403);
     }
 
@@ -71,7 +71,7 @@ class Access
             return $id;
         } abort_unless($u->can('marketing.'.$kind.'.assign') || $id === $u->id, 403);
         if ($id !== null) {
-            abort_unless(User::whereKey($id)->where('active', true)->exists() && self::available(User::find($id), $kind), 422, 'Choose an active owner with Marketing access.');
+            abort_unless(User::whereKey($id)->where('active', true)->exists() && self::available(User::find($id), $kind), 422, __('Choose an active owner with Marketing access.'));
         }
 
         return $id;

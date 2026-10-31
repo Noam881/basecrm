@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { usePage } from "@inertiajs/vue3";
 import { date } from "../../../../crm-core/resources/js/types";
 import type { History } from "../types";
@@ -21,16 +22,19 @@ const fields: Record<string, string> = {
 };
 function name(field: string) {
     return (
-        fields[field] ??
+        (fields[field] ? tr(fields[field]) : undefined) ??
         field.replaceAll("_", " ").replace(/^./, (v) => v.toUpperCase())
     );
 }
 </script>
 <template>
-    <section class="crm-card crm-flow" aria-label="Finance change history">
-        <h2>History</h2>
+    <section
+        class="crm-card crm-flow"
+        :aria-label="tr('Finance change history')"
+    >
+        <h2>{{ tr("History") }}</h2>
         <article v-for="entry in history" :key="entry.id">
-            <strong>{{ labels[entry.event] ?? entry.event }}</strong>
+            <strong>{{ tr(labels[entry.event] ?? entry.event) }}</strong>
             <p v-if="entry.changed_fields.length">
                 {{ entry.changed_fields.map(name).join(", ") }}
             </p>
@@ -39,7 +43,7 @@ function name(field: string) {
             </p>
             <p v-if="entry.details.reason">{{ entry.details.reason }}</p>
             <small
-                >{{ entry.actor?.name ?? "Former staff" }} ·
+                >{{ entry.actor?.name ?? tr("Former staff") }} ·
                 {{ date(entry.created_at, zone) }}</small
             >
         </article>

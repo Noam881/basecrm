@@ -5,8 +5,10 @@ namespace App\Providers;
 use App\Auth\MagicLogin;
 use App\Models\User;
 use App\Notifications\MagicLoginLink;
+use App\Support\Localization;
 use Awove\Core\Events\SignInLinkRequested;
 use Carbon\CarbonImmutable;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -31,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        Localization::register();
+        $this->app->booted(fn () => Localization::apply());
+        Event::listen(JobProcessing::class, fn () => Localization::apply());
         Event::listen(SignInLinkRequested::class, function (SignInLinkRequested $event): void {
             $user = User::where('active', true)->find($event->userId);
             if ($user) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive } from "vue";
 import DataTable from "../../../../../crm-core/resources/js/components/table/DataTable.vue";
@@ -25,23 +26,23 @@ function apply() {
 }
 </script>
 <template>
-    <Head title="Payroll preparation" />
+    <Head :title="tr('Payroll preparation')" />
     <div class="crm-heading">
-        <h1>Payroll preparation</h1>
+        <h1>{{ tr("Payroll preparation") }}</h1>
         <a
             v-if="canExport"
             class="crm-secondary"
             :href="`/finance/payroll/export?${queryString({ ...props.filters, ...table.state })}`"
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
         <FinanceNav :sections="sections" />
         <form class="crm-card crm-form-grid" @submit.prevent="apply">
             <label class="crm-field"
-                ><span class="crm-field-label">Owner</span
+                ><span class="crm-field-label">{{ tr("Owner") }}</span
                 ><select v-model="filters.owner_id">
-                    <option value="">All permitted owners</option>
+                    <option value="">{{ tr("All permitted owners") }}</option>
                     <option
                         v-for="owner in owners"
                         :key="owner.id"
@@ -51,9 +52,9 @@ function apply() {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Status</span
+                ><span class="crm-field-label">{{ tr("Status") }}</span
                 ><select v-model="filters.status">
-                    <option value="">Any status</option>
+                    <option value="">{{ tr("Any status") }}</option>
                     <option
                         v-for="(label, key) in statuses"
                         :key="key"
@@ -63,10 +64,10 @@ function apply() {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Period from</span
+                ><span class="crm-field-label">{{ tr("Period from") }}</span
                 ><input v-model="filters.from" type="date" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Period to</span
+                ><span class="crm-field-label">{{ tr("Period to") }}</span
                 ><input v-model="filters.to" type="date" /></label
             ><label class="crm-checkbox"
                 ><input
@@ -74,25 +75,25 @@ function apply() {
                     type="checkbox"
                     true-value="1"
                     false-value=""
-                />Include archived</label
+                />{{ tr("Include archived") }}</label
             >
             <div class="crm-form-action">
-                <button class="crm-secondary">Apply filters</button
-                ><Link href="/finance/payroll" class="crm-secondary"
-                    >Clear</Link
-                >
+                <button class="crm-secondary">{{ tr("Apply filters") }}</button
+                ><Link href="/finance/payroll" class="crm-secondary">{{
+                    tr("Clear")
+                }}</Link>
             </div>
         </form>
         <section v-if="canCreate" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add payroll preparation</summary>
+                <summary>{{ tr("Add payroll preparation") }}</summary>
                 <PayrollEditor v-bind="props" />
             </details>
         </section>
         <DataTable
             :payload="table"
             endpoint="/finance/payroll"
-            title="Payroll preparations"
+            :title="tr('Payroll preparations')"
             :base-query="props.filters"
         />
     </div>

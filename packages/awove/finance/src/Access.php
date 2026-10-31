@@ -47,7 +47,7 @@ class Access
     {
         $user = self::actor($user, $cap);
         self::view($user, $record, $cap);
-        abort_if($record->getAttribute('archived_at') !== null, 403, 'Archived records are read only.');
+        abort_if($record->getAttribute('archived_at') !== null, 403, __('Archived records are read only.'));
         abort_unless($user->can('finance.'.$cap.'.edit.all') || ($record->getAttribute('owner_id') === $user->id && $user->can('finance.'.$cap.'.edit.own')), 403);
     }
 

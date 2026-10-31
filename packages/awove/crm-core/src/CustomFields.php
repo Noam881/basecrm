@@ -13,7 +13,7 @@ class CustomFields
         $definitions = Installation::manifest()['custom_fields'];
         foreach ($values as $key => $value) {
             if (! isset($definitions[$key])) {
-                throw ValidationException::withMessages(['custom_fields.'.$key => 'Unknown field.']);
+                throw ValidationException::withMessages(['custom_fields.'.$key => __('Unknown field.')]);
             }
         }
         foreach ($definitions as $key => $d) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import RoutineFields from "../../../../crm-core/resources/js/components/RoutineFields.vue";
 import { historicalOwner, type Options, type Routine } from "../types";
@@ -35,10 +36,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save routine"
-                          : "Create routine"
+                          ? tr("Save routine")
+                          : tr("Create routine")
                 }}
             </button>
         </div>

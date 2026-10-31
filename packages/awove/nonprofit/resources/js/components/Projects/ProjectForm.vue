@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import Errors from "./Errors.vue";
@@ -55,12 +56,12 @@ function save() {
             :disabled="!!record && !record.editable"
         >
             <label class="crm-field"
-                ><span class="crm-field-label">Project name</span
+                ><span class="crm-field-label">{{ tr("Project name") }}</span
                 ><input v-model="form.name" required maxlength="180" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Project owner</span
+                ><span class="crm-field-label">{{ tr("Project owner") }}</span
                 ><select v-model="form.owner_id" :disabled="!canAssign">
-                    <option :value="null">Unassigned</option>
+                    <option :value="null">{{ tr("Unassigned") }}</option>
                     <option
                         v-for="owner in owners"
                         :key="owner.id"
@@ -71,7 +72,7 @@ function save() {
                 </select></label
             >
             <label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Objective</span
+                ><span class="crm-field-label">{{ tr("Objective") }}</span
                 ><textarea
                     v-model="form.objective"
                     required
@@ -80,10 +81,10 @@ function save() {
                 />
             </label>
             <label class="crm-field"
-                ><span class="crm-field-label">Start date</span
+                ><span class="crm-field-label">{{ tr("Start date") }}</span
                 ><input v-model="form.starts_on" type="date" required /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">End date</span
+                ><span class="crm-field-label">{{ tr("End date") }}</span
                 ><input
                     v-model="form.ends_on"
                     type="date"
@@ -91,7 +92,7 @@ function save() {
                     :min="form.starts_on"
             /></label>
             <label class="crm-field"
-                ><span class="crm-field-label">Project status</span
+                ><span class="crm-field-label">{{ tr("Project status") }}</span
                 ><select v-model="form.status">
                     <option
                         v-for="(label, key) in statuses"
@@ -104,16 +105,18 @@ function save() {
             >
             <label v-if="canViewBudget" class="crm-field"
                 ><span class="crm-field-label"
-                    >Planned budget ({{ record?.currency ?? currency }})</span
+                    >{{ tr("Planned budget (")
+                    }}{{ record?.currency ?? currency }})</span
                 ><input
                     v-model="form.planned_budget"
                     type="text"
                     inputmode="decimal"
                     :disabled="!canManageBudget || !!currencyError"
-                /><small
-                    >Optional. Revised amounts retain previous budget
-                    snapshots.</small
-                ></label
+                /><small>{{
+                    tr(
+                        "Optional. Revised amounts retain previous budget snapshots.",
+                    )
+                }}</small></label
             >
         </fieldset>
         <p
@@ -124,19 +127,23 @@ function save() {
             {{ currencyError }}
         </p>
         <p v-if="stale" class="crm-notice" role="alert">
-            This project changed. Reload the latest record before saving.
+            {{
+                tr(
+                    "This project changed. Reload the latest record before saving.",
+                )
+            }}
         </p>
         <Errors :errors="form.errors" />
         <div v-if="!record || record.editable" class="crm-form-action">
             <button class="crm-button" :disabled="form.processing || stale">
-                {{ record ? "Save project" : "Create project" }}</button
+                {{ record ? tr("Save project") : tr("Create project") }}</button
             ><button
                 v-if="stale"
                 class="crm-secondary"
                 type="button"
                 @click="reset"
             >
-                Reload project
+                {{ tr("Reload project") }}
             </button>
         </div>
     </form>

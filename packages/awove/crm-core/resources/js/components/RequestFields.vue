@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import WorkBaseFields from "./WorkBaseFields.vue";
 // Modules retain their own lifecycle and persistence around the shared controls.
 export interface RequestDraft {
@@ -26,13 +27,13 @@ defineProps<{
         :owners="owners"
         :errors="errors"
         :can-assign="canAssign"
-        title-label="Subject"
+        :title-label="t('Subject')"
         title-error-key="subject"
         :description-required="true"
         :due-required="false"
     />
     <label class="crm-field crm-form-span">
-        <span class="crm-field-label">Next action</span>
+        <span class="crm-field-label">{{ t("Next action") }}</span>
         <textarea
             v-model="model.next_action"
             rows="2"

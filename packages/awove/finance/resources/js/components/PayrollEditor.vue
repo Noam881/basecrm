@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import EmployeeReferenceSelect from "../../../../crm-core/resources/js/components/EmployeeReferenceSelect.vue";
 import type { PayrollOptions, PayrollRecord } from "../payroll";
@@ -45,13 +46,16 @@ function save() {
             :error="form.errors.employee_reference_id"
         />
         <p v-else class="crm-muted">
-            Employee reference is restricted; the existing link will be
-            retained.
+            {{
+                tr(
+                    "Employee reference is restricted; the existing link will be retained.",
+                )
+            }}
         </p>
         <label v-if="canAssign" class="crm-field"
-            ><span class="crm-field-label">Owner</span
+            ><span class="crm-field-label">{{ tr("Owner") }}</span
             ><select v-model="form.owner_id">
-                <option :value="null">Unassigned</option>
+                <option :value="null">{{ tr("Unassigned") }}</option>
                 <option
                     v-for="owner in owners"
                     :key="owner.id"
@@ -62,7 +66,7 @@ function save() {
             </select></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Period start</span
+            ><span class="crm-field-label">{{ tr("Period start") }}</span
             ><input v-model="form.period_start_on" type="date" required /><small
                 v-if="form.errors.period_start_on"
                 role="alert"
@@ -71,7 +75,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Period end</span
+            ><span class="crm-field-label">{{ tr("Period end") }}</span
             ><input v-model="form.period_end_on" type="date" required /><small
                 v-if="form.errors.period_end_on"
                 role="alert"
@@ -80,7 +84,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Status</span
+            ><span class="crm-field-label">{{ tr("Status") }}</span
             ><select v-model="form.status">
                 <option
                     v-for="(label, key) in statuses"
@@ -92,7 +96,7 @@ function save() {
             </select></label
         >
         <label v-if="form.status === 'sent-to-payroll'" class="crm-field"
-            ><span class="crm-field-label">Manually sent date</span
+            ><span class="crm-field-label">{{ tr("Manually sent date") }}</span
             ><input v-model="form.sent_on" type="date" required /><small
                 v-if="form.errors.sent_on"
                 role="alert"
@@ -101,10 +105,14 @@ function save() {
             ></label
         >
         <div class="crm-form-span crm-flow">
-            <h3>Agreed manual inputs</h3>
+            <h3>{{ tr("Agreed manual inputs") }}</h3>
             <p class="crm-muted">
-                {{ record?.currency ?? currency }} · Record reviewed inputs for
-                this period. No payroll amount is calculated.
+                {{ record?.currency ?? currency }}
+                {{
+                    tr(
+                        "· Record reviewed inputs for this period. No payroll amount is calculated.",
+                    )
+                }}
             </p>
         </div>
         <label v-for="field in schema" :key="field.key" class="crm-field"
@@ -135,7 +143,7 @@ function save() {
             ></label
         >
         <label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Notes</span
+            ><span class="crm-field-label">{{ tr("Notes") }}</span
             ><textarea v-model="form.notes" rows="3" maxlength="20000" />
         </label>
         <div
@@ -155,10 +163,10 @@ function save() {
             >
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save preparation"
-                          : "Create preparation"
+                          ? tr("Save preparation")
+                          : tr("Create preparation")
                 }}
             </button>
         </div>

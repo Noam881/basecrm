@@ -108,7 +108,7 @@ class KnowledgeController
             $owners[] = $owner;
         }$ids = Access::query($u, $s)->distinct()->pluck('owner_id');
 
-        return ['sections' => $this->sections($u), 'owners' => $owners, 'currentOwnerId' => $u->id, 'filterOwners' => config('auth.providers.users.model')::whereIn('id', $ids)->orderBy('name')->get(['id', 'name']), 'kinds' => Records::KINDS, 'statuses' => Records::statuses(), 'renewalStatuses' => Records::renewalStatuses(), 'today' => now(Installation::settings()['timezone'])->toDateString(), 'canCreate' => $u->can(Access::prefix($s).'.create'), 'canAssign' => $u->can(Access::prefix($s).'.assign'), 'canArchive' => $u->can(Access::prefix($s).'.archive'), 'canExport' => $u->can(Access::prefix($s).'.export'), 'canViewDocuments' => $u->can('knowledge.documents.view'), 'canManageDocuments' => $u->can('knowledge.documents.view') && $u->can('knowledge.documents.manage'), 'canViewSystemReferences' => $u->can('knowledge.systems.references.view'), 'canEditSystemReferences' => $u->can('knowledge.systems.references.view') && $u->can('knowledge.systems.references.edit')];
+        return ['sections' => $this->sections($u), 'owners' => $owners, 'currentOwnerId' => $u->id, 'filterOwners' => config('auth.providers.users.model')::whereIn('id', $ids)->orderBy('name')->get(['id', 'name']), 'kinds' => array_map(fn ($label) => (string) __($label), Records::KINDS), 'statuses' => Records::statuses(), 'renewalStatuses' => Records::renewalStatuses(), 'today' => now(Installation::settings()['timezone'])->toDateString(), 'canCreate' => $u->can(Access::prefix($s).'.create'), 'canAssign' => $u->can(Access::prefix($s).'.assign'), 'canArchive' => $u->can(Access::prefix($s).'.archive'), 'canExport' => $u->can(Access::prefix($s).'.export'), 'canViewDocuments' => $u->can('knowledge.documents.view'), 'canManageDocuments' => $u->can('knowledge.documents.view') && $u->can('knowledge.documents.manage'), 'canViewSystemReferences' => $u->can('knowledge.systems.references.view'), 'canEditSystemReferences' => $u->can('knowledge.systems.references.view') && $u->can('knowledge.systems.references.edit')];
     }
 
     private function serialize($u, Model $r): array
@@ -251,7 +251,7 @@ class KnowledgeController
         $s = $this->filters($r);
         abort_unless(Access::fresh($r->user())->can(Access::prefix($s).'.export'), 403);
         $q = app(Query::class)->filtered($this->query($r, $s), 'knowledge.'.$s, $r);
-        abort_if((clone $q)->count() > 5000, 422, 'Narrow the filters to export at most 5,000 Knowledge records.');
+        abort_if((clone $q)->count() > 5000, 422, __('Narrow the filters to export at most 5,000 Knowledge records.'));
         $headers = match ($s) {
             'library' => ['id', 'kind', 'title', 'category', 'relevant_role', 'purpose', 'use_classification', 'revision', 'revised_on', 'updated_on', 'status', 'owner_id'],'renewals' => ['id', 'name', 'provider', 'expires_on', 'remind_on', 'status', 'owner_id'],'systems' => ['id', 'name', 'owner_id'], default => abort(404)
         };

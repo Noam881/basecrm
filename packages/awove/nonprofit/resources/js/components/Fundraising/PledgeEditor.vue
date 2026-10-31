@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { Options, Constituent, Pledge } from "./types";
@@ -66,39 +67,53 @@ function save() {
             :disabled="(!!record && !editable) || !!currencyError"
         >
             <label class="crm-field"
-                ><span class="crm-field-label">Pledge reference (optional)</span
+                ><span class="crm-field-label">{{
+                    tr("Pledge reference (optional)")
+                }}</span
                 ><input v-model="f.reference" maxlength="120" /></label
             ><label class="crm-field"
                 ><span class="crm-field-label"
-                    >Pledged amount ({{ record?.currency ?? currency }})</span
+                    >{{ tr("Pledged amount (")
+                    }}{{ record?.currency ?? currency }})</span
                 ><input
                     v-model="f.amount"
                     required
                     inputmode="decimal"
                     type="text"
-                    aria-label="Pledged amount" /></label
+                    :aria-label="tr('Pledged amount')" /></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Expected donation date</span
+                ><span class="crm-field-label">{{
+                    tr("Expected donation date")
+                }}</span
                 ><input v-model="f.expected_on" required type="date" /></label
             ><label class="crm-field crm-form-span"
-                ><span class="crm-field-label">Donation restrictions</span
+                ><span class="crm-field-label">{{
+                    tr("Donation restrictions")
+                }}</span
                 ><textarea
                     v-model="f.restrictions"
                     rows="3"
                     maxlength="10000"
-                    placeholder="Leave blank if unrestricted"
+                    :placeholder="tr('Leave blank if unrestricted')"
                 />
             </label>
         </fieldset>
         <p class="crm-muted crm-form-span">
-            A pledge is an expectation, not a receipt. Saving creates no Finance
-            transaction.
+            {{
+                tr(
+                    "A pledge is an expectation, not a receipt. Saving creates no Finance transaction.",
+                )
+            }}
         </p>
         <p v-if="currencyError" class="crm-notice crm-form-span" role="alert">
             {{ currencyError }}
         </p>
         <p v-if="stale" class="crm-notice crm-form-span" role="alert">
-            The pledge or fundraising context changed. Reload before saving.
+            {{
+                tr(
+                    "The pledge or fundraising context changed. Reload before saving.",
+                )
+            }}
         </p>
         <Errors :errors="f.errors" />
         <div v-if="!record || editable" class="crm-form-action">
@@ -106,14 +121,14 @@ function save() {
                 class="crm-button"
                 :disabled="stale || f.processing || !!currencyError"
             >
-                {{ record ? "Save pledge" : "Add pledge" }}</button
+                {{ record ? tr("Save pledge") : tr("Add pledge") }}</button
             ><button
                 v-if="stale"
                 class="crm-secondary"
                 type="button"
                 @click="reset"
             >
-                Reload pledge form
+                {{ tr("Reload pledge form") }}
             </button>
         </div>
     </form>

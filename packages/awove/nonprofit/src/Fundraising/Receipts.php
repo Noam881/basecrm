@@ -130,12 +130,12 @@ class Receipts
                 $charge = app(Ledger::class)->query($u, 'collections')->lockForUpdate()->findOrFail($data['finance_record_id']);
                 $ref = $this->reference($u, $c, $charge->id, (int) $data['payment_id']);
                 abort_unless($ref !== null, 403);
-                abort_unless($charge->version === (int) $data['finance_version'], 409, 'The Finance record changed. Reload available receipts.');
+                abort_unless($charge->version === (int) $data['finance_version'], 409, __('The Finance record changed. Reload available receipts.'));
                 if ($ref['currency'] !== $p->getAttribute('currency')) {
-                    throw ValidationException::withMessages(['payment_id' => 'Link receipts only in this pledge’s retained currency; no conversion is performed.']);
+                    throw ValidationException::withMessages(['payment_id' => __('Link receipts only in this pledge’s retained currency; no conversion is performed.')]);
                 }
                 if (ReceiptLink::where('payment_id', $ref['payment_id'])->whereNull('archived_at')->exists()) {
-                    throw ValidationException::withMessages(['payment_id' => 'This actual payment already has an active pledge link.']);
+                    throw ValidationException::withMessages(['payment_id' => __('This actual payment already has an active pledge link.')]);
                 }
                 $link = ReceiptLink::create(['pledge_id' => $p->id, 'finance_record_id' => $charge->id, 'payment_id' => $ref['payment_id'], 'actor_id' => $u->id, 'version' => 1]);
                 $p->update(['version' => $p->version + 1]);
@@ -146,7 +146,7 @@ class Receipts
             });
         } catch (QueryException $e) {
             if ($e->getCode() === '23505' && str_contains($e->getMessage(), 'nonprofit_one_active_pledge_receipt')) {
-                throw ValidationException::withMessages(['payment_id' => 'This actual payment already has an active pledge link.']);
+                throw ValidationException::withMessages(['payment_id' => __('This actual payment already has an active pledge link.')]);
             }throw $e;
         }
     }

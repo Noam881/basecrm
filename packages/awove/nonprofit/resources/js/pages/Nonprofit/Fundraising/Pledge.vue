@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import HistoryList from "../../../../../../crm-core/resources/js/components/HistoryList.vue";
@@ -87,19 +88,23 @@ function archive() {
 }
 </script>
 <template>
-    <Head :title="record.reference ?? 'Pledge #' + record.id" /><Link
+    <Head
+        :title="record.reference ?? tr('Pledge #{id}', { id: record.id })"
+    /><Link
         class="crm-back"
         :href="`/nonprofit/fundraising/constituents/${record.constituent.id}`"
         >← {{ record.constituent.relationship.name }}</Link
     >
     <div class="crm-heading">
-        <h1>{{ record.reference ?? "Pledge #" + record.id }}</h1>
-        <span v-if="record.archived_at" class="crm-badge">Archived</span>
+        <h1>{{ record.reference ?? tr("Pledge #{id}", { id: record.id }) }}</h1>
+        <span v-if="record.archived_at" class="crm-badge">{{
+            tr("Archived")
+        }}</span>
     </div>
     <div class="crm-flow">
         <NonprofitNav :sections="sections" />
         <section class="crm-card crm-flow">
-            <h2>Pledge details</h2>
+            <h2>{{ tr("Pledge details") }}</h2>
             <PledgeEditor
                 v-if="canManagePledges"
                 v-bind="p"
@@ -107,28 +112,31 @@ function archive() {
             />
             <dl v-else class="crm-detail-grid">
                 <div class="crm-detail-item">
-                    <dt>Pledged amount</dt>
+                    <dt>{{ tr("Pledged amount") }}</dt>
                     <dd>{{ record.amount }} {{ record.currency }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Expected donation date</dt>
+                    <dt>{{ tr("Expected donation date") }}</dt>
                     <dd>{{ record.expected_on }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Donation restrictions</dt>
-                    <dd>{{ record.restrictions ?? "Unrestricted" }}</dd>
+                    <dt>{{ tr("Donation restrictions") }}</dt>
+                    <dd>{{ record.restrictions ?? tr("Unrestricted") }}</dd>
                 </div>
             </dl>
         </section>
         <section v-if="canViewReceipts && actuals" class="crm-card crm-flow">
-            <h2>Actual Finance receipts</h2>
+            <h2>{{ tr("Actual Finance receipts") }}</h2>
             <p v-if="!actuals.available" class="crm-notice">
                 {{ actuals.message }}
             </p>
             <p v-else>
                 <strong>{{ actuals.amount }} {{ actuals.currency }}</strong>
-                linked actual receipts. This is separate from the pledged
-                amount.
+                {{
+                    tr(
+                        "linked actual receipts. This is separate from the pledged amount.",
+                    )
+                }}
             </p>
             <article
                 v-for="row in actuals.receipts ?? []"
@@ -139,7 +147,7 @@ function archive() {
                     row.label
                 }}</Link
                 ><span
-                    >{{ row.amount }} {{ row.currency }} · Received
+                    >{{ row.amount }} {{ row.currency }} {{ tr("· Received") }}
                     {{ row.paid_on }}</span
                 >
                 <div
@@ -151,7 +159,7 @@ function archive() {
                         :disabled="action.processing"
                         @click="unlink(row)"
                     >
-                        Remove receipt link
+                        {{ tr("Remove receipt link") }}
                     </button>
                 </div>
             </article>
@@ -161,14 +169,17 @@ function archive() {
                 @submit.prevent="link"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Existing Finance receipt</span
+                    ><span class="crm-field-label">{{
+                        tr("Existing Finance receipt")
+                    }}</span
                     ><select
                         v-model="receipt.payment_id"
                         required
-                        aria-label="Existing Finance receipt"
+                        :aria-label="tr('Existing Finance receipt')"
                     >
-                        <option :value="null">Choose received payment</option>
+                        <option :value="null">
+                            {{ tr("Choose received payment") }}
+                        </option>
                         <option
                             v-for="row in receiptOptions"
                             :key="row.payment_id"
@@ -180,12 +191,14 @@ function archive() {
                     </select></label
                 >
                 <p class="crm-muted">
-                    Only currently accessible payments for the same shared donor
-                    identity can be linked. No payment, invoice or donation
-                    receipt is created.
+                    {{
+                        tr(
+                            "Only currently accessible payments for the same shared donor identity can be linked. No payment, invoice or donation receipt is created.",
+                        )
+                    }}
                 </p>
                 <p v-if="stale" class="crm-notice">
-                    The pledge changed. Reload the receipt form.
+                    {{ tr("The pledge changed. Reload the receipt form.") }}
                 </p>
                 <Errors :errors="receipt.errors" />
                 <div class="crm-form-action">
@@ -193,14 +206,14 @@ function archive() {
                         class="crm-button"
                         :disabled="receipt.processing || stale"
                     >
-                        Link existing receipt</button
+                        {{ tr("Link existing receipt") }}</button
                     ><button
                         v-if="stale"
                         class="crm-secondary"
                         type="button"
                         @click="reset"
                     >
-                        Reload receipt form
+                        {{ tr("Reload receipt form") }}
                     </button>
                 </div>
             </form>
@@ -208,15 +221,18 @@ function archive() {
                 v-else-if="editable && canManageReceipts && actuals.available"
                 class="crm-muted"
             >
-                No unlinked matching receipts are available. Record actual
-                payments in Finance separately.
+                {{
+                    tr(
+                        "No unlinked matching receipts are available. Record actual payments in Finance separately.",
+                    )
+                }}
             </p>
             <Errors :errors="action.errors" />
         </section>
         <HistoryList
             :history="history"
-            :event-labels="events"
-            :field-labels="fields"
+            :event-labels="translateLabels(events)"
+            :field-labels="translateLabels(fields)"
         />
         <form
             v-if="editable && canManagePledges && canArchive"
@@ -224,13 +240,16 @@ function archive() {
             @submit.prevent="archive"
         >
             <p>
-                Archive retains this expectation and every receipt link. It
-                changes no actual Finance payment.
+                {{
+                    tr(
+                        "Archive retains this expectation and every receipt link. It changes no actual Finance payment.",
+                    )
+                }}
             </p>
             <Errors :errors="action.errors" />
             <div class="crm-form-action">
                 <button class="crm-secondary" :disabled="action.processing">
-                    Archive pledge
+                    {{ tr("Archive pledge") }}
                 </button>
             </div>
         </form>

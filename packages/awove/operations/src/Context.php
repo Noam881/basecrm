@@ -65,7 +65,7 @@ class Context
         $columns = app(Catalog::class)->columns($table, $request->user());
         $query = app(Query::class)->filtered($query, $table, $request);
         if ((clone $query)->count() > 5000) {
-            throw ValidationException::withMessages(['export' => 'Export at most 5,000 filtered records.']);
+            throw ValidationException::withMessages(['export' => __('Export at most 5,000 filtered records.')]);
         }
         $rows = (function () use ($query, $columns) {
             foreach ($query->cursor() as $row) {

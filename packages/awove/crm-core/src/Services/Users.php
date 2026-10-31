@@ -21,7 +21,7 @@ class Users
             $model = config('auth.providers.users.model');
             $u = $model::lockForUpdate()->findOrFail($id);
             if (! $data['active'] && $u->hasRole('Administrator')) {
-                abort_if($model::role('Administrator')->where('active', true)->where('id', '!=', $u->id)->count() === 0, 422, 'The last active administrator cannot be deactivated.');
+                abort_if($model::role('Administrator')->where('active', true)->where('id', '!=', $u->id)->count() === 0, 422, __('The last active administrator cannot be deactivated.'));
             }$target = null;
             if (! empty($data['reassign_to'])) {
                 $target = $model::where('active', true)->findOrFail($data['reassign_to']);

@@ -39,7 +39,7 @@ class Records
     public function version(Model $r, array $input, string $field = 'version'): void
     {
         $data = validator($input, [$field => 'required|integer|min:1'])->validate();
-        abort_unless((int) $data[$field] === $r->getAttribute('version'), 409, 'This fundraising record changed. Reload before saving.');
+        abort_unless((int) $data[$field] === $r->getAttribute('version'), 409, __('This fundraising record changed. Reload before saving.'));
     }
 
     public function history($u, Constituent $c, string $event, array $fields, ?int $pledge = null): void
@@ -73,12 +73,12 @@ class Records
             $data = validator($values, ['relationship_id' => 'required|integer|min:1', 'owner_id' => 'nullable|integer|min:1', 'next_action' => 'nullable|string|max:10000', 'next_action_on' => 'nullable|date_format:Y-m-d', 'notes' => 'nullable|string|max:10000'])->validate();
             $relationship = Access::relationships($u)->findOrFail($data['relationship_id']);
             if ($r && $r->getAttribute('relationship_id') !== (int) $data['relationship_id']) {
-                throw ValidationException::withMessages(['relationship_id' => 'A fundraising context retains its shared identity. Create a separate context for another identity.']);
+                throw ValidationException::withMessages(['relationship_id' => __('A fundraising context retains its shared identity. Create a separate context for another identity.')]);
             }
             if (! $r) {
                 abort_unless($relationship->active && ! $relationship->archived_at, 403);
                 if (Constituent::where('relationship_id', $relationship->id)->exists()) {
-                    throw ValidationException::withMessages(['relationship_id' => 'This classification already has a retained fundraising context.']);
+                    throw ValidationException::withMessages(['relationship_id' => __('This classification already has a retained fundraising context.')]);
                 }
             }
             $data['owner_id'] = isset($data['owner_id']) ? (int) $data['owner_id'] : null;
@@ -87,12 +87,12 @@ class Records
                 if ($data['owner_id'] !== null) {
                     $owner = config('auth.providers.users.model')::find($data['owner_id']);
                     if (! Access::available($owner) || ! Access::relationships($owner)->whereKey($relationship->id)->exists()) {
-                        throw ValidationException::withMessages(['owner_id' => 'Choose active staff who already have Fundraising and shared identity access to this classification. Assignment grants neither.']);
+                        throw ValidationException::withMessages(['owner_id' => __('Choose active staff who already have Fundraising and shared identity access to this classification. Assignment grants neither.')]);
                     }
                 }
             }
             if (filled($data['next_action'] ?? null) !== filled($data['next_action_on'] ?? null)) {
-                throw ValidationException::withMessages(['next_action' => 'Enter both a next action and its date, or clear both.']);
+                throw ValidationException::withMessages(['next_action' => __('Enter both a next action and its date, or clear both.')]);
             }
             if ($r) {
                 $r->fill($data);
@@ -146,7 +146,7 @@ class Records
             $data['amount'] = Money::amount($data['amount'], 'amount', true);
             app(Currency::class)->assertConsistent();
             if ($p && $p->getAttribute('currency') !== Currency::current()) {
-                throw ValidationException::withMessages(['currency' => 'The retained pledge currency differs from the installation currency.']);
+                throw ValidationException::withMessages(['currency' => __('The retained pledge currency differs from the installation currency.')]);
             }
             if ($p) {
                 $p->fill($data);

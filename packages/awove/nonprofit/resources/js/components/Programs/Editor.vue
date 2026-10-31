@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import type { Options, ProgramRecord, Kind, Person, Related } from "./types";
@@ -154,34 +155,34 @@ function save() {
             <label v-if="kind !== 'feedback'" class="crm-field"
                 ><span class="crm-field-label">{{
                     kind === "participants"
-                        ? "Participant name"
+                        ? tr("Participant name")
                         : kind === "sessions"
-                          ? "Session name"
+                          ? tr("Session name")
                           : kind === "programs"
-                            ? "Program name"
+                            ? tr("Program name")
                             : kind === "groups"
-                              ? "Group name"
-                              : "Location name"
+                              ? tr("Group name")
+                              : tr("Location name")
                 }}</span
                 ><input v-model="f.name" required maxlength="180"
             /></label>
             <label v-if="kind === 'participants'" class="crm-field"
-                ><span class="crm-field-label">Participant ID</span
+                ><span class="crm-field-label">{{ tr("Participant ID") }}</span
                 ><input v-model="f.participant_code" required maxlength="80"
             /></label>
             <label v-if="kind !== 'sessions'" class="crm-field"
                 ><span class="crm-field-label">{{
                     kind === "feedback"
-                        ? "Follow-up owner"
-                        : "Responsible staff member"
+                        ? tr("Follow-up owner")
+                        : tr("Responsible staff member")
                 }}</span
                 ><select
                     v-if="kind === 'feedback'"
                     v-model="f.follow_up_owner_id"
                     :disabled="!canAssign"
-                    aria-label="Follow-up owner"
+                    :aria-label="tr('Follow-up owner')"
                 >
-                    <option :value="null">Unassigned</option>
+                    <option :value="null">{{ tr("Unassigned") }}</option>
                     <option
                         v-for="owner in ownerOptions"
                         :key="owner.id"
@@ -198,15 +199,15 @@ function save() {
                         "
                         :value="f.follow_up_owner_id"
                     >
-                        Current responsible staff member
+                        {{ tr("Current responsible staff member") }}
                     </option></select
                 ><select
                     v-else
                     v-model="f.owner_id"
                     :disabled="!canAssign"
-                    aria-label="Responsible staff member"
+                    :aria-label="tr('Responsible staff member')"
                 >
-                    <option :value="null">Unassigned</option>
+                    <option :value="null">{{ tr("Unassigned") }}</option>
                     <option
                         v-for="owner in ownerOptions"
                         :key="owner.id"
@@ -221,17 +222,17 @@ function save() {
                         "
                         :value="f.owner_id"
                     >
-                        Current responsible staff member
+                        {{ tr("Current responsible staff member") }}
                     </option>
                 </select></label
             >
             <label
                 v-if="!['sessions', 'feedback'].includes(kind)"
                 class="crm-field"
-                ><span class="crm-field-label">Record status</span
-                ><select v-model="f.active" aria-label="Record status">
-                    <option :value="true">Active</option>
-                    <option :value="false">Inactive</option>
+                ><span class="crm-field-label">{{ tr("Record status") }}</span
+                ><select v-model="f.active" :aria-label="tr('Record status')">
+                    <option :value="true">{{ tr("Active") }}</option>
+                    <option :value="false">{{ tr("Inactive") }}</option>
                 </select></label
             >
             <label
@@ -241,13 +242,13 @@ function save() {
                     )
                 "
                 class="crm-field"
-                ><span class="crm-field-label">Location</span
+                ><span class="crm-field-label">{{ tr("Location") }}</span
                 ><select
                     v-model="f.location_id"
                     :disabled="record?.location_restricted"
-                    aria-label="Location"
+                    :aria-label="tr('Location')"
                 >
-                    <option :value="null">Not specified</option>
+                    <option :value="null">{{ tr("Not specified") }}</option>
                     <option
                         v-for="r in related('locations')"
                         :key="r.id"
@@ -260,13 +261,13 @@ function save() {
             <label
                 v-if="['programs', 'participants', 'sessions'].includes(kind)"
                 class="crm-field"
-                ><span class="crm-field-label">Group</span
+                ><span class="crm-field-label">{{ tr("Group") }}</span
                 ><select
                     v-model="f.group_id"
                     :disabled="record?.group_restricted"
-                    aria-label="Group"
+                    :aria-label="tr('Group')"
                 >
-                    <option :value="null">Not specified</option>
+                    <option :value="null">{{ tr("Not specified") }}</option>
                     <option
                         v-for="r in related('groups')"
                         :key="r.id"
@@ -278,13 +279,15 @@ function save() {
             >
             <template v-if="kind === 'participants'"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Current program</span
+                    ><span class="crm-field-label">{{
+                        tr("Current program")
+                    }}</span
                     ><select
                         v-model="f.program_id"
                         :disabled="record?.program_restricted"
-                        aria-label="Current program"
+                        :aria-label="tr('Current program')"
                     >
-                        <option :value="null">Not specified</option>
+                        <option :value="null">{{ tr("Not specified") }}</option>
                         <option
                             v-for="r in related('programs')"
                             :key="r.id"
@@ -294,14 +297,17 @@ function save() {
                         </option>
                     </select></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Shared contact (optional)</span
+                    ><span class="crm-field-label">{{
+                        tr("Shared contact (optional)")
+                    }}</span
                     ><select
                         v-model="f.contact_id"
                         :disabled="record?.contact_restricted"
-                        aria-label="Shared contact (optional)"
+                        :aria-label="tr('Shared contact (optional)')"
                     >
-                        <option :value="null">No shared contact link</option>
+                        <option :value="null">
+                            {{ tr("No shared contact link") }}
+                        </option>
                         <option
                             v-for="r in related('contacts')"
                             :key="r.id"
@@ -311,13 +317,17 @@ function save() {
                         </option>
                     </select></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Private email</span
+                    ><span class="crm-field-label">{{
+                        tr("Private email")
+                    }}</span
                     ><input
                         v-model="f.email"
                         type="email"
                         maxlength="254" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Private phone</span
+                    ><span class="crm-field-label">{{
+                        tr("Private phone")
+                    }}</span
                     ><input
                         v-model="f.phone"
                         type="tel"
@@ -325,29 +335,31 @@ function save() {
             ></template>
             <template v-if="kind === 'programs'"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Start date</span
+                    ><span class="crm-field-label">{{ tr("Start date") }}</span
                     ><input v-model="f.starts_on" type="date" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">End date</span
+                    ><span class="crm-field-label">{{ tr("End date") }}</span
                     ><input
                         v-model="f.ends_on"
                         type="date"
                         :min="f.starts_on || undefined" /></label
             ></template>
             <label v-if="kind === 'sessions'" class="crm-field"
-                ><span class="crm-field-label">Session date</span
+                ><span class="crm-field-label">{{ tr("Session date") }}</span
                 ><input v-model="f.session_on" type="date" required
             /></label>
             <template v-if="kind === 'feedback'"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Feedback date</span
+                    ><span class="crm-field-label">{{
+                        tr("Feedback date")
+                    }}</span
                     ><input
                         v-model="f.feedback_on"
                         type="date"
                         required
                         :max="today" /></label
                 ><label class="crm-field crm-form-span"
-                    ><span class="crm-field-label">Comments</span
+                    ><span class="crm-field-label">{{ tr("Comments") }}</span
                     ><textarea
                         v-model="f.comments"
                         required
@@ -355,20 +367,24 @@ function save() {
                         maxlength="10000"
                     /></label
                 ><label class="crm-field crm-form-span"
-                    ><span class="crm-field-label">Next action</span
+                    ><span class="crm-field-label">{{ tr("Next action") }}</span
                     ><input v-model="f.next_action" maxlength="500" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Follow-up date</span
+                    ><span class="crm-field-label">{{
+                        tr("Follow-up date")
+                    }}</span
                     ><input v-model="f.due_on" type="date" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Completed date</span
+                    ><span class="crm-field-label">{{
+                        tr("Completed date")
+                    }}</span
                     ><input
                         v-model="f.completed_on"
                         type="date"
                         :max="today" /></label
             ></template>
             <label v-else class="crm-field crm-form-span"
-                ><span class="crm-field-label">Notes</span
+                ><span class="crm-field-label">{{ tr("Notes") }}</span
                 ><textarea v-model="f.notes" rows="3" maxlength="10000" />
             </label>
         </fieldset>
@@ -381,26 +397,32 @@ function save() {
             "
             class="crm-notice"
         >
-            A restricted linked record is retained when you save.
+            {{ tr("A restricted linked record is retained when you save.") }}
         </p>
         <p v-if="kind === 'participants'" class="crm-muted">
-            Private contact details stay within the participant roster. A shared
-            contact link grants no participant access.
+            {{
+                tr(
+                    "Private contact details stay within the participant roster. A shared contact link grants no participant access.",
+                )
+            }}
         </p>
         <p v-if="stale" class="crm-notice" role="alert">
-            The record changed. Reload current details before saving.
+            {{
+                tr("The record changed. Reload current details before saving.")
+            }}
         </p>
         <Errors :errors="f.errors" />
         <div v-if="!disabled" class="crm-form-action">
             <button class="crm-button" :disabled="f.processing || stale">
-                {{ record ? "Save" : "Create" }} {{ singular[kind] }}</button
+                {{ record ? tr("Save") : tr("Create") }}
+                {{ singular[kind] }}</button
             ><button
                 v-if="stale"
                 type="button"
                 class="crm-secondary"
                 @click="sync"
             >
-                Reload current details
+                {{ tr("Reload current details") }}
             </button>
         </div>
     </form>

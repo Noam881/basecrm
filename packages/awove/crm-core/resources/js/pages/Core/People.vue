@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import { contactFormData, type Person, type ContactOptions } from "../../types";
@@ -12,7 +13,7 @@ const props = defineProps<{
 const capabilities = usePage().props.capabilities as string[];
 const type = ref(props.recordType);
 const title = computed(() =>
-    type.value === "contacts" ? "Add new contact" : "Add new company",
+    type.value === "contacts" ? t("Add new contact") : t("Add new company"),
 );
 const form = useForm({
     ...contactFormData(),
@@ -37,7 +38,7 @@ function createCustomer() {
 <template>
     <Head :title="title" />
     <Link :href="returnTo" class="crm-back">{{
-        returnTo === "/leads" ? "← Back to leads" : "← Back to overview"
+        returnTo === "/leads" ? t("← Back to leads") : t("← Back to overview")
     }}</Link>
     <div class="crm-heading">
         <h1>{{ title }}</h1>
@@ -47,14 +48,18 @@ function createCustomer() {
         class="crm-card crm-flow"
     >
         <h2>
-            {{ type === "contacts" ? "Contact details" : "Company details" }}
+            {{
+                type === "contacts"
+                    ? t("Contact details")
+                    : t("Company details")
+            }}
         </h2>
         <form class="crm-form-grid" @submit.prevent="createCustomer">
             <label class="crm-field crm-form-span">
-                <span class="crm-field-label">Record type</span>
+                <span class="crm-field-label">{{ t("Record type") }}</span>
                 <select v-model="type">
-                    <option value="contacts">Contact</option>
-                    <option value="companies">Company</option>
+                    <option value="contacts">{{ t("Contact") }}</option>
+                    <option value="companies">{{ t("Company") }}</option>
                 </select>
             </label>
             <ContactFields
@@ -66,7 +71,7 @@ function createCustomer() {
             />
             <template v-else>
                 <label class="crm-field">
-                    <span class="crm-field-label">Name</span>
+                    <span class="crm-field-label">{{ t("Name") }}</span>
                     <input
                         v-model="form.name"
                         required
@@ -82,7 +87,7 @@ function createCustomer() {
                     >
                 </label>
                 <label class="crm-field">
-                    <span class="crm-field-label">Email</span>
+                    <span class="crm-field-label">{{ t("Email") }}</span>
                     <input
                         v-model="form.email"
                         type="email"
@@ -98,7 +103,7 @@ function createCustomer() {
                     >
                 </label>
                 <label class="crm-field">
-                    <span class="crm-field-label">Phone</span>
+                    <span class="crm-field-label">{{ t("Phone") }}</span>
                     <input
                         v-model="form.phone"
                         type="tel"
@@ -115,12 +120,14 @@ function createCustomer() {
                 </label>
             </template>
             <label class="crm-field crm-form-span">
-                <span class="crm-field-label">Notes</span>
+                <span class="crm-field-label">{{ t("Notes") }}</span>
                 <textarea
                     v-model="form.notes"
                     rows="3"
                     maxlength="10000"
-                    placeholder="Add background or the first conversation…"
+                    :placeholder="
+                        t('Add background or the first conversation…')
+                    "
                     :aria-invalid="!!form.errors.notes"
                 />
                 <small
@@ -132,17 +139,19 @@ function createCustomer() {
             </label>
             <label class="crm-checkbox crm-form-span">
                 <input v-model="form.accept_duplicate" type="checkbox" />
-                Keep a separate record if a duplicate is found
+                {{ t("Keep a separate record if a duplicate is found") }}
             </label>
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">
                     {{
                         type === "contacts"
-                            ? "Create contact"
-                            : "Create company"
+                            ? t("Create contact")
+                            : t("Create company")
                     }}
                 </button>
-                <Link :href="returnTo" class="crm-secondary">Cancel</Link>
+                <Link :href="returnTo" class="crm-secondary">{{
+                    t("Cancel")
+                }}</Link>
             </div>
         </form>
     </section>

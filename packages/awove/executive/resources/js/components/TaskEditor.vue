@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import WorkFields, {
@@ -42,8 +43,9 @@ function save() {
         preserveScroll: true,
         onHttpException: (response: { status: number }) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "This task changed or your access changed. Your edits are kept. Reload before saving.";
+                warning.value = tr(
+                    "This task changed or your access changed. Your edits are kept. Reload before saving.",
+                );
                 return false;
             }
         },
@@ -62,16 +64,17 @@ function save() {
             :completed-statuses="['done']"
             :errors="form.errors"
             :can-assign="options.canAssign"
-            title-label="Task name"
+            :title-label="tr('Task name')"
         /><label
             v-if="record?.goal_restricted"
             class="crm-checkbox crm-form-span"
-            ><input v-model="keepRestricted" type="checkbox" />Keep the existing
-            restricted goal link</label
+            ><input v-model="keepRestricted" type="checkbox" />{{
+                tr("Keep the existing restricted goal link")
+            }}</label
         ><label class="crm-field"
-            ><span class="crm-field-label">Goal (optional)</span
+            ><span class="crm-field-label">{{ tr("Goal (optional)") }}</span
             ><select v-model="form.goal_id" :disabled="keepRestricted">
-                <option :value="null">No goal</option>
+                <option :value="null">{{ tr("No goal") }}</option>
                 <option
                     v-if="
                         record?.goal &&
@@ -81,7 +84,7 @@ function save() {
                     "
                     :value="record.goal_id"
                 >
-                    {{ record.goal.name }} (archived)
+                    {{ record.goal.name }} {{ tr("(archived)") }}
                 </option>
                 <option
                     v-for="goal in options.goals"
@@ -104,10 +107,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing || !!warning">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save task"
-                          : "Create task"
+                          ? tr("Save task")
+                          : tr("Create task")
                 }}
             </button>
         </div>

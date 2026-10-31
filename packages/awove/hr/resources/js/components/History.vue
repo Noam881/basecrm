@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import HistoryList from "../../../../crm-core/resources/js/components/HistoryList.vue";
 import type { History } from "../types";
 defineProps<{ history: History[] }>();
@@ -41,7 +42,7 @@ const fields = {
 <template>
     <HistoryList
         :history="history"
-        :event-labels="events"
-        :field-labels="fields"
+        :event-labels="translateLabels(events)"
+        :field-labels="translateLabels(fields)"
     />
 </template>

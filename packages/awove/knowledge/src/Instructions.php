@@ -93,11 +93,11 @@ class Instructions
             $parent = $model::lockForUpdate()->find($data['reference_id']);
             $reference = $this->reference($u, $data['reference_type'], $data['reference_id']);
             if (! $parent || ! $reference) {
-                throw ValidationException::withMessages(['reference_id' => 'Choose work or a routine that is enabled and accessible to you.']);
-            }abort_unless($reference['version'] === (int) $data['reference_version'], 409, 'The linked work changed. Reload before linking.');
+                throw ValidationException::withMessages(['reference_id' => __('Choose work or a routine that is enabled and accessible to you.')]);
+            }abort_unless($reference['version'] === (int) $data['reference_version'], 409, __('The linked work changed. Reload before linking.'));
             $existing = DB::table('knowledge_instructions')->where('entry_id', $entryId)->where($field, $parent->id)->first();
             if ($existing && ! $existing->archived_at) {
-                throw ValidationException::withMessages(['reference_id' => 'This instruction is already linked to the selected work.']);
+                throw ValidationException::withMessages(['reference_id' => __('This instruction is already linked to the selected work.')]);
             }
             if ($existing) {
                 DB::table('knowledge_instructions')->where('id', $existing->id)->update(['archived_at' => null, 'version' => $existing->version + 1, 'updated_at' => now()]);

@@ -42,6 +42,6 @@ class Reminders implements ReminderSource
             return null;
         }
 
-        return ['version' => $r->version, 'title' => 'Fundraising follow-up: '.$relationship['name'], 'href' => '/nonprofit/fundraising/constituents/'.$r->id];
+        return ['version' => $r->version, 'title' => __('Fundraising follow-up: :name', ['name' => $relationship['name']]), 'href' => '/nonprofit/fundraising/constituents/'.$r->id];
     }
 }

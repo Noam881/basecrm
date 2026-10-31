@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import HistoryList from "../../../../../crm-core/resources/js/components/HistoryList.vue";
 import FinanceNav from "../../components/FinanceNav.vue";
@@ -38,15 +39,15 @@ function archiveRecord() {
 }
 </script>
 <template>
-    <Head title="Payroll preparation" /><Link
+    <Head :title="tr('Payroll preparation')" /><Link
         href="/finance/payroll"
         class="crm-back"
-        >← Back to payroll preparations</Link
+        >{{ tr("← Back to payroll preparations") }}</Link
     >
     <div class="crm-heading">
         <h1>
-            {{ record.employee?.name ?? "Restricted employee" }} · Payroll
-            preparation
+            {{ record.employee?.name ?? tr("Restricted employee") }}
+            {{ tr("· Payroll preparation") }}
         </h1>
         <button
             v-if="editable && canArchive"
@@ -54,13 +55,13 @@ function archiveRecord() {
             :disabled="archive.processing"
             @click="archiveRecord"
         >
-            Archive preparation
+            {{ tr("Archive preparation") }}
         </button>
     </div>
     <div class="crm-stack">
         <FinanceNav :sections="sections" />
         <p v-if="record.archived_at" class="crm-notice">
-            Archived · Retained for this employee and pay period.
+            {{ tr("Archived · Retained for this employee and pay period.") }}
         </p>
         <section class="crm-card crm-flow">
             <h2>{{ record.period_start_on }} – {{ record.period_end_on }}</h2>
@@ -78,22 +79,24 @@ function archiveRecord() {
                         {{ field.label
                         }}{{ field.unit ? ` (${field.unit})` : "" }}
                     </dt>
-                    <dd>{{ record.inputs[field.key] ?? "Not recorded" }}</dd>
+                    <dd>
+                        {{ record.inputs[field.key] ?? tr("Not recorded") }}
+                    </dd>
                 </div>
                 <div>
-                    <dt>Notes</dt>
-                    <dd>{{ record.notes ?? "None" }}</dd>
+                    <dt>{{ tr("Notes") }}</dt>
+                    <dd>{{ record.notes ?? tr("None") }}</dd>
                 </div>
                 <div>
-                    <dt>Manually sent date</dt>
-                    <dd>{{ record.sent_on ?? "Not recorded" }}</dd>
+                    <dt>{{ tr("Manually sent date") }}</dt>
+                    <dd>{{ record.sent_on ?? tr("Not recorded") }}</dd>
                 </div>
             </dl>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Supporting documents</h2>
+            <h2>{{ tr("Supporting documents") }}</h2>
             <p v-if="!documents.length" class="crm-muted">
-                No supporting documents recorded.
+                {{ tr("No supporting documents recorded.") }}
             </p>
             <article v-for="item in documents" :key="item.id" class="crm-note">
                 <a
@@ -109,19 +112,23 @@ function archiveRecord() {
                 @submit.prevent="addDocument"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Document label</span
+                    ><span class="crm-field-label">{{
+                        tr("Document label")
+                    }}</span
                     ><input
                         v-model="document.label"
                         required
                         maxlength="180" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Document link</span
+                    ><span class="crm-field-label">{{
+                        tr("Document link")
+                    }}</span
                     ><input
                         v-model="document.url"
                         type="url"
                         required
                         maxlength="2048"
-                        placeholder="https://"
+                        :placeholder="tr('https://')"
                 /></label>
                 <div
                     v-if="Object.keys(document.errors).length"
@@ -134,20 +141,22 @@ function archiveRecord() {
                 </div>
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="document.processing">
-                        Add supporting document
+                        {{ tr("Add supporting document") }}
                     </button>
                 </div>
             </form>
         </section>
         <HistoryList
-            :field-labels="{
-                employee_reference_id: 'Employee',
-                owner_id: 'Owner',
-                input_schema: 'Agreed input definitions',
-                period_start_on: 'Period start',
-                period_end_on: 'Period end',
-                sent_on: 'Manually sent date',
-            }"
+            :field-labels="
+                translateLabels({
+                    employee_reference_id: 'Employee',
+                    owner_id: 'Owner',
+                    input_schema: 'Agreed input definitions',
+                    period_start_on: 'Period start',
+                    period_end_on: 'Period end',
+                    sent_on: 'Manually sent date',
+                })
+            "
             :history="
                 history.map((entry) => ({
                     ...entry,

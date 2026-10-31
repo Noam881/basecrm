@@ -33,7 +33,7 @@ class Records
             }
         }
 
-        return array_replace($defaults, array_intersect_key($overrides, $defaults));
+        return array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key($overrides, $defaults));
     }
 
     public static function stages(): array
@@ -81,7 +81,7 @@ class Records
                 if (isset($data[$field])) {
                     $data[$field] = trim($data[$field]);
                     if ($data[$field] === '') {
-                        throw ValidationException::withMessages([$field => 'Enter a value.']);
+                        throw ValidationException::withMessages([$field => __('Enter a value.')]);
                     }
                 }
             }
@@ -108,11 +108,11 @@ class Records
         $data = validator($values, [...$common, 'employee_reference_id' => ['required', 'integer', Rule::unique('hr_employment_profiles')->ignore($record?->getKey())], 'email' => 'nullable|email|max:254', 'phone' => 'nullable|string|max:80', 'role_name' => 'required|string|max:180', 'role_description' => 'nullable|string|max:20000', 'responsibilities' => 'required|string|max:20000', 'manager_employee_reference_id' => 'nullable|integer', 'start_on' => 'required|date_format:Y-m-d', 'employment_status' => ['required', Rule::in(['active', 'inactive'])]])->validate();
         $this->employee($u, $data, 'employee_reference_id', $record);
         if ($record && (int) $data['employee_reference_id'] !== $record->getAttribute('employee_reference_id')) {
-            throw ValidationException::withMessages(['employee_reference_id' => 'An employment profile retains its employee identity. Create a separate profile for another employee.']);
+            throw ValidationException::withMessages(['employee_reference_id' => __('An employment profile retains its employee identity. Create a separate profile for another employee.')]);
         }
         $this->employee($u, $data, 'manager_employee_reference_id', $record);
         if (isset($data['manager_employee_reference_id']) && (int) $data['manager_employee_reference_id'] === (int) $data['employee_reference_id']) {
-            throw ValidationException::withMessages(['manager_employee_reference_id' => 'Choose another employee as manager.']);
+            throw ValidationException::withMessages(['manager_employee_reference_id' => __('Choose another employee as manager.')]);
         }
 
         return $data;
@@ -129,11 +129,11 @@ class Records
         if (! $record || (int) $data['vacancy_id'] !== $record->getAttribute('vacancy_id')) {
             $vacancy = Access::query($u, 'vacancies')->whereNull('archived_at')->where('status', 'open')->find($data['vacancy_id']);
             if (! $vacancy) {
-                throw ValidationException::withMessages(['vacancy_id' => 'Choose an accessible open vacancy.']);
+                throw ValidationException::withMessages(['vacancy_id' => __('Choose an accessible open vacancy.')]);
             }
         }
         if (isset($data['employee_reference_id']) && (! $record || (int) $data['employee_reference_id'] !== $record->getAttribute('employee_reference_id')) && $data['stage'] !== 'hired') {
-            throw ValidationException::withMessages(['employee_reference_id' => 'Resolve an employee explicitly when the candidate is hired.']);
+            throw ValidationException::withMessages(['employee_reference_id' => __('Resolve an employee explicitly when the candidate is hired.')]);
         }
         $this->employee($u, $data, 'employee_reference_id', $record);
 
@@ -148,7 +148,7 @@ class Records
         $data = validator($values, [...$common, 'employee_reference_id' => 'required|integer', 'kind' => ['required', Rule::in(['onboarding', 'offboarding'])], 'name' => 'required|string|max:180', 'due_on' => 'required|date_format:Y-m-d', 'final_work_on' => ($values['kind'] ?? '') === 'offboarding' ? 'required|date_format:Y-m-d' : 'nullable|prohibited', 'final_pay_info' => ($values['kind'] ?? '') === 'offboarding' ? 'nullable|string|max:20000' : 'nullable|prohibited'])->validate();
         $this->employee($u, $data, 'employee_reference_id', $record, $data['kind'] === 'offboarding');
         if ($record && ((int) $data['employee_reference_id'] !== $record->getAttribute('employee_reference_id') || $data['kind'] !== $record->getAttribute('kind'))) {
-            throw ValidationException::withMessages(['employee_reference_id' => 'The case retains its employee and onboarding/offboarding purpose.']);
+            throw ValidationException::withMessages(['employee_reference_id' => __('The case retains its employee and onboarding/offboarding purpose.')]);
         }
 
         return $data;
@@ -177,14 +177,14 @@ class Records
         abort_unless($id === $u->id || $u->can(Access::prefix($section).'.assign'), 403);
         $owner = config('auth.providers.users.model')::find($id);
         if (! Access::available($owner, $section)) {
-            throw ValidationException::withMessages(['owner_id' => 'Choose an active responsible staff member who already has the appropriate HR access.']);
+            throw ValidationException::withMessages(['owner_id' => __('Choose an active responsible staff member who already has the appropriate HR access.')]);
         }
     }
 
     public function version(Model $record, array $input): void
     {
         $data = validator($input, ['version' => 'required|integer|min:1'])->validate();
-        abort_unless((int) $data['version'] === $record->getAttribute('version'), 409, 'This HR record changed. Reload before saving.');
+        abort_unless((int) $data['version'] === $record->getAttribute('version'), 409, __('This HR record changed. Reload before saving.'));
     }
 
     public function history($u, Model $record, string $event, array $fields = [], array $details = []): void
@@ -210,7 +210,7 @@ class Records
                 foreach ($items as $item) {
                     if (! $item->archived_at) {
                         if (! $service->editable($u, $item)) {
-                            throw ValidationException::withMessages(['case' => 'An authorized HR manager must archive the remaining assigned checklist work. No work was marked done.']);
+                            throw ValidationException::withMessages(['case' => __('An authorized HR manager must archive the remaining assigned checklist work. No work was marked done.')]);
                         }
                         $service->archive($u, 'hr', 'checklist', $item->id, ['version' => $item->version]);
                     }
@@ -230,7 +230,7 @@ class Records
                 $service->find($u, 'hr', 'checklist', $workId);
             }
             $case = EmploymentCase::lockForUpdate()->findOrFail($caseId);
-            abort_if($case->archived_at || $case->completed_on, 403, 'This HR case is read only.');
+            abort_if($case->archived_at || $case->completed_on, 403, __('This HR case is read only.'));
             if (! $workId) {
                 Access::edit($u, $case);
             }
@@ -241,7 +241,7 @@ class Records
             $data = validator($input, ['category' => ['required', Rule::in(array_keys(self::CATEGORIES))], 'required' => 'required|boolean'])->validate();
             $base = array_intersect_key($input, array_flip([...WorkItems::FIELDS, 'version']));
             if ($data['required'] && ($base['status'] ?? '') === 'skipped') {
-                throw ValidationException::withMessages(['status' => 'Required work must be completed; it cannot be skipped.']);
+                throw ValidationException::withMessages(['status' => __('Required work must be completed; it cannot be skipped.')]);
             }
             $changed = $link && ($link->category !== $data['category'] || $link->required !== (bool) $data['required']) ? ['category', 'required'] : [];
             if ($changed) {
@@ -270,14 +270,14 @@ class Records
             $data = validator($input, ['completed_on' => 'required|date_format:Y-m-d', 'deactivate_employee' => 'sometimes|boolean', 'employee_version' => 'nullable|integer|min:1'])->validate();
             $items = DB::table('hr_case_items')->join('crm_work_items', 'crm_work_items.id', '=', 'hr_case_items.work_item_id')->where('case_id', $id)->lockForUpdate()->get(['crm_work_items.status', 'hr_case_items.required']);
             if ($items->isEmpty()) {
-                throw ValidationException::withMessages(['case' => 'Add at least one checklist item before completing this case.']);
+                throw ValidationException::withMessages(['case' => __('Add at least one checklist item before completing this case.')]);
             }
             if ($items->contains(fn ($item) => $item->required ? $item->status !== 'done' : ! in_array($item->status, ['done', 'skipped'], true))) {
-                throw ValidationException::withMessages(['case' => 'Complete every required checklist item and complete or explicitly skip optional items before completing this case.']);
+                throw ValidationException::withMessages(['case' => __('Complete every required checklist item and complete or explicitly skip optional items before completing this case.')]);
             }
             if ($data['deactivate_employee'] ?? false) {
                 if ($case->kind !== 'offboarding') {
-                    throw ValidationException::withMessages(['deactivate_employee' => 'Only offboarding can explicitly retain an employee as inactive.']);
+                    throw ValidationException::withMessages(['deactivate_employee' => __('Only offboarding can explicitly retain an employee as inactive.')]);
                 }
                 app(EmployeeReferences::class)->setActive($u, $case->employee_reference_id, (int) ($data['employee_version'] ?? 0), false);
             }

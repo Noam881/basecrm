@@ -40,6 +40,6 @@ class DueReminders implements ReminderSource
             return null;
         }$r = $this->query()->whereKey($recordId)->where('owner_id', $recipientId)->first();
 
-        return $r ? ['version' => $r->version, 'title' => 'Renewal reminder: '.$r->name, 'href' => '/knowledge/renewals/'.$r->id] : null;
+        return $r ? ['version' => $r->version, 'title' => __('Renewal reminder: :name', ['name' => $r->name]), 'href' => '/knowledge/renewals/'.$r->id] : null;
     }
 }

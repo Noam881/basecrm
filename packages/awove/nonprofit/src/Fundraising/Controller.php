@@ -248,7 +248,7 @@ class Controller
         $u = Access::fresh($r->user());
         abort_unless($u->can(Access::PREFIX.'export'), 403);
         $q = app(Query::class)->filtered($this->query($r, $tab), 'nonprofit.fundraising-'.$tab, $r);
-        abort_if((clone $q)->count() > 5000, 422, 'Narrow the filters to at most 5,000 records.');
+        abort_if((clone $q)->count() > 5000, 422, __('Narrow the filters to at most 5,000 records.'));
         $columns = (new Tables)->columns('nonprofit.fundraising-'.$tab, $u);
         $rows = (function () use ($q, $columns) {
             foreach ($q->cursor() as $row) {

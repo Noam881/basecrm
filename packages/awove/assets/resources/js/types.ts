@@ -1,3 +1,4 @@
+import { t as tr } from "@/lib/i18n";
 import type { EmployeeSummary } from "../../../crm-core/resources/js/components/EmployeeReferenceSelect.vue";
 import type { HistoryEntry } from "../../../crm-core/resources/js/components/HistoryList.vue";
 import { queryString } from "../../../crm-core/resources/js/components/table/queryString";
@@ -141,20 +142,21 @@ export function assignmentTarget(row: Assignment): string {
     if (row.target_type === "employee")
         return (
             (row.employee
-                ? row.employee.name + (row.employee.active ? "" : " (inactive)")
+                ? row.employee.name +
+                  (row.employee.active ? "" : tr(" (inactive)"))
                 : undefined) ??
             (row.employee_restricted
-                ? "Employee reference restricted"
-                : "Employee reference unavailable")
+                ? tr("Employee reference restricted")
+                : tr("Employee reference unavailable"))
         );
     if (row.target_type === "customer")
         return (
             row.customer?.name ??
             (row.customer_restricted
-                ? "Customer reference restricted"
-                : "Customer reference unavailable")
+                ? tr("Customer reference restricted")
+                : tr("Customer reference unavailable"))
         );
-    return row.location ?? "Location unavailable";
+    return row.location ?? tr("Location unavailable");
 }
 export const historyLabels: Record<string, string> = {
     code: "Asset code",

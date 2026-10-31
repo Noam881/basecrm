@@ -32,7 +32,7 @@ class Access
     public static function edit($user, SupplierOrder $order): void
     {
         self::view($user, $order);
-        abort_if($order->archived_at !== null, 403, 'Archived orders are read only.');
+        abort_if($order->archived_at !== null, 403, __('Archived orders are read only.'));
         abort_unless($user->can('operations.edit.all') || ($order->owner_id === $user->id && $user->can('operations.edit.own')), 403);
     }
 }

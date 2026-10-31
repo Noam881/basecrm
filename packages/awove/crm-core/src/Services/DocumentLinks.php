@@ -18,7 +18,7 @@ class DocumentLinks
         $parts = parse_url($url);
         if (! $parts || strtolower($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])
             || isset($parts['user']) || isset($parts['pass']) || preg_match('/[\x00-\x20\\\\]/', $url)) {
-            throw ValidationException::withMessages([$field => 'Use an HTTPS document link without embedded credentials or whitespace.']);
+            throw ValidationException::withMessages([$field => __('Use an HTTPS document link without embedded credentials or whitespace.')]);
         }
 
         return $url;

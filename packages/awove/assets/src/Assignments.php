@@ -21,7 +21,7 @@ class Assignments
             abort_unless($u->can('assets.assign'), 403);
             $service->version($asset, $input, 'asset_version');
             if (! in_array($asset->status, ['available', 'in-use'], true) || $service->hasAssignment($asset)) {
-                throw ValidationException::withMessages(['assignment' => 'Choose an Available or In use asset with no current assignment.']);
+                throw ValidationException::withMessages(['assignment' => __('Choose an Available or In use asset with no current assignment.')]);
             }
             $input = Records::clean($input);
             $kind = $input['target_type'] ?? null;
@@ -32,7 +32,7 @@ class Assignments
                 app(EmployeeReferences::class)->assertSelectable($u, $id);
                 $employee = EmployeeReference::whereKey($id)->lockForUpdate()->firstOrFail();
                 if (! $employee->active) {
-                    throw ValidationException::withMessages(['employee_reference_id' => 'Choose an active employee reference.']);
+                    throw ValidationException::withMessages(['employee_reference_id' => __('Choose an active employee reference.')]);
                 }
                 $data['employee_reference_id'] = $id;
             }
@@ -60,7 +60,7 @@ class Assignments
             $service->version($asset, $input, 'asset_version');
             $record = Assignment::whereKey($id)->lockForUpdate()->firstOrFail();
             $service->version($record, $input);
-            abort_unless($record->returned_on === null, 409, 'A returned assignment retains its recorded dates and notes.');
+            abort_unless($record->returned_on === null, 409, __('A returned assignment retains its recorded dates and notes.'));
             $input = Records::clean($input);
             $data = validator($input, ['expected_return_on' => 'sometimes|nullable|date_format:Y-m-d|after_or_equal:'.$record->toArray()['assigned_on'], 'notes' => 'sometimes|nullable|string|max:10000'])->validate();
             $record->fill($data);
@@ -89,7 +89,7 @@ class Assignments
             $service->version($asset, $input, 'asset_version');
             $record = Assignment::whereKey($id)->lockForUpdate()->firstOrFail();
             $service->version($record, $input);
-            abort_unless($record->returned_on === null, 409, 'This assignment was already returned.');
+            abort_unless($record->returned_on === null, 409, __('This assignment was already returned.'));
             $data = validator(Records::clean($input), ['returned_on' => 'required|date_format:Y-m-d|after_or_equal:'.$record->toArray()['assigned_on'].'|before_or_equal:'.Records::today(), 'return_condition' => 'required|string|max:10000'])->validate();
             $record->update([...$data, 'returned_by' => $u->id, 'version' => $record->version + 1]);
             $asset->update(['status' => $service->hasProgress($asset) ? 'under-maintenance' : 'available', 'version' => $asset->version + 1]);

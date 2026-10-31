@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import type { DialogContentEmits, DialogContentProps } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 import { X } from "@lucide/vue";
@@ -56,7 +57,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 
                 <DialogClose class="crm-material-popup-close">
                     <X class="w-4 h-4" />
-                    <span class="sr-only">Close</span>
+                    <span class="sr-only">{{ t("Close") }}</span>
                 </DialogClose>
             </DialogContent>
         </DialogOverlay>

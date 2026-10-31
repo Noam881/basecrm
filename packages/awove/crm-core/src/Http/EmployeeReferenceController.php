@@ -58,7 +58,7 @@ class EmployeeReferenceController
         $request->validate(['active' => ['nullable', Rule::in(['1', '0'])]]);
         $columns = app(Catalog::class)->columns('employees', $request->user());
         $query = app(Query::class)->filtered($this->query($request, $references), 'employees', $request);
-        abort_if((clone $query)->count() > 10000, 422, 'Narrow the filters to export at most 10,000 employee references.');
+        abort_if((clone $query)->count() > 10000, 422, __('Narrow the filters to export at most 10,000 employee references.'));
         $rows = (function () use ($query, $columns) {
             foreach ($query->cursor() as $row) {
                 yield array_map(fn ($column, $i) => $column->type === 'boolean' ? ($row->getAttribute('dt_'.$i) ? 'Yes' : 'No') : ($row->getAttribute('dt_'.$i) ?? ''), array_values($columns), array_keys(array_values($columns)));

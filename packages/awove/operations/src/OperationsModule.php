@@ -29,7 +29,7 @@ class OperationsModule implements DashboardContributor, Module, RecordTableContr
 
     private static function labels(array $defaults, string $key): array
     {
-        $labels = array_replace($defaults, array_intersect_key(Installation::manifest()[$key] ?? [], $defaults));
+        $labels = array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key(Installation::manifest()[$key] ?? [], $defaults));
         foreach ($labels as $label) {
             if (! is_string($label) || trim($label) === '' || mb_strlen($label) > 100) {
                 throw new \RuntimeException('Operations status labels must be nonempty strings up to 100 characters.');
@@ -66,7 +66,7 @@ class OperationsModule implements DashboardContributor, Module, RecordTableContr
 
     public function navigation(): array
     {
-        return [new NavigationItem(Installation::manifest()['module_labels']['operations'] ?? 'Operations', '/operations', 'operations.view.own', ['operations.view.all'])];
+        return [new NavigationItem(Installation::manifest()['module_labels']['operations'] ?? __('Operations'), '/operations', 'operations.view.own', ['operations.view.all'])];
     }
 
     public function panels(): array
@@ -76,12 +76,12 @@ class OperationsModule implements DashboardContributor, Module, RecordTableContr
 
     public function workTypes(): array
     {
-        return [new WorkType(module: 'operations', kind: 'requests', label: 'Operational requests', permissionPrefix: 'operations', statuses: self::requestStatuses(), defaultStatus: 'new', terminalStatuses: ['done', 'cancelled'], completedStatuses: ['done'], routePrefix: '/operations/requests')];
+        return [new WorkType(module: 'operations', kind: 'requests', label: __('Operational requests'), permissionPrefix: 'operations', statuses: self::requestStatuses(), defaultStatus: 'new', terminalStatuses: ['done', 'cancelled'], completedStatuses: ['done'], routePrefix: '/operations/requests')];
     }
 
     public function routineTypes(): array
     {
-        return [new RoutineType(module: 'operations', kind: 'routines', label: 'Operational routines', permissionPrefix: 'operations', routePrefix: '/operations/routines')];
+        return [new RoutineType(module: 'operations', kind: 'routines', label: __('Operational routines'), permissionPrefix: 'operations', routePrefix: '/operations/routines')];
     }
 
     public function tableIds(): array
@@ -115,9 +115,9 @@ class OperationsModule implements DashboardContributor, Module, RecordTableContr
         $permissions = ['permission' => 'operations.view.own', 'anyPermissions' => ['operations.view.all']];
 
         return [
-            [...$permissions, 'id' => 'operations.open-requests', 'label' => 'Open operational requests', 'value' => (clone $requests)->count(), 'href' => '/operations/requests'],
-            [...$permissions, 'id' => 'operations.overdue-requests', 'label' => 'Overdue operational requests', 'value' => (clone $requests)->where('due_on', '<', $today)->count(), 'href' => '/operations/requests?view=overdue'],
-            [...$permissions, 'id' => 'operations.outstanding-orders', 'label' => 'Outstanding supplier orders', 'value' => $orders->count(), 'href' => '/operations/orders?view=outstanding'],
+            [...$permissions, 'id' => 'operations.open-requests', 'label' => __('Open operational requests'), 'value' => (clone $requests)->count(), 'href' => '/operations/requests'],
+            [...$permissions, 'id' => 'operations.overdue-requests', 'label' => __('Overdue operational requests'), 'value' => (clone $requests)->where('due_on', '<', $today)->count(), 'href' => '/operations/requests?view=overdue'],
+            [...$permissions, 'id' => 'operations.outstanding-orders', 'label' => __('Outstanding supplier orders'), 'value' => $orders->count(), 'href' => '/operations/orders?view=outstanding'],
         ];
     }
 }

@@ -263,6 +263,16 @@ function enhanceDocument() {
     queued = false;
     document.querySelectorAll<HTMLElement>(selector).forEach(enhanceControl);
     document
+        .querySelectorAll<HTMLElement>(".material-symbols-outlined")
+        .forEach((icon) => {
+            icon.classList.toggle(
+                "crm-directional-icon",
+                /^(arrow_back|arrow_forward|arrow_outward|menu_open|chevron_left|chevron_right|first_page|last_page|keyboard_arrow_left|keyboard_arrow_right|keyboard_double_arrow_left|keyboard_double_arrow_right)$/.test(
+                    icon.textContent?.trim() ?? "",
+                ),
+            );
+        });
+    document
         .querySelectorAll<
             HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
         >("input,textarea,select")

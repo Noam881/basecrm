@@ -20,7 +20,7 @@ class Preparations
 
     public static function statuses(): array
     {
-        $labels = array_replace(self::STATUSES, array_intersect_key(Installation::manifest()['payroll_statuses'] ?? [], self::STATUSES));
+        $labels = array_replace(array_map(fn ($label) => (string) __($label), self::STATUSES), array_intersect_key(Installation::manifest()['payroll_statuses'] ?? [], self::STATUSES));
         foreach ($labels as $label) {
             if (! is_string($label) || trim($label) === '' || mb_strlen($label) > 100) {
                 throw new \RuntimeException('Payroll status labels must be nonempty strings up to 100 characters.');
@@ -177,10 +177,10 @@ class Preparations
             }
         }
         if ($data['period_end_on'] < $data['period_start_on']) {
-            throw ValidationException::withMessages(['period_end_on' => 'Period end must be on or after its start.']);
+            throw ValidationException::withMessages(['period_end_on' => __('Period end must be on or after its start.')]);
         }
         if ($data['status'] === 'sent-to-payroll' && ! $data['sent_on']) {
-            throw ValidationException::withMessages(['sent_on' => 'Record the date you manually sent the preparation to payroll.']);
+            throw ValidationException::withMessages(['sent_on' => __('Record the date you manually sent the preparation to payroll.')]);
         }
         if ($data['status'] !== 'sent-to-payroll') {
             $data['sent_on'] = null;
@@ -194,14 +194,14 @@ class Preparations
     private function uniquePeriod(array $data, ?int $except = null): void
     {
         if (Preparation::where('employee_reference_id', $data['employee_reference_id'])->whereDate('period_start_on', $data['period_start_on'])->whereDate('period_end_on', $data['period_end_on'])->when($except, fn ($q) => $q->whereKeyNot($except))->exists()) {
-            throw ValidationException::withMessages(['period_start_on' => 'This employee already has a preparation for this exact pay period, including archived records.']);
+            throw ValidationException::withMessages(['period_start_on' => __('This employee already has a preparation for this exact pay period, including archived records.')]);
         }
     }
 
     private function version(Preparation $record, array $input): void
     {
         $data = validator($input, ['version' => 'required|integer|min:1'])->validate();
-        abort_unless($record->version === (int) $data['version'], 409, 'This preparation changed. Reload before saving.');
+        abort_unless($record->version === (int) $data['version'], 409, __('This preparation changed. Reload before saving.'));
     }
 
     private function historyEntry(User $user, Preparation $record, string $event, array $details): void

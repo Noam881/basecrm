@@ -145,7 +145,7 @@ class Work
     public function version(Model $r, array $input): void
     {
         validator($input, ['version' => 'required|integer|min:0'])->validate();
-        abort_unless((int) $input['version'] === $r->getAttribute('version'), 409, 'This record changed. Reload before saving.');
+        abort_unless((int) $input['version'] === $r->getAttribute('version'), 409, __('This record changed. Reload before saving.'));
     }
 
     public function log(Model $r, string $kind, $u, string $event, array $details): void

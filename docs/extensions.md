@@ -36,7 +36,7 @@ Endpoints return 404 while disabled, even if a user has its permissions. Enabled
 
 ## Add a third fictional installation
 
-1. Place a new non-secret manifest in `installations/examples/gamma/manifest.json` (real clients use private deployment-controlled paths). Choose name, local logo/favicon paths, color, terminology, IANA timezone, field definitions and enabled module IDs. Choose labels for stable status IDs through `statuses`.
+1. Place a new non-secret manifest in `installations/examples/gamma/manifest.json` (real clients use private deployment-controlled paths). Choose name, local logo/favicon paths, supported theme and locale, terminology, IANA timezone, field definitions and enabled module IDs. Free-form colors remain unsupported. Choose labels for stable status IDs through `statuses`.
 2. Create a completely separate database/runtime role, app key, session cookie, cache prefix, queue database and private storage root. Point `CRM_MANIFEST` to its manifest. Do not reuse Alpha/Beta credentials.
 3. For different functionality, add `packages/awove/gamma-service` with its own Composer metadata/provider and contract-1 `Module` implementation. Own the module's tables, migration prefix, namespaced permissions/routes, and `resources/js/panels/GammaService/Panel.vue`.
 4. Add the approved package to a release's Composer requirements and lockfile, register typed contributions, guard every route/event/job, and write tests for disabled/unauthorized/parent-policy states. Build the image with mirrored path repositories and compile assets. The resolver discovers installed package pages/panels without editing core Vue files.

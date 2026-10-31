@@ -8,6 +8,7 @@ use Awove\Core\Contracts\RecordTableContributor;
 use Awove\Core\Installation;
 use Awove\Core\Models\Status;
 use Awove\Core\Modules;
+use Awove\Core\StatusDisplay;
 
 class Catalog
 {
@@ -42,8 +43,8 @@ class Catalog
             $c[$id] = new Column($id, $label, $sql, $type, $group, $options, $width);
         };
         $person = fn (string $fk) => "(SELECT name FROM users WHERE users.id = $fk)";
-        $priorities = [['value' => 'low', 'label' => 'Low'], ['value' => 'normal', 'label' => 'Normal'], ['value' => 'high', 'label' => 'High']];
-        $choices = fn (array $labels) => array_map(fn ($value, $label) => compact('value', 'label'), array_keys($labels), array_values($labels));
+        $priorities = [['value' => 'low', 'label' => __('Low')], ['value' => 'normal', 'label' => __('Normal')], ['value' => 'high', 'label' => __('High')]];
+        $choices = fn (array $labels) => array_map(fn ($value, $label) => ['value' => $value, 'label' => (string) __($label)], array_keys($labels), array_values($labels));
         $availability = function (string $sql, array $labels): string {
             $cases = [];
             foreach ($labels as $value => $label) {
@@ -80,8 +81,8 @@ class Catalog
             $add('owner', 'Owner', $person("$t.owner_id"), 'text', 'Ownership');
             $add('owner_id', 'Owner ID', "$t.owner_id", 'number', 'Ownership');
             $add('created_by', 'Created by', $person("$t.created_by"), 'text', 'Ownership');
-            $add('status', 'Stage', "(SELECT name FROM crm_statuses WHERE id=$t.status_id)", 'select', 'Pipeline', Status::orderBy('position')->get()->map(fn ($s) => ['value' => $s->name, 'label' => $s->name])->all());
-            $add('outcome', 'Stage outcome', "(SELECT kind FROM crm_statuses WHERE id=$t.status_id)", 'select', 'Pipeline', array_map(fn ($s) => ['value' => $s, 'label' => ucfirst($s)], ['active', 'won', 'lost']));
+            $add('status', 'Stage', "(SELECT name FROM crm_statuses WHERE id=$t.status_id)", 'select', 'Pipeline', Status::orderBy('position')->get()->map(fn ($s) => ['value' => $s->name, 'label' => StatusDisplay::label($s)])->all());
+            $add('outcome', 'Stage outcome', "(SELECT kind FROM crm_statuses WHERE id=$t.status_id)", 'select', 'Pipeline', array_map(fn ($s) => ['value' => $s, 'label' => (string) __(ucfirst($s))], ['active', 'won', 'lost']));
             $add('priority', 'Priority', "$t.priority", 'select', 'Pipeline', $priorities, 140);
             $add('source', 'Source', "$t.source", group: 'Pipeline');
             $add('needs', 'Needs', "$t.needs", group: 'Sales', width: 280);
@@ -107,7 +108,7 @@ class Catalog
                 }if ($field['type'] === 'date') {
                     $sql = "($sql)::date";
                 }$options = array_map(fn ($v) => ['value' => $v, 'label' => $v], $field['options'] ?? []);
-                $add('custom:'.$key, $field['label'], $sql, $field['type'] === 'text' ? 'text' : $field['type'], 'Custom fields', $options);
+                $add('custom:'.$key, $field['label'], $sql, $field['type'] === 'text' ? 'text' : $field['type'], __('Custom fields'), $options);
             }
             foreach (app(Modules::class)->installed() as $id => $module) {
                 if (app(Modules::class)->enabled($id) && $module instanceof LeadTableContributor) {
@@ -136,7 +137,7 @@ class Catalog
             $add('lead', 'Lead', "(SELECT title FROM crm_leads WHERE id=$t.lead_id)", 'text', 'Customer', width: 240);
             $add('assignee', 'Assignee', $person("$t.assignee_id"), 'text', 'Ownership');
             $add('priority', 'Priority', "$t.priority", 'select', 'Follow-up', $priorities);
-            $add('status', 'Status', "$t.status", 'select', 'Follow-up', array_map(fn ($v) => ['value' => $v, 'label' => ucfirst($v)], ['open', 'completed', 'cancelled']));
+            $add('status', 'Status', "$t.status", 'select', 'Follow-up', array_map(fn ($v) => ['value' => $v, 'label' => (string) __(ucfirst($v))], ['open', 'completed', 'cancelled']));
             $add('due_at', 'Deadline', "$t.due_at", 'datetime', 'Schedule', width: 220);
             $add('remind_at', 'Reminder', "$t.remind_at", 'datetime', 'Schedule', width: 220);
             $add('version', 'Record version', "$t.version", 'number', 'Activity');

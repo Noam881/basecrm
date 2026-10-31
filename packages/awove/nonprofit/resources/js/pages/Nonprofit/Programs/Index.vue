@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { reactive, computed } from "vue";
 import NonprofitNav from "../../../components/NonprofitNav.vue";
@@ -45,7 +46,7 @@ const canCreateHere = computed(() =>
 const rootKind = computed(() =>
     ["programs", "participants", "locations", "groups"].includes(p.section),
 );
-const title = computed(() => titles[p.section]);
+const title = computed(() => tr(titles[p.section]));
 function apply() {
     router.get(
         "/nonprofit/programs",
@@ -62,7 +63,7 @@ function apply() {
             v-if="canExport"
             class="crm-secondary"
             :href="exportUrl(section, filters, table.state)"
-            >Export CSV</a
+            >{{ tr("Export CSV") }}</a
         >
     </div>
     <div class="crm-flow">
@@ -73,36 +74,47 @@ function apply() {
         <form class="crm-card crm-form" @submit.prevent="apply">
             <div class="crm-form-grid">
                 <label class="crm-field"
-                    ><span class="crm-field-label">View</span
-                    ><select v-model="f.view" aria-label="View">
-                        <option value="all">All current records</option>
-                        <option v-if="rootKind" value="active">Active</option>
-                        <option v-if="rootKind" value="inactive">
-                            Inactive
+                    ><span class="crm-field-label">{{ tr("View") }}</span
+                    ><select v-model="f.view" :aria-label="tr('View')">
+                        <option value="all">
+                            {{ tr("All current records") }}
                         </option>
-                        <option value="archived">Archived</option>
+                        <option v-if="rootKind" value="active">
+                            {{ tr("Active") }}
+                        </option>
+                        <option v-if="rootKind" value="inactive">
+                            {{ tr("Inactive") }}
+                        </option>
+                        <option value="archived">{{ tr("Archived") }}</option>
                         <option v-if="section === 'feedback'" value="due">
-                            Follow-ups due
+                            {{ tr("Follow-ups due") }}
                         </option>
                         <option v-if="section === 'feedback'" value="completed">
-                            Follow-ups completed
+                            {{ tr("Follow-ups completed") }}
                         </option>
                     </select></label
                 ><label v-if="canViewPrograms" class="crm-field"
-                    ><span class="crm-field-label">Program filter</span
-                    ><select v-model="f.program_id" aria-label="Program filter">
-                        <option value="">All programs</option>
+                    ><span class="crm-field-label">{{
+                        tr("Program filter")
+                    }}</span
+                    ><select
+                        v-model="f.program_id"
+                        :aria-label="tr('Program filter')"
+                    >
+                        <option value="">{{ tr("All programs") }}</option>
                         <option v-for="r in programs" :key="r.id" :value="r.id">
                             {{ r.name }}
                         </option>
                     </select></label
                 ><label v-if="canViewPrograms" class="crm-field"
-                    ><span class="crm-field-label">Location filter</span
+                    ><span class="crm-field-label">{{
+                        tr("Location filter")
+                    }}</span
                     ><select
                         v-model="f.location_id"
-                        aria-label="Location filter"
+                        :aria-label="tr('Location filter')"
                     >
-                        <option value="">All locations</option>
+                        <option value="">{{ tr("All locations") }}</option>
                         <option
                             v-for="r in locations"
                             :key="r.id"
@@ -112,21 +124,27 @@ function apply() {
                         </option>
                     </select></label
                 ><label v-if="canViewPrograms" class="crm-field"
-                    ><span class="crm-field-label">Group filter</span
-                    ><select v-model="f.group_id" aria-label="Group filter">
-                        <option value="">All groups</option>
+                    ><span class="crm-field-label">{{
+                        tr("Group filter")
+                    }}</span
+                    ><select
+                        v-model="f.group_id"
+                        :aria-label="tr('Group filter')"
+                    >
+                        <option value="">{{ tr("All groups") }}</option>
                         <option v-for="r in groups" :key="r.id" :value="r.id">
                             {{ r.name }}
                         </option>
                     </select></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Responsible staff filter</span
+                    ><span class="crm-field-label">{{
+                        tr("Responsible staff filter")
+                    }}</span
                     ><select
                         v-model="f.owner_id"
-                        aria-label="Responsible staff filter"
+                        :aria-label="tr('Responsible staff filter')"
                     >
-                        <option value="">All visible staff</option>
+                        <option value="">{{ tr("All visible staff") }}</option>
                         <option
                             v-for="r in section === 'participants'
                                 ? participantOwners
@@ -138,10 +156,10 @@ function apply() {
                         </option>
                     </select></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">From date</span
+                    ><span class="crm-field-label">{{ tr("From date") }}</span
                     ><input v-model="f.from" type="date" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">To date</span
+                    ><span class="crm-field-label">{{ tr("To date") }}</span
                     ><input
                         v-model="f.to"
                         type="date"
@@ -151,21 +169,21 @@ function apply() {
             <p class="crm-muted">
                 {{
                     section === "attendance" || section === "sessions"
-                        ? "Dates filter session dates."
+                        ? tr("Dates filter session dates.")
                         : section === "programs"
-                          ? "Dates filter program start dates."
+                          ? tr("Dates filter program start dates.")
                           : section === "feedback"
-                            ? "Dates filter feedback dates."
-                            : "Dates filter record creation dates."
+                            ? tr("Dates filter feedback dates.")
+                            : tr("Dates filter record creation dates.")
                 }}
             </p>
             <div class="crm-form-action">
-                <button class="crm-button">Apply filters</button>
+                <button class="crm-button">{{ tr("Apply filters") }}</button>
             </div>
         </form>
         <section v-if="canCreateHere && rootKind" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add {{ singular[section] }}</summary>
+                <summary>{{ tr("Add") }} {{ singular[section] }}</summary>
                 <Editor
                     v-bind="p"
                     :kind="
@@ -179,18 +197,24 @@ function apply() {
             v-if="canCreateHere && ['sessions', 'feedback'].includes(section)"
             class="crm-notice"
         >
-            Open a
-            <Link href="/nonprofit/programs?section=programs">program</Link> to
-            add {{ section === "sessions" ? "a session" : "feedback" }}.
+            {{ tr("Open a") }}
+            <Link href="/nonprofit/programs?section=programs">{{
+                tr("program")
+            }}</Link>
+            {{ tr("to add") }}
+            {{ section === "sessions" ? tr("a session") : tr("feedback") }}.
         </p>
         <section v-if="summaries !== null" class="crm-card crm-flow">
-            <h2>Attendance summary</h2>
+            <h2>{{ tr("Attendance summary") }}</h2>
             <p class="crm-muted">
-                Recorded attendance within the selected period, programs and
-                locations, limited to participants you can access.
+                {{
+                    tr(
+                        "Recorded attendance within the selected period, programs and locations, limited to participants you can access.",
+                    )
+                }}
             </p>
             <p v-if="!summaries.length">
-                No recorded attendance in this selection.
+                {{ tr("No recorded attendance in this selection.") }}
             </p>
             <article
                 v-for="(row, i) in summaries"

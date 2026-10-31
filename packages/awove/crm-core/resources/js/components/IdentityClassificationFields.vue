@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { computed, ref, watch } from "vue";
 
 export interface IdentityClassificationDraft {
@@ -22,11 +23,11 @@ const props = defineProps<{
 }>();
 const kind = ref(model.value.company_id ? "company" : "contact");
 const labels: Record<string, string> = {
-    customer: "Customer",
-    supplier: "Supplier",
-    donor: "Donor",
-    partner: "Partner",
-    prospect: "Prospect",
+    customer: t("Customer"),
+    supplier: t("Supplier"),
+    donor: t("Donor"),
+    partner: t("Partner"),
+    prospect: t("Prospect"),
 };
 const roleOptions = computed(() =>
     (props.roles ?? Object.keys(labels)).map((key) => ({
@@ -55,17 +56,18 @@ watch(
 
 <template>
     <label class="crm-field">
-        <span class="crm-field-label">Identity type</span>
+        <span class="crm-field-label">{{ t("Identity type") }}</span>
         <select v-model="kind" :disabled="lockedIdentity">
-            <option value="contact">Contact</option>
-            <option value="company">Company</option>
+            <option value="contact">{{ t("Contact") }}</option>
+            <option value="company">{{ t("Company") }}</option>
         </select>
     </label>
     <label v-if="kind === 'contact'" class="crm-field">
-        <span class="crm-field-label">Contact</span>
+        <span class="crm-field-label">{{ t("Contact") }}</span>
         <select v-model="model.contact_id" required :disabled="lockedIdentity">
-            <option :value="null">Choose a contact</option>
+            <option :value="null">{{ t("Choose a contact") }}</option>
             <option
+                dir="auto"
                 v-for="contact in contacts"
                 :key="contact.id"
                 :value="contact.id"
@@ -78,10 +80,11 @@ watch(
         }}</small>
     </label>
     <label v-else class="crm-field">
-        <span class="crm-field-label">Company</span>
+        <span class="crm-field-label">{{ t("Company") }}</span>
         <select v-model="model.company_id" required :disabled="lockedIdentity">
-            <option :value="null">Choose a company</option>
+            <option :value="null">{{ t("Choose a company") }}</option>
             <option
+                dir="auto"
                 v-for="company in companies"
                 :key="company.id"
                 :value="company.id"
@@ -94,7 +97,7 @@ watch(
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Classification</span>
+        <span class="crm-field-label">{{ t("Classification") }}</span>
         <select v-model="model.role" required :disabled="lockedIdentity">
             <option
                 v-for="role in roleOptions"
@@ -109,10 +112,15 @@ watch(
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Responsible person</span>
+        <span class="crm-field-label">{{ t("Responsible person") }}</span>
         <select v-model="model.responsible_id" :disabled="!canAssign">
-            <option :value="null">Unassigned</option>
-            <option v-for="owner in owners" :key="owner.id" :value="owner.id">
+            <option :value="null">{{ t("Unassigned") }}</option>
+            <option
+                dir="auto"
+                v-for="owner in owners"
+                :key="owner.id"
+                :value="owner.id"
+            >
                 {{ owner.name }}
             </option>
         </select>
@@ -124,10 +132,11 @@ watch(
         >
     </label>
     <label v-if="kind === 'company'" class="crm-field">
-        <span class="crm-field-label">Main contact</span>
+        <span class="crm-field-label">{{ t("Main contact") }}</span>
         <select v-model="model.main_contact_id">
-            <option :value="null">No main contact</option>
+            <option :value="null">{{ t("No main contact") }}</option>
             <option
+                dir="auto"
                 v-for="contact in companyContacts"
                 :key="contact.id"
                 :value="contact.id"
@@ -143,14 +152,14 @@ watch(
         >
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Relationship status</span>
+        <span class="crm-field-label">{{ t("Relationship status") }}</span>
         <select v-model="model.active">
-            <option :value="true">Active</option>
-            <option :value="false">Inactive</option>
+            <option :value="true">{{ t("Active") }}</option>
+            <option :value="false">{{ t("Inactive") }}</option>
         </select>
     </label>
     <label class="crm-field crm-form-span">
-        <span class="crm-field-label">Relationship notes</span>
+        <span class="crm-field-label">{{ t("Relationship notes") }}</span>
         <textarea v-model="model.notes" rows="3" maxlength="10000" />
         <small v-if="errors.notes" data-slot="input-error" role="alert">{{
             errors.notes

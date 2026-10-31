@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Link } from "@inertiajs/vue3";
 
 export interface DashboardWidget {
@@ -13,7 +14,7 @@ defineProps<{ widgets: DashboardWidget[] }>();
 <template>
     <section
         v-if="widgets.length"
-        aria-label="Module overviews"
+        :aria-label="t('Module overviews')"
         class="crm-metrics"
     >
         <Link

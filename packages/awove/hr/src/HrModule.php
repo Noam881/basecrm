@@ -47,7 +47,7 @@ class HrModule implements DashboardContributor, Module, RecordTableContributor, 
 
     public function navigation(): array
     {
-        return [new NavigationItem(Installation::manifest()['module_labels']['hr'] ?? 'Human resources', '/hr', 'hr.employment.view.own', ['hr.employment.view.all', 'hr.recruitment.view.own', 'hr.recruitment.view.all', 'hr.cases.view.own', 'hr.cases.view.all'])];
+        return [new NavigationItem(Installation::manifest()['module_labels']['hr'] ?? __('Human resources'), '/hr', 'hr.employment.view.own', ['hr.employment.view.all', 'hr.recruitment.view.own', 'hr.recruitment.view.all', 'hr.cases.view.own', 'hr.cases.view.all'])];
     }
 
     public function panels(): array
@@ -57,7 +57,7 @@ class HrModule implements DashboardContributor, Module, RecordTableContributor, 
 
     public function workTypes(): array
     {
-        return [new WorkType(module: 'hr', kind: 'checklist', label: 'HR checklist item', permissionPrefix: 'hr.cases', statuses: Records::checklistStatuses(), defaultStatus: 'not-started', terminalStatuses: ['done', 'skipped'], completedStatuses: ['done'], routePrefix: '/hr/checklist')];
+        return [new WorkType(module: 'hr', kind: 'checklist', label: __('HR checklist item'), permissionPrefix: 'hr.cases', statuses: Records::checklistStatuses(), defaultStatus: 'not-started', terminalStatuses: ['done', 'skipped'], completedStatuses: ['done'], routePrefix: '/hr/checklist')];
     }
 
     public function routineTypes(): array

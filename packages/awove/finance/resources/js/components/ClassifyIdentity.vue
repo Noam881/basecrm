@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import IdentityClassificationFields from "../../../../crm-core/resources/js/components/IdentityClassificationFields.vue";
 import type { Options } from "../types";
@@ -17,7 +18,7 @@ const form = useForm({
 </script>
 <template>
     <details class="crm-form-disclosure">
-        <summary>Classify an existing contact or company</summary>
+        <summary>{{ tr("Classify an existing contact or company") }}</summary>
         <form
             class="crm-form-grid"
             @submit.prevent="
@@ -38,7 +39,7 @@ const form = useForm({
             />
             <div class="crm-form-action">
                 <button class="crm-button" :disabled="form.processing">
-                    Add {{ role }} classification
+                    {{ tr("Add") }} {{ tr(role) }} {{ tr("classification") }}
                 </button>
             </div>
         </form>

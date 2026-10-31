@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage, router } from "@inertiajs/vue3";
 import { computed } from "vue";
 import IdentityClassificationFields from "../../../../crm-core/resources/js/components/IdentityClassificationFields.vue";
@@ -35,7 +36,9 @@ function refresh() {
 <template>
     <section v-if="canClassify" class="crm-card crm-flow">
         <details class="crm-form-disclosure">
-            <summary>Classify an existing contact or company</summary>
+            <summary>
+                {{ tr("Classify an existing contact or company") }}
+            </summary>
             <form class="crm-form-grid" @submit.prevent="save">
                 <IdentityClassificationFields
                     :model-value="form"
@@ -49,7 +52,8 @@ function refresh() {
                 <FormErrors :errors="form.errors" />
                 <div class="crm-form-action">
                     <button class="crm-button" :disabled="form.processing">
-                        Add {{ form.role }} classification
+                        {{ tr("Add") }} {{ form.role }}
+                        {{ tr("classification") }}
                     </button>
                     <a
                         v-if="canAddIdentity"
@@ -57,14 +61,14 @@ function refresh() {
                         href="/people"
                         target="_blank"
                         rel="noopener noreferrer"
-                        >Add new contact or company</a
+                        >{{ tr("Add new contact or company") }}</a
                     >
                     <button
                         class="crm-secondary"
                         type="button"
                         @click="refresh"
                     >
-                        Refresh available identities
+                        {{ tr("Refresh available identities") }}
                     </button>
                 </div>
             </form>

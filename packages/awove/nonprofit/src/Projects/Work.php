@@ -31,7 +31,7 @@ class Work
             $u = Access::actor($u);
             $current = Access::query($u)->lockForUpdate()->findOrFail($p->id);
             Access::edit($u, $current, true);
-            abort_unless($current->version === $p->version, 409, 'The project changed. Reload before adding work.');
+            abort_unless($current->version === $p->version, 409, __('The project changed. Reload before adding work.'));
             self::kind($kind);
             $this->owner($u, $current, $input, null);
             $w = app(WorkItems::class)->create($u, 'nonprofit', $kind, array_intersect_key($input, array_flip(WorkItems::FIELDS)), ['project_id']);
@@ -68,7 +68,7 @@ class Work
         }if ($id !== null) {
             $owner = config('auth.providers.users.model')::find($id);
             if (! $owner || ! Access::visible($owner, $p)) {
-                throw ValidationException::withMessages(['owner_id' => 'Choose an active owner who can already view this project.']);
+                throw ValidationException::withMessages(['owner_id' => __('Choose an active owner who can already view this project.')]);
             }
         }
     }

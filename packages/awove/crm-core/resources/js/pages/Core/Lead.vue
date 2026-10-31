@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Head, Link, useForm, usePage, router } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import {
@@ -94,7 +95,9 @@ const detailsDisabled = computed(
         detailsPermissionDenied.value,
 );
 function markDetailsChanged(
-    message = "Lead details changed in another session. Your unsaved edits are kept. Reload lead details before saving. Reloading will replace your unsaved lead details.",
+    message = t(
+        "Lead details changed in another session. Your unsaved edits are kept. Reload lead details before saving. Reloading will replace your unsaved lead details.",
+    ),
 ) {
     detailsChanged.value = true;
     detailsWarning.value = message;
@@ -134,7 +137,9 @@ function detailsException(response: { status: number }) {
     if (response.status === 403) {
         detailsPermissionDenied.value = true;
         markDetailsChanged(
-            "You no longer have permission to edit this lead. Your unsaved details are kept and have not been saved.",
+            t(
+                "You no longer have permission to edit this lead. Your unsaved details are kept and have not been saved.",
+            ),
         );
         return false;
     }
@@ -148,7 +153,9 @@ function save() {
         onHttpException: detailsException,
         onNetworkError: () => {
             markDetailsChanged(
-                "The connection was interrupted. Reload lead details to check whether your changes were saved. Reloading will replace your unsaved lead details.",
+                t(
+                    "The connection was interrupted. Reload lead details to check whether your changes were saved. Reloading will replace your unsaved lead details.",
+                ),
             );
             return false;
         },
@@ -168,7 +175,9 @@ function reloadDetails() {
         onHttpException: detailsException,
         onNetworkError: () => {
             markDetailsChanged(
-                "Lead details could not be reloaded. Your unsaved edits are kept. Check your connection and try again.",
+                t(
+                    "Lead details could not be reloaded. Your unsaved edits are kept. Check your connection and try again.",
+                ),
             );
             return false;
         },
@@ -228,9 +237,9 @@ function changeTask(t: Task) {
 }
 </script>
 <template>
-    <Head :title="customerName" /><Link href="/leads" class="crm-back"
-        >← Back to leads</Link
-    >
+    <Head :title="customerName" /><Link href="/leads" class="crm-back">{{
+        t("← Back to leads")
+    }}</Link>
     <div class="crm-heading">
         <h1>{{ customerName }}</h1>
         <button
@@ -238,27 +247,27 @@ function changeTask(t: Task) {
             class="crm-secondary"
             @click="router.post(`/leads/${lead.id}/archive`)"
         >
-            Archive lead
+            {{ t("Archive lead") }}
         </button>
     </div>
     <div class="crm-profile-grid">
         <div class="crm-stack">
             <section class="crm-card crm-flow">
-                <h2>Lead details</h2>
+                <h2>{{ t("Lead details") }}</h2>
                 <p class="crm-muted">
-                    Lead #{{ lead.id }} ·
+                    {{ t("Lead #") }}{{ lead.id }} ·
                     {{ lead.contact?.name ?? lead.company?.name }} ·
                     {{ lead.status.name }}
-                    <span v-if="lead.archived_at">· Archived</span>
+                    <span v-if="lead.archived_at">{{ t("· Archived") }}</span>
                 </p>
                 <p class="crm-muted">
-                    Created
+                    {{ t("Created") }}
                     <time :datetime="lead.created_at">{{
                         date(lead.created_at, zone)
                     }}</time>
                 </p>
                 <div class="crm-field">
-                    <span>Stage</span>
+                    <span>{{ t("Stage") }}</span>
                     <StageControl
                         :lead-id="lead.id"
                         :record-name="customerName"
@@ -270,14 +279,15 @@ function changeTask(t: Task) {
                 </div>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <label
-                        ><span class="crm-field-label"
-                            >Enquiry title (optional)</span
+                        ><span class="crm-field-label">{{
+                            t("Enquiry title (optional)")
+                        }}</span
                         ><input
                             v-model="form.title"
                             :disabled="detailsDisabled"
                             maxlength="160" /></label
                     ><label
-                        ><span class="crm-field-label">Owner</span
+                        ><span class="crm-field-label">{{ t("Owner") }}</span
                         ><select
                             v-model="form.owner_id"
                             :disabled="
@@ -285,8 +295,9 @@ function changeTask(t: Task) {
                                 !capabilities.includes('leads.assign')
                             "
                         >
-                            <option :value="null">Unassigned</option>
+                            <option :value="null">{{ t("Unassigned") }}</option>
                             <option
+                                dir="auto"
                                 v-for="o in owners"
                                 :key="o.id"
                                 :value="o.id"
@@ -295,22 +306,22 @@ function changeTask(t: Task) {
                             </option>
                         </select></label
                     ><label
-                        ><span class="crm-field-label">Source</span
+                        ><span class="crm-field-label">{{ t("Source") }}</span
                         ><input
                             v-model="form.source"
                             :disabled="detailsDisabled" /></label
                     ><label
-                        ><span class="crm-field-label">Priority</span
+                        ><span class="crm-field-label">{{ t("Priority") }}</span
                         ><select
                             v-model="form.priority"
                             :disabled="detailsDisabled"
                         >
-                            <option>low</option>
-                            <option>normal</option>
-                            <option>high</option>
+                            <option value="low">{{ t("low") }}</option>
+                            <option value="normal">{{ t("normal") }}</option>
+                            <option value="high">{{ t("high") }}</option>
                         </select></label
                     ><label
-                        ><span class="crm-field-label">Needs</span
+                        ><span class="crm-field-label">{{ t("Needs") }}</span
                         ><textarea
                             v-model="form.needs"
                             :disabled="detailsDisabled"
@@ -320,7 +331,7 @@ function changeTask(t: Task) {
                     </label>
                     <label
                         ><span class="crm-field-label"
-                            >Estimated value ({{ currency }})</span
+                            >{{ t("Estimated value (") }}{{ currency }})</span
                         ><input
                             v-model="form.estimated_value"
                             :disabled="detailsDisabled"
@@ -330,7 +341,9 @@ function changeTask(t: Task) {
                             maxlength="15"
                     /></label>
                     <label
-                        ><span class="crm-field-label">Closing date</span
+                        ><span class="crm-field-label">{{
+                            t("Closing date")
+                        }}</span
                         ><input
                             v-model="form.closing_date"
                             :disabled="detailsDisabled"
@@ -338,7 +351,7 @@ function changeTask(t: Task) {
                     /></label>
                     <label
                         ><span class="crm-field-label"
-                            >Final deal value ({{ currency }})</span
+                            >{{ t("Final deal value (") }}{{ currency }})</span
                         ><input
                             v-model="form.final_value"
                             :disabled="detailsDisabled"
@@ -348,7 +361,9 @@ function changeTask(t: Task) {
                             maxlength="15"
                     /></label>
                     <label
-                        ><span class="crm-field-label">Loss reason</span
+                        ><span class="crm-field-label">{{
+                            t("Loss reason")
+                        }}</span
                         ><textarea
                             v-model="form.loss_reason"
                             :disabled="detailsDisabled"
@@ -357,9 +372,11 @@ function changeTask(t: Task) {
                         />
                     </label>
                     <p class="crm-muted">
-                        Record the closing date and final value for won deals,
-                        or the reason when a deal is lost. Amounts use the
-                        installation currency.
+                        {{
+                            t(
+                                "Record the closing date and final value for won deals, or the reason when a deal is lost. Amounts use the installation currency.",
+                            )
+                        }}
                     </p>
                     <label v-for="(field, key) in fields" :key="key"
                         ><span class="crm-field-label">{{ field.label }}</span
@@ -368,7 +385,11 @@ function changeTask(t: Task) {
                             v-model="form.custom_fields[key]"
                             :disabled="detailsDisabled"
                         >
-                            <option v-for="o in field.options" :key="o">
+                            <option
+                                v-for="o in field.options"
+                                :key="o"
+                                :value="o"
+                            >
                                 {{ o }}
                             </option></select
                         ><input
@@ -405,8 +426,8 @@ function changeTask(t: Task) {
                                 >
                                     {{
                                         reloadingDetails
-                                            ? "Reloading…"
-                                            : "Reload lead details"
+                                            ? t("Reloading…")
+                                            : t("Reload lead details")
                                     }}
                                 </button>
                             </div>
@@ -417,7 +438,7 @@ function changeTask(t: Task) {
                             class="crm-button"
                             :disabled="detailsDisabled || detailsChanged"
                         >
-                            Save changes
+                            {{ t("Save changes") }}
                         </button>
                     </div>
                 </form>
@@ -437,7 +458,7 @@ function changeTask(t: Task) {
                 :proposals="proposals"
             />
             <section class="crm-card crm-flow">
-                <h2>Notes</h2>
+                <h2>{{ t("Notes") }}</h2>
                 <form
                     v-if="editable"
                     class="crm-form"
@@ -449,22 +470,24 @@ function changeTask(t: Task) {
                     "
                 >
                     <label
-                        ><span class="crm-field-label">Add a note</span
+                        ><span class="crm-field-label">{{
+                            t("Add a note")
+                        }}</span
                         ><textarea
                             v-model="note.body"
                             required
                             rows="3"
-                            placeholder="Capture the conversation…"
+                            :placeholder="t('Capture the conversation…')"
                         /></label
                     ><button class="crm-button" :disabled="note.processing">
-                        Add note
+                        {{ t("Add note") }}
                     </button>
                 </form>
                 <p v-if="!lead.notes?.length" class="crm-muted">
-                    No notes yet.
+                    {{ t("No notes yet.") }}
                 </p>
                 <article v-for="n in lead.notes" :key="n.id" class="crm-note">
-                    <p>{{ n.body }}</p>
+                    <p dir="auto">{{ n.body }}</p>
                     <small
                         >{{ n.author.name }} ·
                         {{ date(n.created_at, zone) }}</small
@@ -481,7 +504,7 @@ function changeTask(t: Task) {
                 />
             </section>
             <section class="crm-card">
-                <h2>Activity</h2>
+                <h2>{{ t("Activity") }}</h2>
                 <article
                     v-for="a in [...(lead.activity ?? [])].reverse()"
                     :key="a.id"
@@ -490,10 +513,17 @@ function changeTask(t: Task) {
                     <span class="crm-task-dot" />
                     <div>
                         <strong>{{
-                            a.event.replaceAll(".", " ").replaceAll("_", " ")
+                            t(
+                                a.event
+                                    .replaceAll(".", " ")
+                                    .replaceAll("_", " ")
+                                    .replace(/^./, (value) =>
+                                        value.toUpperCase(),
+                                    ),
+                            )
                         }}</strong
                         ><small
-                            >{{ a.actor?.name ?? "System" }} ·
+                            >{{ a.actor?.name ?? t("System") }} ·
                             {{ date(a.created_at, zone) }}</small
                         >
                     </div>
@@ -502,18 +532,18 @@ function changeTask(t: Task) {
         </div>
         <aside class="crm-stack">
             <section class="crm-card">
-                <h2>Customer</h2>
+                <h2>{{ t("Customer") }}</h2>
                 <div
                     v-for="item in [
                         {
                             type: 'contacts',
-                            label: 'contact',
+                            label: t('Contact'),
                             person: lead.contact,
                             editable: identityPermissions.contact,
                         },
                         {
                             type: 'companies',
-                            label: 'company',
+                            label: t('Company'),
                             person: lead.company,
                             editable: identityPermissions.company,
                         },
@@ -527,58 +557,74 @@ function changeTask(t: Task) {
                             >{{ item.person?.name }}</Link
                         ></strong
                     >
-                    <p>{{ item.person?.email ?? "No email" }}</p>
-                    <p>{{ item.person?.phone ?? "No phone" }}</p>
+                    <p>{{ item.person?.email ?? t("No email") }}</p>
+                    <p>{{ item.person?.phone ?? t("No phone") }}</p>
                     <div v-if="item.editable" class="crm-form-action">
                         <Link
                             :href="`/people/${item.type}/${item.person?.id}?from_lead=${lead.id}`"
                             class="crm-secondary"
-                            >Edit {{ item.label }}</Link
+                            >{{ t("Edit") }} {{ item.label }}</Link
                         >
                     </div>
                 </div>
             </section>
             <section class="crm-card crm-flow">
-                <h2>Follow-ups</h2>
+                <h2>{{ t("Follow-ups") }}</h2>
                 <p v-if="!lead.tasks?.length" class="crm-muted">
-                    No follow-ups scheduled.
+                    {{ t("No follow-ups scheduled.") }}
                 </p>
-                <article v-for="t in lead.tasks" :key="t.id" class="crm-note">
-                    <strong>{{ t.title }}</strong>
-                    <p>{{ date(t.due_at, zone) }}</p>
-                    <small>{{ t.assignee?.name }} · {{ t.status }}</small>
+                <article
+                    v-for="task in lead.tasks"
+                    :key="task.id"
+                    class="crm-note"
+                >
+                    <strong dir="auto">{{ task.title }}</strong>
+                    <p>{{ date(task.due_at, zone) }}</p>
+                    <small
+                        >{{ task.assignee?.name }} ·
+                        {{
+                            t(
+                                task.status.charAt(0).toUpperCase() +
+                                    task.status.slice(1),
+                            )
+                        }}</small
+                    >
                     <div
-                        v-if="editable && t.status === 'open'"
+                        v-if="editable && task.status === 'open'"
                         class="crm-inline"
                     >
-                        <button class="crm-secondary" @click="complete(t)">
-                            Complete</button
+                        <button class="crm-secondary" @click="complete(task)">
+                            {{ t("Complete") }}</button
                         ><button
                             class="crm-secondary"
-                            @click="reschedule = t.id"
+                            @click="reschedule = task.id"
                         >
-                            Reschedule
+                            {{ t("Reschedule") }}
                         </button>
                     </div>
                     <form
-                        v-if="reschedule === t.id"
+                        v-if="reschedule === task.id"
                         class="crm-form"
-                        @submit.prevent="changeTask(t)"
+                        @submit.prevent="changeTask(task)"
                     >
                         <label
-                            ><span class="crm-field-label">New deadline</span
+                            ><span class="crm-field-label">{{
+                                t("New deadline")
+                            }}</span
                             ><input
                                 v-model="rescheduleDue"
                                 type="datetime-local"
                                 required /></label
                         ><label
-                            ><span class="crm-field-label">New reminder</span
+                            ><span class="crm-field-label">{{
+                                t("New reminder")
+                            }}</span
                             ><input
                                 v-model="rescheduleReminder"
                                 type="datetime-local"
                                 required /></label
                         ><button class="crm-button">
-                            Reschedule follow-up
+                            {{ t("Reschedule follow-up") }}
                         </button>
                     </form>
                 </article>
@@ -587,14 +633,17 @@ function changeTask(t: Task) {
                     class="crm-form"
                     @submit.prevent="addTask"
                 >
-                    <h3>Schedule a follow-up</h3>
+                    <h3>{{ t("Schedule a follow-up") }}</h3>
                     <label
-                        ><span class="crm-field-label">Follow-up title</span
+                        ><span class="crm-field-label">{{
+                            t("Follow-up title")
+                        }}</span
                         ><input v-model="task.title" required /></label
                     ><label
-                        ><span class="crm-field-label">Assignee</span
+                        ><span class="crm-field-label">{{ t("Assignee") }}</span
                         ><select v-model="task.assignee_id">
                             <option
+                                dir="auto"
                                 v-for="o in owners"
                                 :key="o.id"
                                 :value="o.id"
@@ -603,29 +652,37 @@ function changeTask(t: Task) {
                             </option>
                         </select></label
                     ><label
-                        ><span class="crm-field-label">Due date & time</span
+                        ><span class="crm-field-label">{{
+                            t("Due date & time")
+                        }}</span
                         ><input
                             v-model="localDue"
                             type="datetime-local"
                             required /></label
                     ><label
-                        ><span class="crm-field-label">Reminder time</span
+                        ><span class="crm-field-label">{{
+                            t("Reminder time")
+                        }}</span
                         ><input
                             v-model="localReminder"
                             type="datetime-local"
                             required /></label
                     ><small
-                        >Times entered in your device timezone; displayed in
+                        >{{
+                            t(
+                                "Times entered in your device timezone; displayed in",
+                            )
+                        }}
                         {{ zone }}.</small
                     ><label
-                        ><span class="crm-field-label">Priority</span
+                        ><span class="crm-field-label">{{ t("Priority") }}</span
                         ><select v-model="task.priority">
-                            <option>low</option>
-                            <option>normal</option>
-                            <option>high</option>
+                            <option value="low">{{ t("low") }}</option>
+                            <option value="normal">{{ t("normal") }}</option>
+                            <option value="high">{{ t("high") }}</option>
                         </select></label
                     ><button class="crm-button" :disabled="task.processing">
-                        Schedule follow-up
+                        {{ t("Schedule follow-up") }}
                     </button>
                 </form>
             </section>

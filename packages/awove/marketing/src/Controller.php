@@ -184,7 +184,7 @@ class Controller
         $columns = app(Catalog::class)->columns('marketing.'.$kind, $u);
         $q = app(Query::class)->filtered($this->query($r, $kind), 'marketing.'.$kind, $r);
         if ((clone $q)->count() > 5000) {
-            throw ValidationException::withMessages(['export' => 'Export at most 5,000 filtered records.']);
+            throw ValidationException::withMessages(['export' => __('Export at most 5,000 filtered records.')]);
         }$rows = (function () use ($q, $columns) {
             foreach ($q->cursor() as $item) {
                 $row = [];

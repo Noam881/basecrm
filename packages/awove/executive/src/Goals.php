@@ -15,7 +15,7 @@ class Goals
 
     public static function statuses(): array
     {
-        return array_replace(self::STATUSES, array_intersect_key(Installation::manifest()['executive_goal_statuses'] ?? [], self::STATUSES));
+        return array_replace(array_map(fn ($label) => (string) __($label), self::STATUSES), array_intersect_key(Installation::manifest()['executive_goal_statuses'] ?? [], self::STATUSES));
     }
 
     public function save($user, array $input, ?Goal $goal = null): Goal
@@ -38,7 +38,7 @@ class Goals
         foreach (['name', 'unit', 'success_criterion'] as $field) {
             $data[$field] = trim($data[$field]);
             if ($data[$field] === '') {
-                throw ValidationException::withMessages([$field => 'Enter a value.']);
+                throw ValidationException::withMessages([$field => __('Enter a value.')]);
             }
         }
 
@@ -46,7 +46,7 @@ class Goals
             if ($goal) {
                 $goal = Goal::lockForUpdate()->findOrFail($goal->id);
                 Access::edit($user, $goal);
-                abort_unless($goal->version === (int) $data['version'], 409, 'This goal changed. Reload before saving.');
+                abort_unless($goal->version === (int) $data['version'], 409, __('This goal changed. Reload before saving.'));
                 unset($data['version']);
                 $this->owner($user, $data['owner_id'], $goal);
                 $goal->fill($data);
@@ -95,7 +95,7 @@ class Goals
         abort_unless($ownerId === $user->id || $user->can('executive.assign'), 403);
         $owner = config('auth.providers.users.model')::where('active', true)->find($ownerId);
         if (! $owner || ! ($owner->can('executive.view.own') || $owner->can('executive.view.all'))) {
-            throw ValidationException::withMessages(['owner_id' => 'Choose an active staff member with Executive access.']);
+            throw ValidationException::withMessages(['owner_id' => __('Choose an active staff member with Executive access.')]);
         }
     }
 }

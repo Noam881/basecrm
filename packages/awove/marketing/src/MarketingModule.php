@@ -48,12 +48,12 @@ class MarketingModule implements DashboardContributor, LeadTableContributor, Mod
 
     public function navigation(): array
     {
-        return [new NavigationItem(Installation::manifest()['module_labels']['marketing'] ?? 'Marketing', '/marketing', 'marketing.campaigns.view.own', ['marketing.campaigns.view.all', 'marketing.content.view.own', 'marketing.content.view.all'])];
+        return [new NavigationItem(Installation::manifest()['module_labels']['marketing'] ?? __('Marketing'), '/marketing', 'marketing.campaigns.view.own', ['marketing.campaigns.view.all', 'marketing.content.view.own', 'marketing.content.view.all'])];
     }
 
     public function panels(): array
     {
-        return app(Modules::class)->enabled('sales') ? [new LeadPanel('marketing.attribution', 'Marketing attribution', 'Marketing/Attribution', '/marketing/leads/{lead}/attribution', 'marketing.attribution.view', ['marketing.attribution.edit'])] : [];
+        return app(Modules::class)->enabled('sales') ? [new LeadPanel('marketing.attribution', __('Marketing attribution'), 'Marketing/Attribution', '/marketing/leads/{lead}/attribution', 'marketing.attribution.view', ['marketing.attribution.edit'])] : [];
     }
 
     public function tableIds(): array
@@ -84,9 +84,9 @@ class MarketingModule implements DashboardContributor, LeadTableContributor, Mod
     {
         $w = [];
         if (Access::available($u, 'campaigns')) {
-            $w[] = ['id' => 'marketing.active-campaigns', 'label' => 'Active campaigns', 'value' => app(Work::class)->campaigns($u)->whereNull('archived_at')->where('status', 'active')->count(), 'href' => '/marketing/campaigns?status=active', 'permission' => 'marketing.campaigns.view.own', 'anyPermissions' => ['marketing.campaigns.view.all']];
+            $w[] = ['id' => 'marketing.active-campaigns', 'label' => __('Active campaigns'), 'value' => app(Work::class)->campaigns($u)->whereNull('archived_at')->where('status', 'active')->count(), 'href' => '/marketing/campaigns?status=active', 'permission' => 'marketing.campaigns.view.own', 'anyPermissions' => ['marketing.campaigns.view.all']];
         }if (Access::available($u, 'content')) {
-            $w[] = ['id' => 'marketing.content-due', 'label' => 'Content due', 'value' => app(Work::class)->content($u)->whereNull('archived_at')->where('status', '<>', 'published')->where('planned_on', '<=', now(Installation::settings()['timezone'])->toDateString())->count(), 'href' => '/marketing/content?view=due', 'permission' => 'marketing.content.view.own', 'anyPermissions' => ['marketing.content.view.all']];
+            $w[] = ['id' => 'marketing.content-due', 'label' => __('Content due'), 'value' => app(Work::class)->content($u)->whereNull('archived_at')->where('status', '<>', 'published')->where('planned_on', '<=', now(Installation::settings()['timezone'])->toDateString())->count(), 'href' => '/marketing/content?view=due', 'permission' => 'marketing.content.view.own', 'anyPermissions' => ['marketing.content.view.all']];
         }
 
         return $w;

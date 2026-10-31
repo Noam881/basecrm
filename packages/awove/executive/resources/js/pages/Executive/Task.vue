@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import WorkReferences, {
     type WorkReference,
 } from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
@@ -20,7 +21,7 @@ const props = defineProps<
     <Head :title="record.title" /><Link
         href="/executive?section=tasks"
         class="crm-back"
-        >← Back to management tasks</Link
+        >{{ tr("← Back to management tasks") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.title }}</h1>
@@ -33,30 +34,30 @@ const props = defineProps<
                 })
             "
         >
-            Archive task
+            {{ tr("Archive task") }}
         </button>
     </div>
     <div class="crm-stack">
         <section class="crm-card crm-flow">
-            <h2>Management task</h2>
+            <h2>{{ tr("Management task") }}</h2>
             <p>
-                Owner:
+                {{ tr("Owner:") }}
                 {{
                     owners.find((owner) => owner.id === record.owner_id)
-                        ?.name ?? "Unassigned"
+                        ?.name ?? tr("Unassigned")
                 }}
             </p>
             <p class="crm-muted">
                 {{ taskStatuses[record.status]
-                }}<span v-if="record.archived_at"> · Archived</span>
+                }}<span v-if="record.archived_at"> {{ tr("· Archived") }}</span>
             </p>
             <Link
                 v-if="record.goal"
                 :href="`/executive/goals/${record.goal.id}`"
-                >Goal: {{ record.goal.name }}</Link
+                >{{ tr("Goal:") }} {{ record.goal.name }}</Link
             >
             <p v-else-if="record.goal_restricted" class="crm-muted">
-                The linked goal is restricted.
+                {{ tr("The linked goal is restricted.") }}
             </p>
             <TaskEditor
                 v-if="editable"
@@ -66,19 +67,19 @@ const props = defineProps<
             />
             <dl v-else class="crm-detail-grid">
                 <div>
-                    <dt>Description</dt>
-                    <dd>{{ record.description || "No description" }}</dd>
+                    <dt>{{ tr("Description") }}</dt>
+                    <dd>{{ record.description || tr("No description") }}</dd>
                 </div>
                 <div>
-                    <dt>Due date</dt>
+                    <dt>{{ tr("Due date") }}</dt>
                     <dd>{{ record.due_on }}</dd>
                 </div>
                 <div>
-                    <dt>Priority</dt>
-                    <dd>{{ record.priority }}</dd>
+                    <dt>{{ tr("Priority") }}</dt>
+                    <dd>{{ tr(record.priority) }}</dd>
                 </div>
                 <div v-if="record.completed_on">
-                    <dt>Completed on</dt>
+                    <dt>{{ tr("Completed on") }}</dt>
                     <dd>{{ record.completed_on }}</dd>
                 </div>
             </dl>
@@ -88,7 +89,7 @@ const props = defineProps<
         <HistoryList
             v-if="goalHistory.length"
             :history="goalHistory"
-            title="Goal link history"
+            :title="tr('Goal link history')"
         />
     </div>
 </template>

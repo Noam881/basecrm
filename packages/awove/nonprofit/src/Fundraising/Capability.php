@@ -24,7 +24,7 @@ class Capability implements NonprofitCapability
 
     public function navigation(): array
     {
-        return [new NavigationItem('Fundraising', '/nonprofit/fundraising', Access::PREFIX.'view.own', [Access::PREFIX.'view.all'])];
+        return [new NavigationItem(__('Fundraising'), '/nonprofit/fundraising', Access::PREFIX.'view.own', [Access::PREFIX.'view.all'])];
     }
 
     public function tableIds(): array
@@ -53,6 +53,6 @@ class Capability implements NonprofitCapability
             return [];
         }
 
-        return [['id' => 'nonprofit.fundraising.actions', 'label' => 'Fundraising follow-ups due', 'value' => Access::query($u)->whereNull('archived_at')->whereNotNull('next_action')->where('next_action_on', '<=', Records::today())->count(), 'href' => '/nonprofit/fundraising?view=due', 'permission' => Access::PREFIX.'view.own', 'anyPermissions' => [Access::PREFIX.'view.all']]];
+        return [['id' => 'nonprofit.fundraising.actions', 'label' => __('Fundraising follow-ups due'), 'value' => Access::query($u)->whereNull('archived_at')->whereNotNull('next_action')->where('next_action_on', '<=', Records::today())->count(), 'href' => '/nonprofit/fundraising?view=due', 'permission' => Access::PREFIX.'view.own', 'anyPermissions' => [Access::PREFIX.'view.all']]];
     }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
 import OperationsNav from "../../components/OperationsNav.vue";
 import ClassificationEditor from "../../components/ClassificationEditor.vue";
@@ -30,12 +31,12 @@ function archive() {
     <Head :title="record.name" /><Link
         class="crm-back"
         href="/operations/directory"
-        >← Customers &amp; suppliers</Link
+        >{{ tr("← Customers & suppliers") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.name }}</h1>
         <span class="crm-badge">{{
-            record.role === "customer" ? "Customer" : "Supplier"
+            record.role === "customer" ? tr("Customer") : tr("Supplier")
         }}</span>
     </div>
     <div class="crm-flow">
@@ -43,58 +44,62 @@ function archive() {
         <section class="crm-card crm-flow">
             <dl class="crm-detail-grid">
                 <div class="crm-detail-item">
-                    <dt>Phone</dt>
-                    <dd>{{ record.phone ?? "Not provided" }}</dd>
+                    <dt>{{ tr("Phone") }}</dt>
+                    <dd>{{ record.phone ?? tr("Not provided") }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Email</dt>
-                    <dd>{{ record.email ?? "Not provided" }}</dd>
+                    <dt>{{ tr("Email") }}</dt>
+                    <dd>{{ record.email ?? tr("Not provided") }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Main contact</dt>
+                    <dt>{{ tr("Main contact") }}</dt>
                     <dd>
                         {{
                             record.main_contact?.name ??
                             (record.has_hidden_main_contact
-                                ? "Unavailable"
-                                : "Not set")
+                                ? tr("Unavailable")
+                                : tr("Not set"))
                         }}
                     </dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Responsible person</dt>
-                    <dd>{{ record.responsible?.name ?? "Unassigned" }}</dd>
+                    <dt>{{ tr("Responsible person") }}</dt>
+                    <dd>{{ record.responsible?.name ?? tr("Unassigned") }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Activity</dt>
-                    <dd>{{ record.active ? "Active" : "Inactive" }}</dd>
+                    <dt>{{ tr("Activity") }}</dt>
+                    <dd>{{ record.active ? tr("Active") : tr("Inactive") }}</dd>
                 </div>
             </dl>
             <p v-if="record.notes">{{ record.notes }}</p>
-            <Link class="crm-secondary" :href="record.profile_url"
-                >Shared contact details</Link
-            >
+            <Link class="crm-secondary" :href="record.profile_url">{{
+                tr("Shared contact details")
+            }}</Link>
             <p v-if="record.archived_at">
-                Archived classification · existing business links retained.
+                {{
+                    tr(
+                        "Archived classification · existing business links retained.",
+                    )
+                }}
             </p>
         </section>
         <section v-if="canClassify" class="crm-card crm-flow">
-            <h2>Edit classification</h2>
+            <h2>{{ tr("Edit classification") }}</h2>
             <ClassificationEditor :key="record.version" v-bind="props" />
             <div class="crm-form-action">
                 <button class="crm-secondary" @click="archive">
                     {{
                         record.archived_at
-                            ? "Restore classification"
-                            : "Archive classification"
+                            ? tr("Restore classification")
+                            : tr("Archive classification")
                     }}
                 </button>
             </div>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Related records</h2>
+            <h2>{{ tr("Related records") }}</h2>
             <div v-if="related.requests.length">
-                <h3>Operational requests</h3>
+                <h3>{{ tr("Operational requests") }}</h3>
                 <p v-for="item in related.requests" :key="item.id">
                     <Link :href="`/operations/requests/${item.id}`">{{
                         item.title
@@ -102,7 +107,7 @@ function archive() {
                 </p>
             </div>
             <div v-if="related.orders.length">
-                <h3>Supplier orders</h3>
+                <h3>{{ tr("Supplier orders") }}</h3>
                 <p v-for="item in related.orders" :key="item.id">
                     <Link :href="`/operations/orders/${item.id}`">{{
                         item.reference
@@ -110,10 +115,10 @@ function archive() {
                 </p>
             </div>
             <div v-if="related.opportunities.length">
-                <h3>Opportunities</h3>
+                <h3>{{ tr("Opportunities") }}</h3>
                 <p v-for="item in related.opportunities" :key="item.id">
                     <Link :href="`/leads/${item.id}`">{{
-                        item.title ?? `Opportunity #${item.id}`
+                        item.title ?? tr("Opportunity #{id}", { id: item.id })
                     }}</Link>
                 </p>
             </div>
@@ -124,7 +129,7 @@ function archive() {
                     !related.opportunities.length
                 "
             >
-                No accessible linked records.
+                {{ tr("No accessible linked records.") }}
             </p>
         </section>
         <HistoryList :history="history" />

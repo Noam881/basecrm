@@ -19,7 +19,7 @@ class Tasks
             Gate::forUser($actor)->authorize('update', $lead);
             $assignee = config('auth.providers.users.model')::where('active', true)->findOrFail($data['assignee_id']);
             abort_unless($assignee->getKey() === $actor->id || $actor->can('leads.assign'), 403);
-            abort_unless(Access::leads($assignee)->whereKey($lead->id)->exists(), 422, 'Assignee cannot access this lead.');
+            abort_unless(Access::leads($assignee)->whereKey($lead->id)->exists(), 422, __('Assignee cannot access this lead.'));
             DB::transaction(function () use ($actor, $lead, $data, $service) {
                 $task = $lead->tasks()->create($data);
                 $service->log($lead, $actor, 'task.created', ['task_id' => $task->id]);
@@ -43,7 +43,7 @@ class Tasks
                 if (isset($data[$k])) {
                     $data[$k] = CarbonImmutable::parse($data[$k])->utc();
                 }
-            }abort_if(($data['remind_at'] ?? $t->remind_at) > ($data['due_at'] ?? $t->due_at), 422, 'Reminder must be before the deadline.');
+            }abort_if(($data['remind_at'] ?? $t->remind_at) > ($data['due_at'] ?? $t->due_at), 422, __('Reminder must be before the deadline.'));
             $t->update([...$data, 'version' => $t->version + 1]);
             $service->log($t->lead()->firstOrFail(), $actor, 'task.'.$t->status, ['task_id' => $t->id]);
         });

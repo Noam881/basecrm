@@ -18,7 +18,7 @@ class Records
 {
     public static function statuses(): array
     {
-        return array_replace(['planned' => 'Planned', 'in-progress' => 'In progress', 'on-hold' => 'On hold', 'completed' => 'Completed', 'cancelled' => 'Cancelled'], array_intersect_key(Installation::manifest()['nonprofit_project_statuses'] ?? [], array_flip(['planned', 'in-progress', 'on-hold', 'completed', 'cancelled'])));
+        return array_replace(array_map(fn ($label) => (string) __($label), ['planned' => 'Planned', 'in-progress' => 'In progress', 'on-hold' => 'On hold', 'completed' => 'Completed', 'cancelled' => 'Cancelled']), array_intersect_key(Installation::manifest()['nonprofit_project_statuses'] ?? [], array_flip(['planned', 'in-progress', 'on-hold', 'completed', 'cancelled'])));
     }
 
     public function save($user, array $input, ?int $id = null): Project
@@ -39,7 +39,7 @@ class Records
             foreach (['name', 'objective'] as $f) {
                 $data[$f] = trim($data[$f]);
                 if ($data[$f] === '') {
-                    throw ValidationException::withMessages([$f => 'Enter a value.']);
+                    throw ValidationException::withMessages([$f => __('Enter a value.')]);
                 }
             }
             $data['owner_id'] = isset($data['owner_id']) ? (int) $data['owner_id'] : null;
@@ -71,7 +71,7 @@ class Records
         $old = Budget::where('project_id', $p->id)->latest('id')->first();
         if (! filled($input['planned_budget'])) {
             if ($old && $u->can('nonprofit.projects.budgets.view')) {
-                throw ValidationException::withMessages(['planned_budget' => 'Enter a revised amount, including zero, to retain budget history.']);
+                throw ValidationException::withMessages(['planned_budget' => __('Enter a revised amount, including zero, to retain budget history.')]);
             }
 
             return false;
@@ -157,7 +157,7 @@ class Records
             $data = validator($input, ['name' => 'required|string|max:180', 'url' => 'required|string|max:2048'])->validate();
             $data['name'] = trim($data['name']);
             if ($data['name'] === '') {
-                throw ValidationException::withMessages(['name' => 'Enter a document name.']);
+                throw ValidationException::withMessages(['name' => __('Enter a document name.')]);
             }$data['url'] = app(DocumentLinks::class)->validate($data['url']);
             $doc = Document::create([...$data, 'project_id' => $p->id, 'actor_id' => $u->id]);
             $this->change($u, $p, 'document.added', ['documents']);

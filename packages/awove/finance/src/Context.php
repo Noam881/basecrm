@@ -12,7 +12,7 @@ class Context
     public static function statuses(): array
     {
         $defaults = ['unpaid' => 'Unpaid', 'part-paid' => 'Part paid', 'paid' => 'Paid', 'cancelled' => 'Cancelled'];
-        $labels = array_replace($defaults, array_intersect_key(Installation::manifest()['finance_statuses'] ?? [], $defaults));
+        $labels = array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key(Installation::manifest()['finance_statuses'] ?? [], $defaults));
         foreach ($labels as $label) {
             if (! is_string($label) || trim($label) === '' || mb_strlen($label) > 100) {
                 throw new \RuntimeException('Finance status labels must be nonempty strings up to 100 characters.');

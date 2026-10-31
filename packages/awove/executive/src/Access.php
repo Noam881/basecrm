@@ -32,7 +32,7 @@ class Access
     public static function edit($user, Goal $goal): void
     {
         self::view($user, $goal);
-        abort_if($goal->archived_at !== null, 403, 'Archived goals are read only.');
+        abort_if($goal->archived_at !== null, 403, __('Archived goals are read only.'));
         abort_unless($user->can('executive.edit.all') || ($goal->owner_id === $user->id && $user->can('executive.edit.own')), 403);
     }
 }

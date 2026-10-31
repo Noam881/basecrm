@@ -18,7 +18,7 @@ class Links
             $data = validator($input, ['target_type' => ['required', Rule::in(['asset', 'operations-order'])], 'target_id' => 'required|integer|min:1'])->validate();
             $source = app(Connections::class)->resourceQuery($u, $data['target_type'])?->whereNull('archived_at')->lockForUpdate()->find($data['target_id']);
             abort_unless($source !== null && app(Connections::class)->resource($u, $data['target_type'], (int) $data['target_id'], true) !== null, 403);
-            abort_if(ResourceLink::where('project_id', $p->id)->where('target_type', $data['target_type'])->where('target_id', $data['target_id'])->whereNull('archived_at')->exists(), 409, 'This resource is already linked.');
+            abort_if(ResourceLink::where('project_id', $p->id)->where('target_type', $data['target_type'])->where('target_id', $data['target_id'])->whereNull('archived_at')->exists(), 409, __('This resource is already linked.'));
             $link = ResourceLink::create([...$data, 'project_id' => $p->id, 'actor_id' => $u->id]);
             app(Records::class)->change($u, $p, 'resource.linked', ['resources']);
 
@@ -37,7 +37,7 @@ class Links
             // Lock the immutable source payment too: whole-payment attribution cannot race across projects.
             Payment::whereKey($data['payment_id'])->lockForUpdate()->firstOrFail();
             if (PaymentLink::where('payment_id', $data['payment_id'])->whereNull('archived_at')->exists()) {
-                throw ValidationException::withMessages(['payment_id' => 'This whole payment is already linked to a project. Splitting payments is unsupported.']);
+                throw ValidationException::withMessages(['payment_id' => __('This whole payment is already linked to a project. Splitting payments is unsupported.')]);
             }
             $link = PaymentLink::create([...$data, 'project_id' => $p->id, 'actor_id' => $u->id]);
             app(Records::class)->change($u, $p, 'payment.linked', ['financial_links']);

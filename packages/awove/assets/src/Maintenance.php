@@ -28,7 +28,7 @@ class Maintenance
             } else {
                 abort_unless($u->can('assets.create'), 403);
                 if ($asset->status === 'retired') {
-                    throw ValidationException::withMessages(['asset' => 'Reactivate a retired asset explicitly before planning new maintenance.']);
+                    throw ValidationException::withMessages(['asset' => __('Reactivate a retired asset explicitly before planning new maintenance.')]);
                 }
             }
             $input = Records::clean($input);
@@ -37,7 +37,7 @@ class Maintenance
             if ($record?->status === 'completed') {
                 foreach (['action', 'due_on', 'status', 'supplier_relationship_id', 'completed_on', 'cost'] as $f) {
                     if (array_key_exists($f, $input) && $input[$f] !== $record->getAttribute($f)) {
-                        throw ValidationException::withMessages([$f => 'The completed action retains its original details. Edit only responsible staff, description or the manual next reminder date.']);
+                        throw ValidationException::withMessages([$f => __('The completed action retains its original details. Edit only responsible staff, description or the manual next reminder date.')]);
                     }
                 }
             }
@@ -95,7 +95,7 @@ class Maintenance
             $record = MaintenanceRecord::lockForUpdate()->findOrFail($id);
             $service->version($record, $input);
             abort_if($record->archived_at !== null, 403);
-            abort_if($record->status === 'completed', 409, 'This maintenance completion is already recorded.');
+            abort_if($record->status === 'completed', 409, __('This maintenance completion is already recorded.'));
             $data = validator(Records::clean($input), ['completed_on' => 'required|date_format:Y-m-d|before_or_equal:'.Records::today(), 'next_due_on' => 'nullable|date_format:Y-m-d|after:completed_on', 'asset_status' => ['required', Rule::in(['available', 'in-use', 'under-maintenance'])], 'cost' => 'nullable'])->validate();
             $service->status($asset, $data['asset_status'], $id, true);
             $cost = null;
@@ -128,7 +128,7 @@ class Maintenance
             $service->version($record, $input);
             abort_if($record->archived_at !== null, 403);
             if ($record->status !== 'completed') {
-                throw ValidationException::withMessages(['cost' => 'Complete the maintenance action before recording its final manual cost.']);
+                throw ValidationException::withMessages(['cost' => __('Complete the maintenance action before recording its final manual cost.')]);
             }
             $data = validator(Records::clean($input), ['cost' => 'required'])->validate();
             $amount = Money::amount($data['cost'], 'cost');

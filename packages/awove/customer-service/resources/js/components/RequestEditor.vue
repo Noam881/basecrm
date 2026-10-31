@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import RequestFields from "../../../../crm-core/resources/js/components/RequestFields.vue";
 import type { Options, ServiceRequest } from "../types";
@@ -37,7 +38,7 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <p v-if="form.hasErrors" class="crm-form-span" role="alert">
-            Please check the highlighted fields.
+            {{ tr("Please check the highlighted fields.") }}
         </p>
         <RequestFields
             :model-value="form"
@@ -46,9 +47,9 @@ function save() {
             :errors="form.errors"
         />
         <label class="crm-field"
-            ><span class="crm-field-label">Contact</span
+            ><span class="crm-field-label">{{ tr("Contact") }}</span
             ><select v-model="form.contact_id">
-                <option :value="null">Choose contact</option>
+                <option :value="null">{{ tr("Choose contact") }}</option>
                 <option
                     v-for="contact in contacts"
                     :key="contact.id"
@@ -64,9 +65,9 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Company</span
+            ><span class="crm-field-label">{{ tr("Company") }}</span
             ><select v-model="form.company_id">
-                <option :value="null">Choose company</option>
+                <option :value="null">{{ tr("Choose company") }}</option>
                 <option
                     v-for="company in companies"
                     :key="company.id"
@@ -82,7 +83,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Date received</span
+            ><span class="crm-field-label">{{ tr("Date received") }}</span
             ><input v-model="form.received_on" type="date" required /><small
                 v-if="form.errors.received_on"
                 data-slot="input-error"
@@ -91,7 +92,7 @@ function save() {
             ></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Channel</span
+            ><span class="crm-field-label">{{ tr("Channel") }}</span
             ><select v-model="form.channel">
                 <option
                     v-for="(label, key) in channels"
@@ -103,7 +104,7 @@ function save() {
             </select></label
         >
         <label class="crm-field"
-            ><span class="crm-field-label">Status</span
+            ><span class="crm-field-label">{{ tr("Status") }}</span
             ><select v-model="form.status">
                 <option
                     v-for="(label, key) in statuses"
@@ -117,7 +118,7 @@ function save() {
         <label
             v-if="['resolved', 'closed'].includes(form.status)"
             class="crm-field"
-            ><span class="crm-field-label">Resolution date</span
+            ><span class="crm-field-label">{{ tr("Resolution date") }}</span
             ><input v-model="form.resolved_on" type="date" /><small
                 v-if="form.errors.resolved_on"
                 data-slot="input-error"
@@ -128,7 +129,7 @@ function save() {
         <label
             v-if="['resolved', 'closed'].includes(form.status)"
             class="crm-field crm-form-span"
-            ><span class="crm-field-label">Resolution</span
+            ><span class="crm-field-label">{{ tr("Resolution") }}</span
             ><textarea
                 v-model="form.resolution"
                 rows="3"
@@ -142,15 +143,19 @@ function save() {
             ></label
         >
         <label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Supporting document link</span
+            ><span class="crm-field-label">{{
+                tr("Supporting document link")
+            }}</span
             ><input
                 v-model="form.document_url"
                 type="url"
-                placeholder="https://"
+                :placeholder="tr('https://')"
                 maxlength="2000"
-            /><small
-                >Use an HTTPS link. Keep sensitive documents protected at the
-                document provider.</small
+            /><small>{{
+                tr(
+                    "Use an HTTPS link. Keep sensitive documents protected at the document provider.",
+                )
+            }}</small
             ><small
                 v-if="form.errors.document_url"
                 data-slot="input-error"
@@ -162,10 +167,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save request"
-                          : "Create request"
+                          ? tr("Save request")
+                          : tr("Create request")
                 }}
             </button>
         </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import WorkReferences, {
     type WorkReference,
 } from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
@@ -44,7 +45,7 @@ function complete() {
     <Head :title="record.name" /><Link
         href="/executive?section=routines"
         class="crm-back"
-        >← Back to routines</Link
+        >{{ tr("← Back to routines") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.name }}</h1>
@@ -57,17 +58,17 @@ function complete() {
                 })
             "
         >
-            Archive routine
+            {{ tr("Archive routine") }}
         </button>
     </div>
     <div class="crm-stack">
         <section class="crm-card crm-flow">
-            <h2>Routine details</h2>
+            <h2>{{ tr("Routine details") }}</h2>
             <p>
-                Responsible person:
+                {{ tr("Responsible person:") }}
                 {{
                     owners.find((owner) => owner.id === record.owner_id)
-                        ?.name ?? "Unassigned"
+                        ?.name ?? tr("Unassigned")
                 }}
             </p>
             <RoutineEditor
@@ -78,25 +79,29 @@ function complete() {
             />
             <dl v-else class="crm-detail-grid">
                 <div>
-                    <dt>Frequency</dt>
+                    <dt>{{ tr("Frequency") }}</dt>
                     <dd>{{ record.frequency }}</dd>
                 </div>
                 <div>
-                    <dt>Next due date</dt>
-                    <dd>{{ record.next_due_on ?? "Not scheduled" }}</dd>
+                    <dt>{{ tr("Next due date") }}</dt>
+                    <dd>{{ record.next_due_on ?? tr("Not scheduled") }}</dd>
                 </div>
             </dl>
         </section>
         <section v-if="editable" class="crm-card crm-flow">
-            <h2>Complete scheduled occurrence</h2>
+            <h2>{{ tr("Complete scheduled occurrence") }}</h2>
             <form
                 v-if="record.next_due_on"
                 class="crm-form-grid"
                 @submit.prevent="complete"
             >
                 <p>
-                    Scheduled for {{ record.next_due_on }}. Choose the next date
-                    yourself; leaving it blank leaves the routine unscheduled.
+                    {{ tr("Scheduled for") }} {{ record.next_due_on
+                    }}{{
+                        tr(
+                            ". Choose the next date yourself; leaving it blank leaves the routine unscheduled.",
+                        )
+                    }}
                 </p>
                 <RoutineCompletionFields
                     v-model="draft"
@@ -117,31 +122,34 @@ function complete() {
                     <button class="crm-button" :disabled="form.processing">
                         {{
                             form.processing
-                                ? "Recording…"
-                                : "Complete occurrence"
+                                ? tr("Recording…")
+                                : tr("Complete occurrence")
                         }}
                     </button>
                 </div>
             </form>
             <p v-else class="crm-muted">
-                Set the next due date in the routine details to schedule another
-                occurrence.
+                {{
+                    tr(
+                        "Set the next due date in the routine details to schedule another occurrence.",
+                    )
+                }}
             </p>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Completed occurrences</h2>
+            <h2>{{ tr("Completed occurrences") }}</h2>
             <p v-if="!completions.length" class="crm-muted">
-                No occurrences completed yet.
+                {{ tr("No occurrences completed yet.") }}
             </p>
             <article
                 v-for="entry in completions"
                 :key="entry.id"
                 class="crm-note"
             >
-                <strong>Completed {{ entry.completed_on }}</strong>
+                <strong>{{ tr("Completed") }} {{ entry.completed_on }}</strong>
                 <p>
-                    Scheduled for {{ entry.occurrence_due_on }} ·
-                    {{ entry.actor?.name ?? "Former team member" }}
+                    {{ tr("Scheduled for") }} {{ entry.occurrence_due_on }} ·
+                    {{ entry.actor?.name ?? tr("Former team member") }}
                 </p>
             </article>
         </section>

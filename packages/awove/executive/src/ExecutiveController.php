@@ -154,12 +154,12 @@ class ExecutiveController
             if ($goalId && ($goalId != $previousGoal || $ownerId !== $oldOwnerId)) {
                 $goal = Goal::lockForUpdate()->findOrFail($goalId);
                 Access::view($user, $goal);
-                abort_if($goal->archived_at !== null, 422, 'Choose an active goal.');
+                abort_if($goal->archived_at !== null, 422, __('Choose an active goal.'));
                 if ($ownerId === null) {
-                    throw ValidationException::withMessages(['owner_id' => 'Assign a responsible person before linking a goal.']);
+                    throw ValidationException::withMessages(['owner_id' => __('Assign a responsible person before linking a goal.')]);
                 }
                 $owner = config('auth.providers.users.model')::findOrFail($ownerId);
-                abort_unless(Access::goals($owner)->whereKey($goalId)->exists(), 422, 'Task owner must be able to view the linked goal.');
+                abort_unless(Access::goals($owner)->whereKey($goalId)->exists(), 422, __('Task owner must be able to view the linked goal.'));
             }
             $data = $request->only(['title', 'description', 'owner_id', 'priority', 'due_on', 'status', 'completed_on', 'version']);
             $record = $existing ? $service->update($user, 'executive', 'tasks', $existing->id, $data, $goalId != $previousGoal ? ['goal_id'] : []) : $service->create($user, 'executive', 'tasks', $data, $goalId ? ['goal_id'] : []);
@@ -247,7 +247,7 @@ class ExecutiveController
         $section = $this->filters($request);
         abort_unless($request->user()->can('executive.export'), 403);
         $query = app(Query::class)->filtered($this->query($request, $section), 'executive.'.$section, $request);
-        abort_if((clone $query)->count() > 10000, 422, 'Narrow the filters to export at most 10,000 records.');
+        abort_if((clone $query)->count() > 10000, 422, __('Narrow the filters to export at most 10,000 records.'));
         $headers = match ($section) {
             'goals' => ['id', 'name', 'owner_id', 'target_on', 'status', 'success_criterion', 'target_value', 'current_value', 'unit'], 'routines' => ['id', 'name', 'owner_id', 'frequency', 'next_due_on'], default => ['id', 'title', 'description', 'owner_id', 'status', 'priority', 'due_on', 'completed_on']
         };

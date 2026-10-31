@@ -16,9 +16,9 @@ class Installation
         }
         $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
         $result = array_replace(config('core.defaults'), $data);
-        // Legacy manifests may retain a color; the shared product palette is fixed.
+        // Legacy free-form colors remain ignored; themes select shared semantic roles.
         $result['color'] = config('core.defaults.color');
-        if (! in_array($result['timezone'], timezone_identifiers_list()) || $result['locale'] !== 'en') {
+        if (! in_array($result['timezone'], timezone_identifiers_list()) || ! in_array($result['locale'], ['en', 'he'], true) || ! in_array($result['theme'], ['purple', 'green'], true)) {
             throw new \RuntimeException('Invalid installation branding, timezone or locale.');
         }
         if (! is_array($result['modules']) || ! array_is_list($result['modules']) || count(array_unique($result['modules'], SORT_REGULAR)) !== count($result['modules'])) {
@@ -48,7 +48,7 @@ class Installation
 
     public static function locks(): array
     {
-        return array_values(array_unique(array_merge(['color'], config('core.locks'), self::manifest()['locks'] ?? [])));
+        return array_values(array_unique(array_merge(['color', 'locale', 'theme'], config('core.locks'), self::manifest()['locks'] ?? [])));
     }
 
     public static function settings(): array
@@ -73,6 +73,10 @@ class Installation
             $settings['timezone'] = $timezone;
         }
 
+        if (in_array($settings['lead_label'], ['Leads', 'Enquiries'], true)) {
+            $settings['lead_label'] = (string) __($settings['lead_label']);
+        }
+
         return $settings;
     }
 
@@ -81,7 +85,7 @@ class Installation
         validator($data, ['name' => 'sometimes|required|string|max:80', 'color' => 'prohibited', 'timezone' => 'sometimes|timezone', 'lead_label' => 'sometimes|required|string|max:30'])->validate();
         foreach ($data as $key => $value) {
             if (! in_array($key, ['name', 'timezone', 'lead_label']) || in_array($key, self::locks())) {
-                throw ValidationException::withMessages([$key => 'Deployment controlled setting.']);
+                throw ValidationException::withMessages([$key => __('Deployment controlled setting.')]);
             }
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 import WorkFields from "../../../../../crm-core/resources/js/components/WorkFields.vue";
@@ -74,23 +75,23 @@ function save() {
                 :errors="form.errors"
                 :title-label="
                     kind === 'project-milestones'
-                        ? 'Milestone title'
-                        : 'Task title'
+                        ? tr('Milestone title')
+                        : tr('Task title')
                 "
             />
         </fieldset>
         <p v-if="stale" class="crm-notice" role="alert">
-            The project or work item changed. Reload before saving.
+            {{ tr("The project or work item changed. Reload before saving.") }}
         </p>
         <Errors :errors="form.errors" />
         <div v-if="!record || record.editable" class="crm-form-action">
             <button class="crm-button" :disabled="form.processing || stale">
                 {{
                     record
-                        ? "Save work"
+                        ? tr("Save work")
                         : kind === "project-milestones"
-                          ? "Create milestone"
-                          : "Create task"
+                          ? tr("Create milestone")
+                          : tr("Create task")
                 }}</button
             ><button
                 v-if="stale"
@@ -98,7 +99,7 @@ function save() {
                 class="crm-secondary"
                 @click="reset"
             >
-                Reload work
+                {{ tr("Reload work") }}
             </button>
         </div>
     </form>

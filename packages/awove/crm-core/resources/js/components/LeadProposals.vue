@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { useForm } from "@inertiajs/vue3";
 import { ref, useId } from "vue";
 import { date } from "../types";
@@ -53,15 +54,20 @@ function size(bytes: number) {
         aria-labelledby="proposals-title"
     >
         <div class="crm-flow">
-            <h2 id="proposals-title">Proposals</h2>
+            <h2 id="proposals-title">{{ t("Proposals") }}</h2>
             <p class="crm-muted">
-                Upload a new version to keep the previous files in the lead
-                history.
+                {{
+                    t(
+                        "Upload a new version to keep the previous files in the lead history.",
+                    )
+                }}
             </p>
         </div>
         <form v-if="editable" class="crm-form" @submit.prevent="upload">
             <label class="crm-field" :for="fieldId">
-                <span :id="labelId" class="crm-field-label">Proposal file</span>
+                <span :id="labelId" class="crm-field-label">{{
+                    t("Proposal file")
+                }}</span>
                 <input
                     :id="fieldId"
                     ref="fileInput"
@@ -77,10 +83,11 @@ function size(bytes: number) {
                     "
                     @change="chooseFile"
                 />
-                <small :id="helpId" class="crm-muted"
-                    >PDF, DOC or DOCX, up to 10 MB. Files are private to people
-                    with access to this lead.</small
-                >
+                <small :id="helpId" class="crm-muted">{{
+                    t(
+                        "PDF, DOC or DOCX, up to 10 MB. Files are private to people with access to this lead.",
+                    )
+                }}</small>
                 <small
                     v-if="form.errors.file"
                     :id="errorId"
@@ -95,18 +102,22 @@ function size(bytes: number) {
                 aria-live="polite"
                 class="crm-muted"
             >
-                Uploading {{ form.progress.percentage ?? 0 }}%
+                {{ t("Uploading") }} {{ form.progress.percentage ?? 0 }}%
             </div>
             <div class="crm-form-action">
                 <button
                     class="crm-button"
                     :disabled="form.processing || !form.file"
                 >
-                    {{ form.processing ? "Uploading…" : "Upload proposal" }}
+                    {{
+                        form.processing ? t("Uploading…") : t("Upload proposal")
+                    }}
                 </button>
             </div>
         </form>
-        <p v-if="!proposals.length" class="crm-muted">No proposal files yet.</p>
+        <p v-if="!proposals.length" class="crm-muted">
+            {{ t("No proposal files yet.") }}
+        </p>
         <article
             v-for="proposal in proposals"
             :key="proposal.id"
@@ -115,15 +126,15 @@ function size(bytes: number) {
             <div class="crm-field">
                 <strong>{{ proposal.original_name }}</strong>
                 <small class="crm-muted"
-                    >Version {{ proposal.version }} ·
+                    >{{ t("Version") }} {{ proposal.version }} ·
                     {{ size(proposal.size_bytes) }} ·
                     {{ date(proposal.created_at, timezone) }} ·
-                    {{ proposal.uploaded_by?.name ?? "Former user" }}</small
+                    {{ proposal.uploaded_by?.name ?? t("Former user") }}</small
                 >
             </div>
             <div class="crm-form-action">
                 <a class="crm-secondary" :href="proposal.download_url"
-                    >Download version {{ proposal.version }}</a
+                    >{{ t("Download version") }} {{ proposal.version }}</a
                 >
             </div>
         </article>

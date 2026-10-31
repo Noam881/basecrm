@@ -133,7 +133,7 @@ class WorkItems
         } else {
             // Reopening and cancelling stop claiming a current completion; history retains the previous date.
             if (array_key_exists('completed_on', $input) && filled($input['completed_on']) && $input['completed_on'] !== ($defaults['completed_on'] ?? null)) {
-                throw ValidationException::withMessages(['completed_on' => 'A completion date applies only to a completed status.']);
+                throw ValidationException::withMessages(['completed_on' => __('A completion date applies only to a completed status.')]);
             }
             $data['completed_on'] = null;
         }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { Head, Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 import NonprofitNav from "../../../components/NonprofitNav.vue";
@@ -16,10 +17,10 @@ const p = defineProps<
 >();
 const title = computed(() =>
     p.section === "projects"
-        ? "Projects"
+        ? tr("Projects")
         : p.section === "project-tasks"
-          ? "Project tasks"
-          : "Project milestones",
+          ? tr("Project tasks")
+          : tr("Project milestones"),
 );
 const csv = computed(
     () =>
@@ -31,16 +32,20 @@ const csv = computed(
     <Head :title="title" />
     <div class="crm-heading">
         <h1>{{ title }}</h1>
-        <a v-if="canExport" class="crm-secondary" :href="csv">Export CSV</a>
+        <a v-if="canExport" class="crm-secondary" :href="csv">{{
+            tr("Export CSV")
+        }}</a>
     </div>
     <div class="crm-flow">
         <NonprofitNav :sections="sections" />
-        <nav class="crm-tabs" aria-label="Projects navigation">
-            <Link href="/nonprofit/projects">Projects</Link
-            ><Link href="/nonprofit/projects?section=project-tasks">Tasks</Link
-            ><Link href="/nonprofit/projects?section=project-milestones"
-                >Milestones</Link
-            >
+        <nav class="crm-tabs" :aria-label="tr('Projects navigation')">
+            <Link href="/nonprofit/projects">{{ tr("Projects") }}</Link
+            ><Link href="/nonprofit/projects?section=project-tasks">{{
+                tr("Tasks")
+            }}</Link
+            ><Link href="/nonprofit/projects?section=project-milestones">{{
+                tr("Milestones")
+            }}</Link>
         </nav>
         <section class="crm-card">
             <form
@@ -50,39 +55,43 @@ const csv = computed(
             >
                 <input type="hidden" name="section" :value="section" /><label
                     class="crm-field"
-                    ><span class="crm-field-label">View</span
+                    ><span class="crm-field-label">{{ tr("View") }}</span
                     ><select name="view" :value="filters.view ?? 'active'">
-                        <option value="active">Active records</option>
-                        <option value="overdue">Overdue</option>
-                        <option value="archived">Archived</option>
+                        <option value="active">
+                            {{ tr("Active records") }}
+                        </option>
+                        <option value="overdue">{{ tr("Overdue") }}</option>
+                        <option value="archived">{{ tr("Archived") }}</option>
                     </select></label
                 ><label class="crm-field"
                     ><span class="crm-field-label">{{
                         section === "projects"
-                            ? "Start date from"
-                            : "Due date from"
+                            ? tr("Start date from")
+                            : tr("Due date from")
                     }}</span
                     ><input
                         type="date"
                         name="from"
                         :value="filters.from" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">To date</span
+                    ><span class="crm-field-label">{{ tr("To date") }}</span
                     ><input type="date" name="to" :value="filters.to"
                 /></label>
                 <div class="crm-form-action">
-                    <button class="crm-secondary">Apply filters</button>
+                    <button class="crm-secondary">
+                        {{ tr("Apply filters") }}
+                    </button>
                 </div>
             </form>
         </section>
         <section v-if="section === 'projects' && canCreate" class="crm-card">
             <details class="crm-form-disclosure">
-                <summary>Add project</summary>
+                <summary>{{ tr("Add project") }}</summary>
                 <ProjectForm v-bind="p" />
             </details>
         </section>
         <p v-else-if="section !== 'projects'" class="crm-muted">
-            Create tasks and milestones from their project profile.
+            {{ tr("Create tasks and milestones from their project profile.") }}
         </p>
         <DataTable
             :payload="table"

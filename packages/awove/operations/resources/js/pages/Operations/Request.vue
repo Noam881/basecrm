@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import WorkReferences, {
     type WorkReference,
 } from "../../../../../crm-core/resources/js/components/WorkReferences.vue";
@@ -15,7 +16,7 @@ const props = defineProps<
     }
 >();
 function archive() {
-    if (confirm("Archive this request and retain its history?"))
+    if (confirm(tr("Archive this request and retain its history?")))
         router.post(`/operations/requests/${props.record.id}/archive`, {
             version: props.record.version,
         });
@@ -25,7 +26,7 @@ function archive() {
     <Head :title="record.title" /><Link
         class="crm-back"
         href="/operations/requests"
-        >← Operational requests</Link
+        >{{ tr("← Operational requests") }}</Link
     >
     <div class="crm-heading">
         <h1>{{ record.title }}</h1>
@@ -36,30 +37,32 @@ function archive() {
         <section class="crm-card crm-flow">
             <dl class="crm-detail-grid">
                 <div class="crm-detail-item">
-                    <dt>Owner</dt>
-                    <dd>{{ record.owner?.name ?? "Unassigned" }}</dd>
+                    <dt>{{ tr("Owner") }}</dt>
+                    <dd>{{ record.owner?.name ?? tr("Unassigned") }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Customer</dt>
+                    <dt>{{ tr("Customer") }}</dt>
                     <dd>
                         <Link
                             v-if="record.customer"
                             :href="`/operations/directory/${record.customer.id}`"
                             >{{ record.customer.name }}</Link
-                        ><template v-else>No visible customer link</template>
+                        ><template v-else>{{
+                            tr("No visible customer link")
+                        }}</template>
                     </dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Due date</dt>
+                    <dt>{{ tr("Due date") }}</dt>
                     <dd>{{ record.due_on }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Priority</dt>
-                    <dd>{{ record.priority }}</dd>
+                    <dt>{{ tr("Priority") }}</dt>
+                    <dd>{{ tr(record.priority) }}</dd>
                 </div>
                 <div class="crm-detail-item">
-                    <dt>Completion date</dt>
-                    <dd>{{ record.completed_on ?? "Not completed" }}</dd>
+                    <dt>{{ tr("Completion date") }}</dt>
+                    <dd>{{ record.completed_on ?? tr("Not completed") }}</dd>
                 </div>
             </dl>
             <p v-if="record.description">{{ record.description }}</p>
@@ -70,18 +73,18 @@ function archive() {
                 :href="record.document_link"
                 target="_blank"
                 rel="noopener noreferrer"
-                >Open document</a
+                >{{ tr("Open document") }}</a
             >
             <p v-if="record.archived_at">
-                Archived · retained read-only record.
+                {{ tr("Archived · retained read-only record.") }}
             </p>
         </section>
         <section v-if="record.editable" class="crm-card crm-flow">
-            <h2>Edit request</h2>
+            <h2>{{ tr("Edit request") }}</h2>
             <RequestEditor :key="record.version" v-bind="props" />
             <div v-if="canArchive" class="crm-form-action">
                 <button class="crm-secondary" @click="archive">
-                    Archive request
+                    {{ tr("Archive request") }}
                 </button>
             </div>
         </section>

@@ -11,9 +11,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans:
-        Roboto, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
-        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-sans: var(--crm-font-family);
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -66,13 +64,11 @@
 @layer utilities {
     body,
     html {
-        --font-sans:
-            "Roboto", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
-            "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        --font-sans: var(--crm-font-family);
     }
 }
 
-/* Host utilities share the neutral roles; pink accents are scoped by global components. */
+/* Host utilities share the neutral roles; theme accents are scoped by global components. */
 :root,
 .dark {
     --background: var(--crm-canvas-color);

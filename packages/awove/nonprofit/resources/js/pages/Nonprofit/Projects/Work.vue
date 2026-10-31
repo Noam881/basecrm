@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import NonprofitNav from "../../../components/NonprofitNav.vue";
 import WorkEditor from "../../../components/Projects/WorkEditor.vue";
@@ -38,7 +39,7 @@ function remove() {
     <div class="crm-heading">
         <h1>{{ record.title }}</h1>
         <span class="crm-badge">{{
-            record.archived_at ? "Archived" : workStatuses[record.status]
+            record.archived_at ? tr("Archived") : workStatuses[record.status]
         }}</span>
     </div>
     <div class="crm-flow">
@@ -51,12 +52,19 @@ function remove() {
             />
         </section>
         <p v-if="!record.editable" class="crm-notice">
-            This work is read only. The project and work item must both be
-            active and editable to make changes.
+            {{
+                tr(
+                    "This work is read only. The project and work item must both be active and editable to make changes.",
+                )
+            }}
         </p>
         <WorkReferences :links="instructionLinks" /><HistoryList
             :history="history"
-            :field-labels="{ 'module:nonprofit:project_id': 'Project' }"
+            :field-labels="
+                translateLabels({
+                    'module:nonprofit:project_id': 'Project',
+                })
+            "
         />
         <form
             v-if="record.editable && canArchive"
@@ -64,13 +72,16 @@ function remove() {
             @submit.prevent="remove"
         >
             <p>
-                Archiving retains this work and its history without claiming
-                completion.
+                {{
+                    tr(
+                        "Archiving retains this work and its history without claiming completion.",
+                    )
+                }}
             </p>
             <Errors :errors="archive.errors" />
             <div class="crm-form-action">
                 <button class="crm-secondary" :disabled="archive.processing">
-                    Archive work
+                    {{ tr("Archive work") }}
                 </button>
             </div>
         </form>

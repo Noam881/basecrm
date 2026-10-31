@@ -36,7 +36,7 @@ class Records
             }
         }
 
-        return array_replace($defaults, array_intersect_key($labels, $defaults));
+        return array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key($labels, $defaults));
     }
 
     public static function clean(array $input): array
@@ -53,7 +53,7 @@ class Records
     public function version(Record $r, array $input, string $key = 'version'): void
     {
         $d = validator($input, [$key => 'required|integer|min:1'])->validate();
-        abort_unless($r->version === (int) $d[$key], 409, 'This record changed. Reload before saving.');
+        abort_unless($r->version === (int) $d[$key], 409, __('This record changed. Reload before saving.'));
     }
 
     public function log($u, string $kind, Record $r, string $event, array $fields = []): void
@@ -71,7 +71,7 @@ class Records
             return;
         }$person = config('auth.providers.users.model')::where('active', true)->find($id);
         if (! Access::available($person, $kind) || ($program && ! Access::query($person, 'programs')->whereKey($program->id)->exists())) {
-            throw ValidationException::withMessages([$field => 'Choose active staff with existing access to this record.']);
+            throw ValidationException::withMessages([$field => __('Choose active staff with existing access to this record.')]);
         }
     }
 
@@ -86,7 +86,7 @@ class Records
                 $data[$field] = $old;
 
                 return;
-            }abort(403, 'The existing related record is restricted.');
+            }abort(403, __('The existing related record is restricted.'));
         }
         if ($next === $old) {
             $data[$field] = $next;
@@ -96,7 +96,7 @@ class Records
         if ($next !== null) {
             $r = (clone $query)->find($next);
             if (! $r || ($kind !== 'contacts' && ($r->getAttribute('archived_at') || ! $r->getAttribute('active')))) {
-                throw ValidationException::withMessages([$field => 'Choose an active record you can access.']);
+                throw ValidationException::withMessages([$field => __('Choose an active record you can access.')]);
             }
         }
         $data[$field] = $next;
@@ -139,7 +139,7 @@ class Records
                     }
                 }
                 if ($kind === 'participants' && Participant::whereRaw('lower(participant_code)=lower(?)', [$data['participant_code']])->when($r, fn ($q) => $q->whereKeyNot($r->id))->exists()) {
-                    throw ValidationException::withMessages(['participant_code' => 'This participant ID is already in use.']);
+                    throw ValidationException::withMessages(['participant_code' => __('This participant ID is already in use.')]);
                 }
                 $before = $r?->getAttributes() ?? [];
                 $model = Access::MODELS[$kind];
@@ -156,7 +156,7 @@ class Records
             });
         } catch (QueryException $e) {
             if ($e->getCode() === '23505') {
-                throw ValidationException::withMessages(['participant_code' => 'This participant ID is already in use.']);
+                throw ValidationException::withMessages(['participant_code' => __('This participant ID is already in use.')]);
             }throw $e;
         }
     }
@@ -189,10 +189,10 @@ class Records
                 $data['follow_up_owner_id'] = isset($data['follow_up_owner_id']) ? (int) $data['follow_up_owner_id'] : null;
                 $this->owner($u, 'programs', $data['follow_up_owner_id'], $r, $program, 'follow_up_owner_id');
                 if (($data['due_on'] ?? null) && (! $data['follow_up_owner_id'] || ! ($data['next_action'] ?? null))) {
-                    throw ValidationException::withMessages(['due_on' => 'A dated follow-up needs a next action and responsible staff.']);
+                    throw ValidationException::withMessages(['due_on' => __('A dated follow-up needs a next action and responsible staff.')]);
                 }
                 if (($data['completed_on'] ?? null) && ! ($data['next_action'] ?? null)) {
-                    throw ValidationException::withMessages(['completed_on' => 'Record the action being completed.']);
+                    throw ValidationException::withMessages(['completed_on' => __('Record the action being completed.')]);
                 }
             }
             $before = $r?->getAttributes() ?? [];
@@ -229,14 +229,14 @@ class Records
                 }
                 $data = validator(self::clean([...($r?->getAttributes() ?? []), ...$input]), ['participant_id' => 'required|integer|min:1', 'status' => ['required', Rule::in(array_keys(self::statuses()))], 'notes' => 'nullable|string|max:3000'])->validate();
                 if ($r && $r->getAttribute('participant_id') !== (int) $data['participant_id']) {
-                    throw ValidationException::withMessages(['participant_id' => 'Attendance keeps its original participant.']);
+                    throw ValidationException::withMessages(['participant_id' => __('Attendance keeps its original participant.')]);
                 }
                 $participant = Access::query($u, 'participants')->lockForUpdate()->findOrFail($data['participant_id']);
                 if (! $r && ($participant->archived_at || ! $participant->getAttribute('active'))) {
-                    throw ValidationException::withMessages(['participant_id' => 'Choose an active participant.']);
+                    throw ValidationException::withMessages(['participant_id' => __('Choose an active participant.')]);
                 }
                 if (! $r && Attendance::where('session_id', $sessionId)->where('participant_id', $participant->id)->exists()) {
-                    throw ValidationException::withMessages(['participant_id' => 'Attendance is already recorded for this participant and session. Edit the existing record.']);
+                    throw ValidationException::withMessages(['participant_id' => __('Attendance is already recorded for this participant and session. Edit the existing record.')]);
                 }
                 $r ??= new Attendance;
                 $r->fill([...$data, 'participant_id' => $participant->id, 'session_id' => $sessionId]);
@@ -252,7 +252,7 @@ class Records
             });
         } catch (QueryException $e) {
             if ($e->getCode() === '23505') {
-                throw ValidationException::withMessages(['participant_id' => 'Attendance is already recorded for this session.']);
+                throw ValidationException::withMessages(['participant_id' => __('Attendance is already recorded for this session.')]);
             }throw $e;
         }
     }

@@ -57,7 +57,7 @@ class EmployeeReferences
     {
         $record = $this->find($user, $id);
         if (! $allowInactive && ! $record->getAttribute('active')) {
-            throw ValidationException::withMessages(['employee_reference_id' => 'Choose an active employee reference.']);
+            throw ValidationException::withMessages(['employee_reference_id' => __('Choose an active employee reference.')]);
         }
 
         return $record;
@@ -161,14 +161,14 @@ class EmployeeReferences
         }
         $result['name'] = trim($result['name']);
         if ($result['name'] === '') {
-            throw ValidationException::withMessages(['name' => 'Enter an employee name.']);
+            throw ValidationException::withMessages(['name' => __('Enter an employee name.')]);
         }
         foreach (['contact_id' => 'contact_action', 'user_id' => 'user_action'] as $field => $actionKey) {
             $existing = $record?->getAttribute($field);
             $action = $data[$actionKey] ?? (filled($data[$field] ?? null) ? 'set' : 'keep');
             $value = $action === 'clear' ? null : ($action === 'set' ? ($data[$field] ?? null) : $existing);
             if ($action === 'set' && ! filled($value)) {
-                throw ValidationException::withMessages([$field => 'Choose an existing record for the explicit link.']);
+                throw ValidationException::withMessages([$field => __('Choose an existing record for the explicit link.')]);
             }
             $value = $value !== null ? (int) $value : null;
             if ($value !== $existing) {
@@ -180,7 +180,7 @@ class EmployeeReferences
                     $linked = $field === 'contact_id' ? Access::identities($user, Contact::class)->whereKey($value)->lockForUpdate()->first() : $this->accountModel($user, $value, true);
                     abort_unless($linked !== null, 403);
                     if (EmployeeReference::where($field, $value)->when($record, fn ($q) => $q->whereKeyNot($record->id))->exists()) {
-                        throw ValidationException::withMessages([$field => 'This record is already linked to another employee reference. Choose that existing employee instead.']);
+                        throw ValidationException::withMessages([$field => __('This record is already linked to another employee reference. Choose that existing employee instead.')]);
                     }
                 }
             }
@@ -226,7 +226,7 @@ class EmployeeReferences
     private function version(EmployeeReference $record, array $input): void
     {
         $data = validator($input, ['version' => 'required|integer|min:1'])->validate();
-        abort_unless($record->version === (int) $data['version'], 409, 'This employee reference changed. Reload before saving.');
+        abort_unless($record->version === (int) $data['version'], 409, __('This employee reference changed. Reload before saving.'));
     }
 
     private function recordHistory(User $user, EmployeeReference $record, string $event, array $fields, array $links): void

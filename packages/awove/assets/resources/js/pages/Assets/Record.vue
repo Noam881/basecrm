@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import { computed } from "vue";
 import HistoryList from "../../../../../crm-core/resources/js/components/HistoryList.vue";
@@ -64,14 +65,14 @@ function archive() {
     <div class="crm-heading">
         <h1>{{ record.name }}</h1>
         <span class="crm-badge">{{
-            record.archived_at ? "Archived" : statuses[record.status]
+            record.archived_at ? tr("Archived") : statuses[record.status]
         }}</span>
     </div>
     <div class="crm-flow">
-        <p class="crm-muted">Asset ID: {{ record.code }}</p>
+        <p class="crm-muted">{{ tr("Asset ID:") }} {{ record.code }}</p>
         <AssetsNav :sections="sections" :module-label="moduleLabel" />
         <section class="crm-card crm-flow">
-            <h2>Register details</h2>
+            <h2>{{ tr("Register details") }}</h2>
             <AssetEditor v-bind="p" />
         </section>
         <ClassifyIdentity
@@ -83,9 +84,9 @@ function archive() {
             ]"
         />
         <section class="crm-card crm-flow">
-            <h2>Assignments and returns</h2>
+            <h2>{{ tr("Assignments and returns") }}</h2>
             <p v-if="!assignments.length" class="crm-muted">
-                No assignments recorded.
+                {{ tr("No assignments recorded.") }}
             </p>
             <article
                 v-for="assignment in assignments"
@@ -95,12 +96,14 @@ function archive() {
                 <div class="crm-heading">
                     <h3>{{ assignmentTarget(assignment) }}</h3>
                     <span class="crm-badge">{{
-                        assignment.returned_on ? "Returned" : "Open assignment"
+                        assignment.returned_on
+                            ? tr("Returned")
+                            : tr("Open assignment")
                     }}</span>
                 </div>
                 <dl class="crm-detail-grid">
                     <div class="crm-detail-item">
-                        <dt>Assignment target</dt>
+                        <dt>{{ tr("Assignment target") }}</dt>
                         <dd>
                             {{
                                 assignment.target_type.charAt(0).toUpperCase() +
@@ -109,26 +112,27 @@ function archive() {
                         </dd>
                     </div>
                     <div class="crm-detail-item">
-                        <dt>Assignment date</dt>
+                        <dt>{{ tr("Assignment date") }}</dt>
                         <dd>{{ assignment.assigned_on }}</dd>
                     </div>
                     <div class="crm-detail-item">
-                        <dt>Expected return date</dt>
+                        <dt>{{ tr("Expected return date") }}</dt>
                         <dd>
                             {{
-                                assignment.expected_return_on ?? "Not specified"
+                                assignment.expected_return_on ??
+                                tr("Not specified")
                             }}
                         </dd>
                     </div>
                     <div v-if="assignment.returned_on" class="crm-detail-item">
-                        <dt>Actual return date</dt>
+                        <dt>{{ tr("Actual return date") }}</dt>
                         <dd>{{ assignment.returned_on }}</dd>
                     </div>
                     <div
                         v-if="assignment.return_condition"
                         class="crm-detail-item"
                     >
-                        <dt>Condition on return</dt>
+                        <dt>{{ tr("Condition on return") }}</dt>
                         <dd>{{ assignment.return_condition }}</dd>
                     </div>
                 </dl>
@@ -137,7 +141,7 @@ function archive() {
                     v-if="!assignment.returned_on && canUpdateAssignment"
                     class="crm-form-disclosure"
                 >
-                    <summary>Edit expected return</summary>
+                    <summary>{{ tr("Edit expected return") }}</summary>
                     <AssignmentDetailsEditor
                         :asset="record"
                         :assignment="assignment"
@@ -147,7 +151,7 @@ function archive() {
                     v-if="!assignment.returned_on && canReturnAssignment"
                     class="crm-form-disclosure"
                 >
-                    <summary>Record asset return</summary>
+                    <summary>{{ tr("Record asset return") }}</summary>
                     <ReturnEditor
                         :asset="record"
                         :assignment="assignment"
@@ -156,21 +160,22 @@ function archive() {
                 </details>
             </article>
             <details v-if="assignmentAllowed" class="crm-form-disclosure">
-                <summary>Assign this asset</summary>
+                <summary>{{ tr("Assign this asset") }}</summary>
                 <AssignmentEditor v-bind="p" :asset="record" />
             </details>
             <p
                 v-else-if="canCreateAssignment && !openAssignment"
                 class="crm-muted"
             >
-                An assignment can start when the asset is
-                {{ statuses.available }} or {{ statuses["in-use"] }}.
+                {{ tr("An assignment can start when the asset is") }}
+                {{ statuses.available }} {{ tr("or") }}
+                {{ statuses["in-use"] }}.
             </p>
         </section>
         <section class="crm-card crm-flow">
-            <h2>Maintenance</h2>
+            <h2>{{ tr("Maintenance") }}</h2>
             <p v-if="!maintenance.length" class="crm-muted">
-                No maintenance actions recorded.
+                {{ tr("No maintenance actions recorded.") }}
             </p>
             <article
                 v-for="action in maintenance"
@@ -185,31 +190,31 @@ function archive() {
                     >
                     <span class="crm-badge">{{
                         action.archived_at
-                            ? "Archived"
+                            ? tr("Archived")
                             : maintenanceStatuses[action.status]
                     }}</span>
                 </div>
                 <dl class="crm-detail-grid">
                     <div class="crm-detail-item">
-                        <dt>Responsible staff member</dt>
-                        <dd>{{ action.owner?.name ?? "Unassigned" }}</dd>
+                        <dt>{{ tr("Responsible staff member") }}</dt>
+                        <dd>{{ action.owner?.name ?? tr("Unassigned") }}</dd>
                     </div>
                     <div class="crm-detail-item">
-                        <dt>Due date</dt>
+                        <dt>{{ tr("Due date") }}</dt>
                         <dd>{{ action.due_on }}</dd>
                     </div>
                     <div v-if="action.completed_on" class="crm-detail-item">
-                        <dt>Completion date</dt>
+                        <dt>{{ tr("Completion date") }}</dt>
                         <dd>{{ action.completed_on }}</dd>
                     </div>
                     <div v-if="action.next_due_on" class="crm-detail-item">
-                        <dt>Manual next due date</dt>
+                        <dt>{{ tr("Manual next due date") }}</dt>
                         <dd>{{ action.next_due_on }}</dd>
                     </div>
                 </dl>
             </article>
             <details v-if="canCreateMaintenance" class="crm-form-disclosure">
-                <summary>Plan maintenance action</summary>
+                <summary>{{ tr("Plan maintenance action") }}</summary>
                 <MaintenanceEditor
                     v-bind="p"
                     :record="undefined"
@@ -223,19 +228,28 @@ function archive() {
             :editable="editable"
             :can-view-documents="canViewDocuments"
             :can-manage-documents="canManageDocuments"
-        /><HistoryList :history="history" :field-labels="historyLabels" />
+        /><HistoryList
+            :history="history"
+            :field-labels="translateLabels(historyLabels)"
+        />
         <form
             v-if="editable && canArchive"
             class="crm-card crm-form"
             @submit.prevent="archive"
         >
             <p v-if="openAssignment || openMaintenance">
-                Return the open assignment and resolve or archive maintenance
-                before archiving this asset.
+                {{
+                    tr(
+                        "Return the open assignment and resolve or archive maintenance before archiving this asset.",
+                    )
+                }}
             </p>
             <p v-else>
-                Archiving retains the asset's assignments, maintenance,
-                documents and history as read-only records.
+                {{
+                    tr(
+                        "Archiving retains the asset's assignments, maintenance, documents and history as read-only records.",
+                    )
+                }}
             </p>
             <FormErrors :errors="archival.errors" />
             <div class="crm-form-action">
@@ -247,7 +261,7 @@ function archive() {
                         openMaintenance
                     "
                 >
-                    Archive asset
+                    {{ tr("Archive asset") }}
                 </button>
             </div>
         </form>

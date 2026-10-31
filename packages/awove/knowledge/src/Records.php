@@ -38,13 +38,13 @@ class Records
             }
         }
 
-        return array_replace($defaults, array_intersect_key($values, $defaults));
+        return array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key($values, $defaults));
     }
 
     public function version(Model $r, array $input): void
     {
         $v = validator($input, ['version' => 'required|integer|min:1'])->validate();
-        abort_unless((int) $v['version'] === $r->getAttribute('version'), 409, 'This Knowledge record changed. Reload before saving.');
+        abort_unless((int) $v['version'] === $r->getAttribute('version'), 409, __('This Knowledge record changed. Reload before saving.'));
     }
 
     public function parentField(Model $r): string
@@ -91,26 +91,26 @@ class Records
                 if (isset($data[$f])) {
                     $data[$f] = trim($data[$f]);
                     if (in_array($f, ['title', 'name', 'provider'], true) && $data[$f] === '') {
-                        throw ValidationException::withMessages([$f => 'Enter a value.']);
+                        throw ValidationException::withMessages([$f => __('Enter a value.')]);
                     }
                 }
             }
             if ($s === 'library') {
                 if ($r && $data['kind'] !== $r->getAttribute('kind')) {
-                    throw ValidationException::withMessages(['kind' => 'The record retains its procedure, material or training purpose.']);
+                    throw ValidationException::withMessages(['kind' => __('The record retains its procedure, material or training purpose.')]);
                 }
                 if ($data['status'] === 'current' && $data['kind'] === 'procedure' && empty($data['revision']) && empty($data['revised_on'])) {
-                    throw ValidationException::withMessages(['revision' => 'Enter a current version or revision date for a current procedure.']);
+                    throw ValidationException::withMessages(['revision' => __('Enter a current version or revision date for a current procedure.')]);
                 }
             }
             if ($s === 'renewals' && $data['status'] === 'renewed' && (! $r || $r->getAttribute('status') !== 'renewed')) {
-                throw ValidationException::withMessages(['status' => 'Use Record renewal to retain the dated renewal history.']);
+                throw ValidationException::withMessages(['status' => __('Use Record renewal to retain the dated renewal history.')]);
             }
             if ($s === 'systems') {
                 $data['login_url'] = app(DocumentLinks::class)->validate($data['login_url'] ?? null, 'login_url');
                 $this->reference($data['password_manager_reference'] ?? null);
                 if ($data['login_url'] && (parse_url($data['login_url'], PHP_URL_QUERY) !== null || parse_url($data['login_url'], PHP_URL_FRAGMENT) !== null)) {
-                    throw ValidationException::withMessages(['login_url' => 'Use the public HTTPS login page without a query string or fragment.']);
+                    throw ValidationException::withMessages(['login_url' => __('Use the public HTTPS login page without a query string or fragment.')]);
                 }
             }
             $owner = isset($data['owner_id']) ? (int) $data['owner_id'] : null;
@@ -120,7 +120,7 @@ class Records
                 if ($owner !== null) {
                     $person = config('auth.providers.users.model')::find($owner);
                     if (! Access::available($person, $s)) {
-                        throw ValidationException::withMessages(['owner_id' => 'Choose an active owner who already has the appropriate Knowledge access.']);
+                        throw ValidationException::withMessages(['owner_id' => __('Choose an active owner who already has the appropriate Knowledge access.')]);
                     }
                 }
             }
@@ -153,7 +153,7 @@ class Records
         // Store an opaque item locator only: no URLs, credentials, credential-labelled
         // assignments, PEM blocks or common API-token forms are accepted here.
         if (! preg_match('/^[\pL\pN][\pL\pN ._\/#:-]{0,299}$/u', $value) || preg_match('/(?:password|passwd|secret|token|api[-_ ]?key)\s*[:=]|-----BEGIN|\b(?:sk-|ghp_|xox[baprs]-)|@|:\/\//i', $value)) {
-            throw ValidationException::withMessages(['password_manager_reference' => 'Enter only the password-manager item name or opaque item ID. Do not enter credentials, secret keys or a URL.']);
+            throw ValidationException::withMessages(['password_manager_reference' => __('Enter only the password-manager item name or opaque item ID. Do not enter credentials, secret keys or a URL.')]);
         }
     }
 
@@ -183,7 +183,7 @@ class Records
             $data = validator($input, ['name' => 'required|string|max:180', 'url' => 'required|string|max:2048'])->validate();
             $data['name'] = trim($data['name']);
             if ($data['name'] === '') {
-                throw ValidationException::withMessages(['name' => 'Enter a document name.']);
+                throw ValidationException::withMessages(['name' => __('Enter a document name.')]);
             }
             $data['url'] = app(DocumentLinks::class)->validate($data['url'], 'url');
             $doc = KnowledgeDocument::create([...$data, $this->parentField($r) => $id, 'created_by' => $u->id, 'version' => 1]);
@@ -218,10 +218,10 @@ class Records
             $r = Access::query($u, 'renewals')->lockForUpdate()->findOrFail($id);
             Access::edit($u, $r);
             $this->version($r, $input);
-            abort_if($r->status === 'renewed', 409, 'This renewal was already recorded.');
+            abort_if($r->status === 'renewed', 409, __('This renewal was already recorded.'));
             $data = validator($input, ['renewed_on' => 'required|date_format:Y-m-d|before_or_equal:'.now(Installation::settings()['timezone'])->toDateString(), 'next_expiry_on' => 'nullable|date_format:Y-m-d|after:renewed_on|after:'.$r->toArray()['expires_on'], 'next_remind_on' => 'nullable|date_format:Y-m-d|before_or_equal:next_expiry_on', 'summary' => 'nullable|string|max:10000'])->validate();
             if (! empty($data['next_remind_on']) && empty($data['next_expiry_on'])) {
-                throw ValidationException::withMessages(['next_remind_on' => 'A next reminder requires an explicitly entered next expiry date.']);
+                throw ValidationException::withMessages(['next_remind_on' => __('A next reminder requires an explicitly entered next expiry date.')]);
             }RenewalEvent::create(['renewal_id' => $id, 'previous_expiry_on' => $r->toArray()['expires_on'], 'renewed_on' => $data['renewed_on'], 'next_expiry_on' => $data['next_expiry_on'] ?? null, 'summary' => $data['summary'] ?? null, 'actor_id' => $u->id]);
             $r->update(['expires_on' => $data['next_expiry_on'] ?? $r->toArray()['expires_on'], 'remind_on' => $data['next_remind_on'] ?? null, 'status' => empty($data['next_expiry_on']) ? 'renewed' : 'pending', 'version' => $r->version + 1]);
             $this->history($u, $r, 'renewed', ['expires_on', 'remind_on', 'status']);

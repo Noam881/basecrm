@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import WorkFields, {
@@ -41,8 +42,9 @@ function save() {
         preserveScroll: true,
         onHttpException: (response: { status: number }) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "This checklist item or case changed. Your edits are kept. Reload before saving.";
+                warning.value = tr(
+                    "This checklist item or case changed. Your edits are kept. Reload before saving.",
+                );
                 return false;
             }
         },
@@ -60,10 +62,10 @@ function save() {
             :completed-statuses="['done']"
             :errors="form.errors"
             :can-assign="options.canAssign"
-            title-label="Checklist item"
+            :title-label="tr('Checklist item')"
         />
         <label class="crm-field"
-            ><span class="crm-field-label">Category</span
+            ><span class="crm-field-label">{{ tr("Category") }}</span
             ><select v-model="form.category" :disabled="!canEditMetadata">
                 <option
                     v-for="(label, id) in options.categories"
@@ -79,12 +81,14 @@ function save() {
                 v-model="form.required"
                 type="checkbox"
                 :disabled="!canEditMetadata"
-            />Required before case completion</label
+            />{{ tr("Required before case completion") }}</label
         >
         <p class="crm-muted">
-            Done records manual completion. Optional work may be explicitly
-            skipped. Recording access work does not create or revoke an external
-            account.
+            {{
+                tr(
+                    "Done records manual completion. Optional work may be explicitly skipped. Recording access work does not create or revoke an external account.",
+                )
+            }}
         </p>
         <div
             v-if="Object.keys(form.errors).length || warning"
@@ -98,10 +102,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing || !!warning">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save checklist item"
-                          : "Add checklist item"
+                          ? tr("Save checklist item")
+                          : tr("Add checklist item")
                 }}
             </button>
         </div>

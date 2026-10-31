@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 // Common controls shared by typed work items and module request composers.
 const title = defineModel<string>("title", { required: true });
 const description = defineModel<string>("description", { required: true });
@@ -16,7 +17,7 @@ withDefaults(
         dueRequired?: boolean;
     }>(),
     {
-        titleLabel: "Title",
+        titleLabel: () => t("Title"),
         titleErrorKey: "title",
         descriptionRequired: false,
         dueRequired: true,
@@ -40,7 +41,7 @@ withDefaults(
         >
     </label>
     <label class="crm-field crm-form-span">
-        <span class="crm-field-label">Description</span>
+        <span class="crm-field-label">{{ t("Description") }}</span>
         <textarea
             v-model="description"
             rows="3"
@@ -53,10 +54,15 @@ withDefaults(
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Owner</span>
+        <span class="crm-field-label">{{ t("Owner") }}</span>
         <select v-model="ownerId" :disabled="!canAssign">
-            <option :value="null">Unassigned</option>
-            <option v-for="owner in owners" :key="owner.id" :value="owner.id">
+            <option :value="null">{{ t("Unassigned") }}</option>
+            <option
+                dir="auto"
+                v-for="owner in owners"
+                :key="owner.id"
+                :value="owner.id"
+            >
                 {{ owner.name }}
             </option>
         </select>
@@ -65,18 +71,18 @@ withDefaults(
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Priority</span>
+        <span class="crm-field-label">{{ t("Priority") }}</span>
         <select v-model="priority">
-            <option value="low">Low</option>
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
+            <option value="low">{{ t("Low") }}</option>
+            <option value="normal">{{ t("Normal") }}</option>
+            <option value="high">{{ t("High") }}</option>
         </select>
         <small v-if="errors.priority" data-slot="input-error" role="alert">{{
             errors.priority
         }}</small>
     </label>
     <label class="crm-field">
-        <span class="crm-field-label">Due date</span>
+        <span class="crm-field-label">{{ t("Due date") }}</span>
         <input
             v-model="dueOn"
             type="date"

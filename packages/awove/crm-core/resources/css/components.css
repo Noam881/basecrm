@@ -562,7 +562,7 @@
 .crm-material-popup-close {
     position: absolute;
     top: 12px;
-    right: 12px;
+    inset-inline-end: 12px;
     width: 40px;
     height: 40px;
 }
@@ -986,4 +986,20 @@
 }
 .crm-form-disclosure[open] > summary {
     margin-block-end: var(--crm-space-6);
+}
+
+/* Contact channels and exact amounts retain their reading direction inside RTL forms. */
+:where(.crm, .crm-auth)
+    :is(
+        input[type="email"],
+        input[type="url"],
+        input[type="tel"],
+        input[inputmode="decimal"]
+    ) {
+    direction: ltr;
+    text-align: start;
+    unicode-bidi: plaintext;
+}
+.crm-directional-icon:dir(rtl) {
+    transform: scaleX(-1);
 }

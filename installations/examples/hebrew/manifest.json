@@ -1,0 +1,13 @@
+{
+    "id": "hebrew",
+    "name": "CRM לדוגמה",
+    "logo": "/brands/base-b.svg",
+    "favicon": "/brands/base-b.svg",
+    "locale": "he",
+    "theme": "green",
+    "timezone": "Asia/Jerusalem",
+    "lead_label": "Leads",
+    "modules": [],
+    "custom_fields": {},
+    "legacy_sales_stages": true
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
 import type { Goal, Options } from "../types";
@@ -25,8 +26,9 @@ function save() {
         preserveScroll: true,
         onHttpException: (response: { status: number }) => {
             if ([403, 409].includes(response.status)) {
-                warning.value =
-                    "This goal changed or your access changed. Your edits are kept. Reload before saving.";
+                warning.value = tr(
+                    "This goal changed or your access changed. Your edits are kept. Reload before saving.",
+                );
                 return false;
             }
         },
@@ -39,10 +41,10 @@ function save() {
 <template>
     <form class="crm-form-grid" @submit.prevent="save">
         <label class="crm-field"
-            ><span class="crm-field-label">Goal name</span
+            ><span class="crm-field-label">{{ tr("Goal name") }}</span
             ><input v-model="form.name" required maxlength="180" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Responsible person</span
+            ><span class="crm-field-label">{{ tr("Responsible person") }}</span
             ><select v-model="form.owner_id" :disabled="!options.canAssign">
                 <option
                     v-for="owner in options.owners"
@@ -53,17 +55,17 @@ function save() {
                 </option>
             </select></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Target date</span
+            ><span class="crm-field-label">{{ tr("Target date") }}</span
             ><input v-model="form.target_on" type="date" required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Unit</span
+            ><span class="crm-field-label">{{ tr("Unit") }}</span
             ><input
                 v-model="form.unit"
                 required
                 maxlength="80"
-                placeholder="e.g. completed projects" /></label
+                :placeholder="tr('e.g. completed projects')" /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Target result</span
+            ><span class="crm-field-label">{{ tr("Target result") }}</span
             ><input
                 v-model="form.target_value"
                 inputmode="decimal"
@@ -71,7 +73,7 @@ function save() {
                 maxlength="20"
                 required /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Current result</span
+            ><span class="crm-field-label">{{ tr("Current result") }}</span
             ><input
                 v-model="form.current_value"
                 inputmode="decimal"
@@ -79,7 +81,7 @@ function save() {
                 maxlength="20"
                 required /></label
         ><label class="crm-field crm-form-span"
-            ><span class="crm-field-label">Success criterion</span
+            ><span class="crm-field-label">{{ tr("Success criterion") }}</span
             ><textarea
                 v-model="form.success_criterion"
                 required
@@ -87,7 +89,7 @@ function save() {
                 rows="3"
             /></label
         ><label class="crm-field"
-            ><span class="crm-field-label">Goal status</span
+            ><span class="crm-field-label">{{ tr("Goal status") }}</span
             ><select v-model="form.status">
                 <option
                     v-for="(label, status) in options.goalStatuses"
@@ -99,8 +101,11 @@ function save() {
             </select></label
         >
         <p class="crm-muted">
-            Target and current results use the same unit. Results and status are
-            entered manually.
+            {{
+                tr(
+                    "Target and current results use the same unit. Results and status are entered manually.",
+                )
+            }}
         </p>
         <div
             v-if="Object.keys(form.errors).length || warning"
@@ -114,10 +119,10 @@ function save() {
             <button class="crm-button" :disabled="form.processing || !!warning">
                 {{
                     form.processing
-                        ? "Saving…"
+                        ? tr("Saving…")
                         : record
-                          ? "Save goal"
-                          : "Create goal"
+                          ? tr("Save goal")
+                          : tr("Create goal")
                 }}
             </button>
         </div>

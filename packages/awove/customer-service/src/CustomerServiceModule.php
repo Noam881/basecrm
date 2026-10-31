@@ -38,7 +38,7 @@ class CustomerServiceModule implements DashboardContributor, Module, RecordTable
 
     public function navigation(): array
     {
-        return [new NavigationItem(Installation::manifest()['module_labels']['customer-service'] ?? 'Customer service', '/service', 'customer-service.view.own', ['customer-service.view.all'])];
+        return [new NavigationItem(Installation::manifest()['module_labels']['customer-service'] ?? __('Customer service'), '/service', 'customer-service.view.own', ['customer-service.view.all'])];
     }
 
     public function panels(): array
@@ -55,8 +55,8 @@ class CustomerServiceModule implements DashboardContributor, Module, RecordTable
         $permission = ['permission' => 'customer-service.view.own', 'anyPermissions' => ['customer-service.view.all']];
 
         return [
-            [...$permission, 'id' => 'customer-service.open-requests', 'label' => 'Open service requests', 'value' => (clone $query)->count(), 'href' => '/service'],
-            [...$permission, 'id' => 'customer-service.overdue-actions', 'label' => 'Overdue service actions', 'value' => (clone $query)->where('due_on', '<', now(Installation::settings()['timezone'])->toDateString())->count(), 'href' => '/service?view=overdue'],
+            [...$permission, 'id' => 'customer-service.open-requests', 'label' => __('Open service requests'), 'value' => (clone $query)->count(), 'href' => '/service'],
+            [...$permission, 'id' => 'customer-service.overdue-actions', 'label' => __('Overdue service actions'), 'value' => (clone $query)->where('due_on', '<', now(Installation::settings()['timezone'])->toDateString())->count(), 'href' => '/service?view=overdue'],
         ];
     }
 

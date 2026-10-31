@@ -42,7 +42,7 @@ class ExecutiveModule implements DashboardContributor, Module, RecordTableContri
 
     public function navigation(): array
     {
-        return [new NavigationItem(Installation::manifest()['module_labels']['executive'] ?? 'Executive management', '/executive', 'executive.view.own', ['executive.view.all'])];
+        return [new NavigationItem(Installation::manifest()['module_labels']['executive'] ?? __('Executive management'), '/executive', 'executive.view.own', ['executive.view.all'])];
     }
 
     public function panels(): array
@@ -52,19 +52,19 @@ class ExecutiveModule implements DashboardContributor, Module, RecordTableContri
 
     public function workTypes(): array
     {
-        return [new WorkType(module: 'executive', kind: 'tasks', label: 'Management task', permissionPrefix: 'executive', statuses: self::taskStatuses(), defaultStatus: 'not-started', terminalStatuses: ['done'], completedStatuses: ['done'], routePrefix: '/executive/tasks')];
+        return [new WorkType(module: 'executive', kind: 'tasks', label: __('Management task'), permissionPrefix: 'executive', statuses: self::taskStatuses(), defaultStatus: 'not-started', terminalStatuses: ['done'], completedStatuses: ['done'], routePrefix: '/executive/tasks')];
     }
 
     public function routineTypes(): array
     {
-        return [new RoutineType(module: 'executive', kind: 'routines', label: 'Management routine', permissionPrefix: 'executive', routePrefix: '/executive/routines')];
+        return [new RoutineType(module: 'executive', kind: 'routines', label: __('Management routine'), permissionPrefix: 'executive', routePrefix: '/executive/routines')];
     }
 
     public static function taskStatuses(): array
     {
         $defaults = ['not-started' => 'Not started', 'in-progress' => 'In progress', 'blocked' => 'Blocked', 'done' => 'Done'];
 
-        return array_replace($defaults, array_intersect_key(Installation::manifest()['executive_task_statuses'] ?? [], $defaults));
+        return array_replace(array_map(fn ($label) => (string) __($label), $defaults), array_intersect_key(Installation::manifest()['executive_task_statuses'] ?? [], $defaults));
     }
 
     public function widgets($user): array
@@ -77,8 +77,8 @@ class ExecutiveModule implements DashboardContributor, Module, RecordTableContri
         $permission = ['permission' => 'executive.view.own', 'anyPermissions' => ['executive.view.all']];
 
         return [
-            [...$permission, 'id' => 'executive.open-tasks', 'label' => 'Open management tasks', 'value' => (clone $query)->count(), 'href' => '/executive?section=tasks'],
-            [...$permission, 'id' => 'executive.overdue-tasks', 'label' => 'Overdue management tasks', 'value' => (clone $query)->where('due_on', '<', $today)->count(), 'href' => '/executive?section=tasks&view=overdue'],
+            [...$permission, 'id' => 'executive.open-tasks', 'label' => __('Open management tasks'), 'value' => (clone $query)->count(), 'href' => '/executive?section=tasks'],
+            [...$permission, 'id' => 'executive.overdue-tasks', 'label' => __('Overdue management tasks'), 'value' => (clone $query)->where('due_on', '<', $today)->count(), 'href' => '/executive?section=tasks&view=overdue'],
         ];
     }
 

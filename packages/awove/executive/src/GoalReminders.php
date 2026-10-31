@@ -37,6 +37,6 @@ class GoalReminders implements ReminderSource
         }
         $goal = Access::goals($user)->whereKey($recordId)->where('owner_id', $recipientId)->whereNull('archived_at')->whereIn('status', ['not-started', 'in-progress'])->where('target_on', '<=', now(Installation::settings()['timezone'])->toDateString())->first();
 
-        return $goal ? ['version' => $goal->version, 'title' => 'Goal target due: '.$goal->name, 'href' => '/executive/goals/'.$goal->id] : null;
+        return $goal ? ['version' => $goal->version, 'title' => __('Goal target due: :name', ['name' => $goal->name]), 'href' => '/executive/goals/'.$goal->id] : null;
     }
 }

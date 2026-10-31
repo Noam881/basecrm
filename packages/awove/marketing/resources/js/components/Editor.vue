@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr } from "@/lib/i18n";
 import { useForm, usePage } from "@inertiajs/vue3";
 import { computed } from "vue";
 import type { Options, MarketingRecord } from "../types";
@@ -48,29 +49,33 @@ function save() {
         <fieldset :disabled="disabled" class="crm-form-grid">
             <template v-if="kind === 'campaigns'"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Campaign name</span
+                    ><span class="crm-field-label">{{
+                        tr("Campaign name")
+                    }}</span
                     ><input v-model="f.name" required maxlength="160" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Objective</span
+                    ><span class="crm-field-label">{{ tr("Objective") }}</span
                     ><textarea
                         v-model="f.objective"
                         required
                     /></label></template
             ><template v-else
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Content title</span
+                    ><span class="crm-field-label">{{
+                        tr("Content title")
+                    }}</span
                     ><input v-model="f.title" required maxlength="160" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Format</span
+                    ><span class="crm-field-label">{{ tr("Format") }}</span
                     ><input
                         v-model="f.format"
                         required
                         maxlength="80" /></label></template
             ><label class="crm-field"
-                ><span class="crm-field-label">Channel</span
+                ><span class="crm-field-label">{{ tr("Channel") }}</span
                 ><select v-model="f.channel">
                     <option v-for="c in channels" :key="c" :value="c">
-                        {{ c.charAt(0).toUpperCase() + c.slice(1) }}
+                        {{ tr(c.charAt(0).toUpperCase() + c.slice(1)) }}
                     </option>
                     <option
                         v-if="!channels.includes(f.channel)"
@@ -80,9 +85,9 @@ function save() {
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Owner</span
+                ><span class="crm-field-label">{{ tr("Owner") }}</span
                 ><select v-model="f.owner_id" :disabled="!canAssign">
-                    <option :value="null">Unassigned</option>
+                    <option :value="null">{{ tr("Unassigned") }}</option>
                     <option v-for="o in owners" :key="o.id" :value="o.id">
                         {{ o.name }}
                     </option>
@@ -93,11 +98,11 @@ function save() {
                         "
                         :value="f.owner_id"
                     >
-                        Current owner
+                        {{ tr("Current owner") }}
                     </option>
                 </select></label
             ><label class="crm-field"
-                ><span class="crm-field-label">Status</span
+                ><span class="crm-field-label">{{ tr("Status") }}</span
                 ><select v-model="f.status">
                     <option v-for="(v, k) in statuses" :key="k" :value="k">
                         {{ v }}
@@ -105,59 +110,67 @@ function save() {
                 </select></label
             ><template v-if="kind === 'campaigns'"
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Start date</span
+                    ><span class="crm-field-label">{{ tr("Start date") }}</span
                     ><input v-model="f.starts_on" type="date" required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">End date</span
+                    ><span class="crm-field-label">{{ tr("End date") }}</span
                     ><input v-model="f.ends_on" type="date" required /></label
                 ><label class="crm-field"
                     ><span class="crm-field-label"
-                        >Planned budget ({{
-                            record?.currency ?? currency
-                        }})</span
+                        >{{ tr("Planned budget (")
+                        }}{{ record?.currency ?? currency }})</span
                     ><input
                         v-model="f.planned_budget"
                         type="text"
                         inputmode="decimal"
                         required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Materials link</span
+                    ><span class="crm-field-label">{{
+                        tr("Materials link")
+                    }}</span
                     ><input
                         v-model="f.materials_url"
                         type="url"
-                        placeholder="https://" /></label
+                        :placeholder="tr('https://')" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Landing page link</span
+                    ><span class="crm-field-label">{{
+                        tr("Landing page link")
+                    }}</span
                     ><input
                         v-model="f.landing_url"
                         type="url"
-                        placeholder="https://" /></label></template
+                        :placeholder="tr('https://')" /></label></template
             ><template v-else
                 ><label class="crm-field"
-                    ><span class="crm-field-label"
-                        >Planned publication date</span
+                    ><span class="crm-field-label">{{
+                        tr("Planned publication date")
+                    }}</span
                     ><input
                         v-model="f.planned_on"
                         type="date"
                         required /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Draft</span
+                    ><span class="crm-field-label">{{ tr("Draft") }}</span
                     ><textarea v-model="f.draft" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Asset link</span
+                    ><span class="crm-field-label">{{ tr("Asset link") }}</span
                     ><input
                         v-model="f.asset_url"
                         type="url"
-                        placeholder="https://" /></label
+                        :placeholder="tr('https://')" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Publication link</span
+                    ><span class="crm-field-label">{{
+                        tr("Publication link")
+                    }}</span
                     ><input
                         v-model="f.publication_url"
                         type="url"
                         :required="f.status === 'published'"
-                        placeholder="https://" /></label
+                        :placeholder="tr('https://')" /></label
                 ><label class="crm-field"
-                    ><span class="crm-field-label">Actual publication date</span
+                    ><span class="crm-field-label">{{
+                        tr("Actual publication date")
+                    }}</span
                     ><input
                         v-model="f.published_on"
                         type="date"
@@ -171,10 +184,10 @@ function save() {
             <button class="crm-button" :disabled="f.processing">
                 {{
                     record
-                        ? "Save changes"
+                        ? tr("Save changes")
                         : kind === "campaigns"
-                          ? "Create campaign"
-                          : "Create content"
+                          ? tr("Create campaign")
+                          : tr("Create content")
                 }}
             </button>
         </div>

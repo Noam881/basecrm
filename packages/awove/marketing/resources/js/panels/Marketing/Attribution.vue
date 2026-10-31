@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t as tr, translateLabels } from "@/lib/i18n";
 import { ref, onMounted } from "vue";
 import HistoryList, {
     type HistoryEntry,
@@ -39,7 +40,7 @@ onMounted(async () => {
             headers: { Accept: "application/json" },
         });
         if (!r.ok)
-            throw new Error("Marketing attribution could not be loaded.");
+            throw new Error(tr("Marketing attribution could not be loaded."));
         data.value = await r.json();
         originalFields = { ...data.value!.fields };
     } catch (e) {
@@ -81,7 +82,9 @@ async function save() {
         });
         const result = await r.json();
         if (!r.ok)
-            throw new Error(result.message ?? "Unable to save attribution.");
+            throw new Error(
+                result.message ?? tr("Unable to save attribution."),
+            );
         data.value = result;
         originalFields = { ...result.fields };
         saved.value = true;
@@ -97,22 +100,26 @@ async function save() {
         <p v-if="error" class="crm-notice" role="alert">{{ error }}</p>
         <form v-if="data" class="crm-form" @submit.prevent="save">
             <p v-if="data.has_legacy_snapshot" class="crm-muted">
-                The original attribution was preserved in an immutable migration
-                snapshot. Linked CRM campaign is separate from external campaign
-                IDs.
+                {{
+                    tr(
+                        "The original attribution was preserved in an immutable migration snapshot. Linked CRM campaign is separate from external campaign IDs.",
+                    )
+                }}
             </p>
             <fieldset
                 class="crm-form-grid"
                 :disabled="!editable || !data.canEdit"
             >
                 <label class="crm-field"
-                    ><span class="crm-field-label">Linked CRM campaign</span
+                    ><span class="crm-field-label">{{
+                        tr("Linked CRM campaign")
+                    }}</span
                     ><select v-model="data.linked_campaign_id">
                         <option :value="null">
                             {{
                                 data.has_hidden_campaign
-                                    ? "Existing campaign unavailable"
-                                    : "No linked campaign"
+                                    ? tr("Existing campaign unavailable")
+                                    : tr("No linked campaign")
                             }}
                         </option>
                         <option
@@ -138,12 +145,12 @@ async function save() {
                     v-for="(label, key) in labels"
                     :key="key"
                     class="crm-field"
-                    ><span class="crm-field-label">{{ label }}</span
+                    ><span class="crm-field-label">{{ tr(label) }}</span
                     ><select
                         v-if="key === 'platform'"
                         v-model="data.fields[key]"
                     >
-                        <option :value="null">Not specified</option>
+                        <option :value="null">{{ tr("Not specified") }}</option>
                         <option
                             v-for="c in [
                                 'website',
@@ -159,7 +166,7 @@ async function save() {
                             :key="c"
                             :value="c"
                         >
-                            {{ c }}
+                            {{ tr(c) }}
                         </option></select
                     ><input
                         v-else
@@ -169,23 +176,25 @@ async function save() {
                 /></label>
             </fieldset>
             <p v-if="saved" class="crm-notice" role="status">
-                Marketing attribution saved.
+                {{ tr("Marketing attribution saved.") }}
             </p>
             <div v-if="editable && data.canEdit" class="crm-form-action">
                 <button class="crm-button" :disabled="busy">
-                    Save attribution
+                    {{ tr("Save attribution") }}
                 </button>
             </div>
         </form>
-        <p v-else-if="!error">Loading attribution…</p>
+        <p v-else-if="!error">{{ tr("Loading attribution…") }}</p>
         <HistoryList
             v-if="data"
             :history="data.history"
-            title="Attribution history"
-            :field-labels="{
-                ...labels,
-                linked_campaign_id: 'Linked CRM campaign',
-            }"
+            :title="tr('Attribution history')"
+            :field-labels="
+                translateLabels({
+                    ...labels,
+                    linked_campaign_id: 'Linked CRM campaign',
+                })
+            "
         />
     </div>
 </template>

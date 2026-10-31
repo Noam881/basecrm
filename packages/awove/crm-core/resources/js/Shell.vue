@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { Link, usePage } from "@inertiajs/vue3";
 import { useMediaQuery } from "@vueuse/core";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
@@ -16,7 +17,7 @@ const user = computed(
 );
 const capabilities = computed(() => page.props.capabilities as string[]);
 const navigation = computed(() => [
-    { label: "Overview", href: "/dashboard", icon: "space_dashboard" },
+    { label: t("Overview"), href: "/dashboard", icon: "space_dashboard" },
     ...(page.props.salesAvailable !== false
         ? [
               {
@@ -24,16 +25,16 @@ const navigation = computed(() => [
                   href: "/leads",
                   icon: "view_list",
               },
-              { label: "Follow-ups", href: "/tasks", icon: "task_alt" },
+              { label: t("Follow-ups"), href: "/tasks", icon: "task_alt" },
           ]
         : []),
-    { label: "Reminders", href: "/reminders", icon: "notifications" },
+    { label: t("Reminders"), href: "/reminders", icon: "notifications" },
     ...(capabilities.value.some((permission) =>
         ["imports.manage", "exports.view"].includes(permission),
     )
         ? [
               {
-                  label: "Import / export",
+                  label: t("Import / export"),
                   href: "/spreadsheets",
                   icon: "import_export",
               },
@@ -127,7 +128,7 @@ onBeforeUnmount(closeNavigation);
             id="crm-sidebar"
             ref="sidebar"
             class="crm-sidebar"
-            :aria-label="isMobile ? 'Navigation' : undefined"
+            :aria-label="isMobile ? t('Navigation') : undefined"
             @close="mobileOpen = false"
             @click="backdropClick"
         >
@@ -150,17 +151,17 @@ onBeforeUnmount(closeNavigation);
                     class="crm-icon-control crm-sidebar-toggle"
                     :aria-label="
                         isMobile
-                            ? 'Close navigation'
+                            ? t('Close navigation')
                             : railCollapsed
-                              ? 'Expand sidebar'
-                              : 'Collapse sidebar'
+                              ? t('Expand sidebar')
+                              : t('Collapse sidebar')
                     "
                     :title="
                         isMobile
-                            ? 'Close navigation'
+                            ? t('Close navigation')
                             : railCollapsed
-                              ? 'Expand sidebar'
-                              : 'Collapse sidebar'
+                              ? t('Expand sidebar')
+                              : t('Collapse sidebar')
                     "
                     :aria-expanded="isMobile ? mobileOpen : !railCollapsed"
                     aria-controls="crm-sidebar"
@@ -179,7 +180,7 @@ onBeforeUnmount(closeNavigation);
                     >
                 </button>
             </div>
-            <nav aria-label="Main navigation">
+            <nav :aria-label="t('Main navigation')">
                 <Link
                     v-for="item in navigation"
                     :key="item.href"
@@ -206,12 +207,14 @@ onBeforeUnmount(closeNavigation);
                     :aria-current="
                         selected('/business-settings') ? 'page' : undefined
                     "
-                    aria-label="Business settings"
-                    :title="railCollapsed ? 'Business settings' : undefined"
+                    :aria-label="t('Business settings')"
+                    :title="railCollapsed ? t('Business settings') : undefined"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >settings</span
-                    ><span class="crm-nav-label">Business settings</span>
+                    ><span class="crm-nav-label">{{
+                        t("Business settings")
+                    }}</span>
                 </Link>
                 <Link
                     href="/settings/security"
@@ -220,12 +223,14 @@ onBeforeUnmount(closeNavigation);
                     :aria-current="
                         selected('/settings/security') ? 'page' : undefined
                     "
-                    aria-label="Account settings"
-                    :title="railCollapsed ? 'Account settings' : undefined"
+                    :aria-label="t('Account settings')"
+                    :title="railCollapsed ? t('Account settings') : undefined"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >security</span
-                    ><span class="crm-nav-label">Account settings</span>
+                    ><span class="crm-nav-label">{{
+                        t("Account settings")
+                    }}</span>
                 </Link>
                 <Link
                     href="/settings/profile"
@@ -235,32 +240,38 @@ onBeforeUnmount(closeNavigation);
                     :aria-current="
                         selected('/settings/profile') ? 'page' : undefined
                     "
-                    :aria-label="`Profile: ${user.name}`"
-                    :title="railCollapsed ? `Profile: ${user.name}` : undefined"
+                    :aria-label="t('Profile: {name}', { name: user.name })"
+                    :title="
+                        railCollapsed
+                            ? t('Profile: {name}', { name: user.name })
+                            : undefined
+                    "
                 >
                     <span class="crm-avatar" aria-hidden="true">{{
                         initials
                     }}</span
-                    ><span class="crm-nav-label">{{ user.name }}</span>
+                    ><span class="crm-nav-label"
+                        ><bdi>{{ user.name }}</bdi></span
+                    >
                 </Link>
                 <Link
                     href="/logout"
                     @click="closeNavigation"
                     method="post"
                     as="button"
-                    aria-label="Sign out"
-                    :title="railCollapsed ? 'Sign out' : undefined"
+                    :aria-label="t('Sign out')"
+                    :title="railCollapsed ? t('Sign out') : undefined"
                 >
                     <span class="material-symbols-outlined" aria-hidden="true"
                         >logout</span
-                    ><span class="crm-nav-label">Sign out</span>
+                    ><span class="crm-nav-label">{{ t("Sign out") }}</span>
                 </Link>
             </div>
         </component>
         <main class="crm-main">
             <button
                 class="crm-icon-control crm-mobile-menu"
-                aria-label="Open navigation"
+                :aria-label="t('Open navigation')"
                 aria-controls="crm-sidebar"
                 aria-haspopup="dialog"
                 :aria-expanded="mobileOpen"

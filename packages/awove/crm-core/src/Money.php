@@ -16,11 +16,11 @@ final class Money
             $value = (string) $value;
         }
         if (! is_string($value) || ! preg_match('/^[0-9]{1,12}(?:\.[0-9]{1,2})?$/D', trim($value))) {
-            throw ValidationException::withMessages([$field => 'Enter a non-negative amount with at most two decimal places.']);
+            throw ValidationException::withMessages([$field => __('Enter a non-negative amount with at most two decimal places.')]);
         }
         $number = BigDecimal::of(trim($value))->toScale(2, RoundingMode::Unnecessary);
         if ($positive && $number->compareTo('0') <= 0) {
-            throw ValidationException::withMessages([$field => 'Enter an amount greater than zero.']);
+            throw ValidationException::withMessages([$field => __('Enter an amount greater than zero.')]);
         }
 
         return (string) $number;

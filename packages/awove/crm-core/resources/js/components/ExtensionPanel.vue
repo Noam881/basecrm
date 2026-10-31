@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from "@/lib/i18n";
 import { computed, defineAsyncComponent } from "vue";
 const props = defineProps<{
     component: string;
@@ -27,5 +28,7 @@ const resolved = computed(() => {
         :endpoint="endpoint.replace('{lead}', String(leadId))"
         :editable="editable"
     />
-    <p v-else role="alert">This panel is unavailable in the current build.</p>
+    <p v-else role="alert">
+        {{ t("This panel is unavailable in the current build.") }}
+    </p>
 </template>
