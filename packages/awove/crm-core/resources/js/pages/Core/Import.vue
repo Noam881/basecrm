@@ -127,8 +127,12 @@ async function confirmImport() {
             }),
         );
         if (result) {
-            saved.value = t("Imported {count} records.", {
+            saved.value = t("{count} {type} imported.", {
                 count: result.count,
+                type:
+                    result.count === 1
+                        ? t(singularNames[result.type as RecordType])
+                        : names[result.type as RecordType].toLocaleLowerCase(),
             });
             preview.value = null;
             file.value = null;
@@ -182,12 +186,22 @@ function display(value: unknown): string {
                 <a
                     class="crm-secondary"
                     :href="`/spreadsheets/export/${type}`"
-                    >{{ t("Download {type} CSV", { type: names[type] }) }}</a
+                    >{{
+                        t("Download {type} CSV", {
+                            type: names[type].toLocaleLowerCase(),
+                        })
+                    }}</a
                 >
             </div>
         </section>
         <section v-if="canImport" class="crm-card crm-flow">
-            <h2>{{ t("Import {type}", { type: names[type] }) }}</h2>
+            <h2>
+                {{
+                    t("Import {type}", {
+                        type: names[type].toLocaleLowerCase(),
+                    })
+                }}
+            </h2>
             <p class="crm-muted">
                 {{
                     t(
@@ -270,8 +284,14 @@ function display(value: unknown): string {
         <p v-if="saved" class="crm-notice" role="status">{{ saved }}</p>
         <section v-if="preview" class="crm-card crm-flow">
             <h2>
-                {{ t("Preview:") }} {{ preview.count }}
-                {{ preview.count === 1 ? t("record") : t("records") }}
+                {{
+                    t(
+                        preview.count === 1
+                            ? "Preview: {count} record"
+                            : "Preview: {count} records",
+                        { count: preview.count },
+                    )
+                }}
             </h2>
             <p v-if="preview.errors.length" class="crm-error" role="alert">
                 {{
@@ -302,7 +322,13 @@ function display(value: unknown): string {
             <p class="crm-muted">
                 {{
                     t(
-                        "Showing the first {shown} valid records. All {count} records were checked.",
+                        preview.rows.length === 1
+                            ? preview.count === 1
+                                ? "Showing the first {shown} valid record. All {count} record was checked."
+                                : "Showing the first {shown} valid record. All {count} records were checked."
+                            : preview.count === 1
+                              ? "Showing the first {shown} valid records. All {count} record was checked."
+                              : "Showing the first {shown} valid records. All {count} records were checked.",
                         {
                             shown: Math.min(20, preview.rows.length),
                             count: preview.count,
@@ -388,9 +414,14 @@ function display(value: unknown): string {
                         {{
                             processing
                                 ? t("Importing…")
-                                : t("Import {count} records", {
-                                      count: preview.count,
-                                  })
+                                : t(
+                                      preview.count === 1
+                                          ? "Import {count} record"
+                                          : "Import {count} records",
+                                      {
+                                          count: preview.count,
+                                      },
+                                  )
                         }}
                     </button>
                 </div>

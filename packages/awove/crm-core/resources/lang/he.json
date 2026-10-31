@@ -681,7 +681,7 @@
     "records": "רשומות",
     "record was": "רשומה נבדקה",
     "records were": "רשומות נבדקו",
-    "Showing the first {shown} valid records. All {count} records were checked.": "מוצגות {shown} הרשומות התקינות הראשונות. כל {count} הרשומות נבדקו.",
+    "Showing the first {shown} valid records. All {count} records were checked.": "הרשומות התקינות הראשונות המוצגות: {shown}. סך הרשומות שנבדקו: {count}.",
     "Edit contact": "עריכת איש קשר",
     "Edit company": "עריכת חברה",
     "open": "פתוח",
@@ -706,5 +706,12 @@
     "quotation sent": "הצעת המחיר נשלחה",
     "quotation accepted": "הצעת המחיר אושרה",
     "quotation rejected": "הצעת המחיר נדחתה",
-    "Checklist item {number}": "פריט ברשימת הבדיקה {number}"
+    "Checklist item {number}": "פריט ברשימת הבדיקה {number}",
+    "{count} {type} imported.": "הייבוא הושלם: {count} {type}.",
+    "Preview: {count} record": "תצוגה מקדימה: רשומה אחת ({count})",
+    "Preview: {count} records": "תצוגה מקדימה: {count} רשומות",
+    "Import {count} record": "ייבוא רשומה אחת ({count})",
+    "Showing the first {shown} valid record. All {count} record was checked.": "הרשומות התקינות הראשונות המוצגות: {shown}. סך הרשומות שנבדקו: {count}.",
+    "Showing the first {shown} valid record. All {count} records were checked.": "הרשומות התקינות הראשונות המוצגות: {shown}. סך הרשומות שנבדקו: {count}.",
+    "Showing the first {shown} valid records. All {count} record was checked.": "הרשומות התקינות הראשונות המוצגות: {shown}. סך הרשומות שנבדקו: {count}."
 }
