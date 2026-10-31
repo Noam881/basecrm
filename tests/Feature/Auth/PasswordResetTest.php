@@ -3,93 +3,49 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Laravel\Fortify\Features;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    #[DataProvider('legacyScreens')]
+    public function test_legacy_reset_screens_redirect_to_email_sign_in(string $path): void
     {
-        parent::setUp();
-
-        $this->skipUnlessFortifyHas(Features::resetPasswords());
+        $this->get($path)->assertRedirect('/login');
+        $this->assertGuest();
     }
 
-    public function test_reset_password_link_screen_can_be_rendered()
+    public static function legacyScreens(): array
     {
-        $response = $this->get(route('password.request'));
-
-        $response->assertOk();
+        return [
+            'forgot password' => ['/forgot-password'],
+            'reset without token' => ['/reset-password'],
+            'reset with token' => ['/reset-password/'.str_repeat('a', 64)],
+        ];
     }
 
-    public function test_reset_password_link_can_be_requested()
+    public function test_legacy_reset_mutations_are_unavailable_and_leave_the_account_unchanged(): void
     {
         Notification::fake();
+        $user = User::factory()->create(['name' => 'Noa Levi', 'email' => 'noa.levi@fictional.example.test']);
+        $password = $user->password;
 
-        $user = User::factory()->create();
-
-        $this->post(route('password.email'), ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class);
-    }
-
-    public function test_reset_password_screen_can_be_rendered()
-    {
-        Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post(route('password.email'), ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get(route('password.reset', $notification->token));
-
-            $response->assertOk();
-
-            return true;
-        });
-    }
-
-    public function test_password_can_be_reset_with_valid_token()
-    {
-        Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post(route('password.email'), ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-            $response = $this->post(route('password.update'), [
-                'token' => $notification->token,
+        foreach (['/forgot-password', '/reset-password'] as $path) {
+            $response = $this->post($path, [
                 'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
+                'token' => str_repeat('a', 64),
+                'password' => 'Changed-Fictional-Password!456',
+                'password_confirmation' => 'Changed-Fictional-Password!456',
             ]);
-
-            $response
-                ->assertSessionHasNoErrors()
-                ->assertRedirect(route('login'));
-
-            return true;
-        });
-    }
-
-    public function test_password_cannot_be_reset_with_invalid_token(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->post(route('password.update'), [
-            'token' => 'invalid-token',
-            'email' => $user->email,
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123',
-        ]);
-
-        $response->assertSessionHasErrors('email');
+            $this->assertContains($response->getStatusCode(), [404, 405]);
+            $this->assertGuest();
+        }
+        Notification::assertNothingSent();
+        $this->assertSame($password, $user->fresh()->password);
+        $this->assertDatabaseCount('password_reset_tokens', 0);
     }
 }

@@ -1,11 +1,15 @@
 <?php
 
 use App\Models\User;
+use Awove\Core\Access;
 use Awove\Core\Installation;
+use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
 use Awove\Core\Models\Task;
 use Awove\Core\Services\Leads;
+use Awove\Core\Tables\Query;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -28,6 +32,14 @@ function tableLead(User $u, string $title, string $priority = 'normal', array $e
 function tableUrl(array $query): string
 {
     return '/leads?'.http_build_query($query);
+}
+function tableIdentityQuery(User $user, array $input = [], string $type = 'contacts'): array
+{
+    $user = $user->fresh();
+    $request = Request::create('/', 'GET', $input);
+    $request->setUserResolver(fn () => $user);
+
+    return app(Query::class)->run(Access::identities($user, $type === 'contacts' ? Contact::class : Company::class), $type, $request);
 }
 it('sorts priorities semantically and supports deterministic multi-column sorting across pages', function () {
     $u = tableEmployee();
@@ -97,6 +109,62 @@ it('exposes configured and enabled-module fields only when permitted and retains
     $r = $this->get('/leads')->assertOk();
     expect(array_column($r->inertiaProps('table.columns'), 'id'))->not->toContain($field);
 });
+
+it('preserves dormant extension layout and view fragments while active table settings change', function () {
+    config(['core.installation' => 'beta']);
+    $user = tableEmployee('Shira Levi');
+    $user->givePermissionTo('service-details.view');
+    $reference = 'module:service-details:service_reference';
+    $service = 'module:service-details:requested_service';
+    $this->actingAs($user)->postJson('/preferences', [
+        'table' => 'leads',
+        'columns' => ['title', $reference, 'priority', $service, 'contact'],
+        'widths' => [$reference => 400, $service => 360, 'title' => 280],
+        'pinned' => [$reference, 'title', $service],
+        'views' => [
+            ['id' => 'mixed', 'name' => 'Service view', 'columns' => ['title', $reference, 'priority'], 'state' => [
+                'sorts' => [['id' => $reference, 'direction' => 'desc'], ['id' => 'priority', 'direction' => 'asc']],
+                'filters' => [['id' => $reference, 'op' => 'contains', 'value' => 'PRIVATE-REF'], ['id' => 'priority', 'op' => 'eq', 'value' => 'high'], ['id' => $service, 'op' => 'starts', 'value' => 'CONFIDENTIAL']],
+            ]],
+            ['id' => 'dormant', 'name' => 'Saved service', 'columns' => [$service], 'state' => [
+                'sorts' => [['id' => $service, 'direction' => 'asc']],
+                'filters' => [['id' => $service, 'op' => 'contains', 'value' => 'PRIVATE-SERVICE']],
+            ]],
+        ],
+    ])->assertOk();
+    $dormant = $user->fresh()->display_preferences['tables']['leads']['views'][1];
+    config(['core.installation' => 'alpha']);
+    $response = $this->get('/leads')->assertOk();
+    $views = $response->inertiaProps('table.preferences.views');
+    expect($views[1]['columns'])->toBe($response->inertiaProps('table.defaultColumns'))
+        ->and($views[1]['state']['sorts'])->toBe([])
+        ->and($views[1]['state']['filters'])->toBe([]);
+    $views[0]['columns'] = ['contact'];
+    $views[0]['state']['sorts'] = [['id' => 'status', 'direction' => 'desc']];
+    $views[0]['state']['filters'] = [['id' => 'priority', 'op' => 'eq', 'value' => 'low']];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact', 'status'], 'widths' => ['contact' => 300], 'pinned' => ['contact'], 'density' => 'compact', 'wrap' => true, 'views' => $views])->assertOk()->assertExactJson(['saved' => true]);
+    $stored = $user->fresh()->display_preferences['tables']['leads'];
+    expect($stored['columns'])->toBe(['contact', $reference, 'status', $service])
+        ->and($stored['widths'])->toMatchArray([$reference => 400, $service => 360, 'contact' => 300])
+        ->and($stored['widths'])->not->toHaveKey('title')
+        ->and($stored['pinned'])->toBe([$reference, 'contact', $service])
+        ->and($stored['density'])->toBe('compact')
+        ->and($stored['wrap'])->toBeTrue()
+        ->and($stored['views'][0]['columns'])->toBe(['contact', $reference])
+        ->and(array_column($stored['views'][0]['state']['sorts'], 'id'))->toBe([$reference, 'status'])
+        ->and(array_column($stored['views'][0]['state']['filters'], 'id'))->toBe([$reference, 'priority', $service])
+        ->and($stored['views'][0]['state']['filters'][1]['value'])->toBe('low')
+        ->and($stored['views'][1])->toBe($dormant);
+    $response = $this->get('/leads')->assertOk();
+    expect($response->inertiaProps('table.preferences.columns'))->toBe(['contact', 'status'])
+        ->and(json_encode($response->inertiaProps('table')))->not->toContain($reference, $service, 'PRIVATE-REF', 'CONFIDENTIAL', 'PRIVATE-SERVICE');
+    config(['core.installation' => 'beta']);
+    $response = $this->get('/leads')->assertOk();
+    expect($response->inertiaProps('table.preferences.columns'))->toBe($stored['columns'])
+        ->and($response->inertiaProps('table.preferences.views.0.state.filters'))->toBe($stored['views'][0]['state']['filters'])
+        ->and($response->inertiaProps('table.preferences.views.1'))->toBe($dormant);
+});
+
 it('validates all query inputs and rejects secret fields and SQL-shaped identifiers', function () {
     $u = tableEmployee();
     $this->actingAs($u);
@@ -112,8 +180,8 @@ it('persists independent per-table and per-user layouts, widths, pins and named 
     $this->postJson('/preferences', ['table' => 'contacts', 'columns' => ['email', 'name']])->assertOk();
     $r = $this->get('/leads')->assertOk();
     expect($r->inertiaProps('table.preferences.columns'))->toBe(['priority', 'title', 'contact_email'])->and($r->inertiaProps('table.preferences.widths.title'))->toBe(360)->and($r->inertiaProps('table.preferences.views.0.name'))->toBe('High first');
-    $r = $this->get('/people?table=contacts')->assertOk();
-    expect($r->inertiaProps('table.preferences.columns'))->toBe(['email', 'name']);
+    $contactTable = tableIdentityQuery($u);
+    expect($contactTable['preferences']['columns'])->toBe(['email', 'name']);
     $r = $this->actingAs($other)->get('/leads')->assertOk();
     expect($r->inertiaProps('table.preferences.columns'))->not->toBe(['priority', 'title', 'contact_email']);
 });
@@ -125,9 +193,9 @@ it('uses the same field catalog for restricted contacts and assigned follow-ups'
     foreach ([[$own, $u], [$foreign, $other]] as [$lead,$assignee]) {
         Task::create(['title' => $lead->title.' follow-up', 'lead_id' => $lead->id, 'assignee_id' => $assignee->id, 'due_at' => now()->addDay(), 'remind_at' => now(), 'priority' => 'normal']);
     }
-    $r = $this->actingAs($u)->get('/people?table=contacts')->assertOk();
-    expect($r->inertiaProps('table.page.total'))->toBe(1)->and(array_column($r->inertiaProps('table.columns'), 'id'))->toContain('email', 'phone', 'company');
-    $r = $this->get('/tasks')->assertOk();
+    $contactTable = tableIdentityQuery($u);
+    expect($contactTable['page']->total())->toBe(1)->and(array_column($contactTable['columns'], 'id'))->toContain('email', 'phone', 'company');
+    $r = $this->actingAs($u)->get('/tasks')->assertOk();
     expect($r->inertiaProps('table.page.total'))->toBe(1)->and($r->inertiaProps('table.page.data.0.cells.title'))->toBe('Own follow-up');
 });
 
@@ -146,4 +214,76 @@ it('sorts configured number fields numerically rather than as text', function ()
     } finally {
         unlink($file);
     }
+});
+
+it('starts leads with customer identities while keeping an optional enquiry title available', function () {
+    $user = tableEmployee();
+    tableLead($user, 'Website refresh');
+    $response = $this->actingAs($user)->get('/leads')->assertOk();
+    $columns = $response->inertiaProps('table.preferences.columns');
+    expect(array_slice($columns, 0, 2))->toBe(['contact', 'company'])
+        ->and($columns)->not->toContain('title')
+        ->and(array_column($response->inertiaProps('table.columns'), 'id'))->toContain('title');
+});
+
+it('exposes contact availability and secondary details as scoped searchable and filterable columns', function () {
+    $user = tableEmployee('Noa Cohen');
+    $contact = Contact::create(['name' => 'Shira Levi', 'created_by' => $user->id, 'search_key' => 'shiralevi', 'secondary_phone' => '+1 202-555-0171', 'secondary_phone_label' => 'office', 'preferred_contact_method' => 'whatsapp', 'preferred_contact_times' => ['mornings', 'evenings'], 'preferred_contact_days' => ['monday', 'saturday', 'sunday'], 'address' => '12 Olive Street', 'city' => 'Tel Aviv', 'country' => 'Israel', 'source' => 'referral']);
+    $contact->notes()->create(['body' => 'Call after the office opens.', 'author_id' => $user->id]);
+    $foreign = tableEmployee('Uri Ben David');
+    Contact::create(['name' => 'Private contact', 'created_by' => $foreign->id, 'search_key' => 'privatecontact', 'city' => 'Tel Aviv']);
+    $contactTable = tableIdentityQuery($user, ['q' => 'Tel Aviv']);
+    expect($contactTable['page']->total())->toBe(1);
+    $cells = $contactTable['page']->items()[0]->getAttribute('cells');
+    expect($cells)->toMatchArray(['secondary_phone' => '+1 202-555-0171', 'preferred_contact_times' => 'Mornings, Evenings', 'preferred_contact_days' => 'Monday, Saturday, Sunday', 'city' => 'Tel Aviv', 'country' => 'Israel', 'notes_count' => 1]);
+    expect(array_column($contactTable['columns'], 'id'))->toContain('secondary_phone', 'secondary_phone_label', 'preferred_contact_method', 'preferred_contact_times', 'preferred_contact_days', 'address', 'city', 'country', 'source', 'notes_count');
+    $contactTable = tableIdentityQuery($user, ['filters' => [['id' => 'preferred_contact_method', 'op' => 'eq', 'value' => 'whatsapp'], ['id' => 'preferred_contact_days', 'op' => 'contains', 'value' => 'Monday']]]);
+    expect($contactTable['page']->total())->toBe(1);
+    $lead = app(Leads::class)->create($user, ['contact_id' => $contact->id, 'owner_id' => $user->id, 'status_id' => 'new']);
+    $response = $this->actingAs($user)->get(tableUrl(['filters' => [['id' => 'contact_secondary_phone', 'op' => 'ends', 'value' => '0171']]]))->assertOk();
+    expect($response->inertiaProps('table.page.data.0.id'))->toBe($lead->id)
+        ->and($response->inertiaProps('table.page.data.0.cells.contact_preferred_contact_times'))->toBe('Mornings, Evenings')
+        ->and($response->inertiaProps('table.page.data.0.cells.contact_notes_count'))->toBe(1);
+});
+
+it('retains scoped company catalog queries without exposing a company directory route', function () {
+    $user = tableEmployee('Noa Cohen');
+    $other = tableEmployee('Uri Ben David');
+    foreach ([[$user, 'Levi Solutions', 'office@levi.example.test'], [$other, 'Hidden company', 'office@hidden.example.test']] as [$owner, $name, $email]) {
+        Company::create(['name' => $name, 'email' => $email, 'phone' => '+1 202-555-0170', 'search_key' => strtolower($name), 'created_by' => $owner->id]);
+    }
+    $companyTable = tableIdentityQuery($user, ['q' => 'office@'], 'companies');
+    expect($companyTable['page']->total())->toBe(1)
+        ->and($companyTable['page']->items()[0]->getAttribute('cells')['email'])->toBe('office@levi.example.test')
+        ->and(array_column($companyTable['columns'], 'id'))->toContain('name', 'email', 'phone')
+        ->and(array_column($companyTable['columns'], 'id'))->not->toContain('secondary_phone', 'preferred_contact_method');
+});
+
+it('rejects merged view overflow atomically while retaining dormant query settings', function () {
+    config(['core.installation' => 'beta']);
+    $user = tableEmployee('Noam Erez');
+    $user->givePermissionTo('service-details.view');
+    $field = 'module:service-details:service_reference';
+    $this->actingAs($user)->postJson('/preferences', ['table' => 'leads', 'columns' => ['title', $field], 'views' => [[
+        'id' => 'service', 'name' => 'Saved service', 'columns' => ['title', $field], 'state' => [
+            'sorts' => [['id' => $field, 'direction' => 'asc']],
+            'filters' => [['id' => $field, 'op' => 'contains', 'value' => 'PRIVATE']],
+        ],
+    ]]])->assertOk();
+    $stored = $user->fresh()->display_preferences;
+    config(['core.installation' => 'alpha']);
+    $sorts = array_map(fn ($id) => ['id' => $id, 'direction' => 'asc'], ['title', 'priority', 'status', 'owner', 'contact']);
+    $view = ['id' => 'service', 'name' => 'Saved service', 'columns' => ['title'], 'state' => ['sorts' => $sorts]];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact'], 'views' => [$view]])->assertUnprocessable()->assertJsonValidationErrors('views.0.state.sorts');
+    expect($user->fresh()->display_preferences)->toBe($stored);
+    $view['state'] = ['sorts' => array_slice($sorts, 0, 4), 'filters' => array_fill(0, 20, ['id' => 'title', 'op' => 'contains', 'value' => 'visible'])];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact'], 'views' => [$view]])->assertUnprocessable()->assertJsonValidationErrors('views.0.state.filters');
+    expect($user->fresh()->display_preferences)->toBe($stored);
+    $view['state'] = ['sorts' => array_slice($sorts, 0, 4)];
+    $this->postJson('/preferences', ['table' => 'leads', 'columns' => ['contact'], 'views' => [$view]])->assertOk();
+    config(['core.installation' => 'beta']);
+    $view = $user->fresh()->display_preferences['tables']['leads']['views'][0];
+    $this->get(tableUrl($view['state']))->assertOk();
+    expect($view['state']['sorts'])->toHaveCount(5)
+        ->and($view['state']['filters'][0]['value'])->toBe('PRIVATE');
 });

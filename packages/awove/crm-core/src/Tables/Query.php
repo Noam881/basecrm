@@ -17,6 +17,71 @@ class Query
     {
         $columns = $this->catalog->columns($table, $request->user());
         $state = $this->state($request->all(), $columns);
+        $query = $this->prepare($query, $columns, $state, $request);
+        $defaults = array_values(array_filter($this->catalog->defaults($table), fn ($key) => isset($columns[$key])));
+        if ($defaults === []) {
+            $defaults = [array_key_first($columns)];
+        }
+        $page = $query->paginate($state['per_page'], ['*'], $pageName)->withQueryString();
+        $page->getCollection()->transform(function ($row) use ($columns) {
+            $cells = [];
+            foreach (array_keys($columns) as $i => $id) {
+                $cells[$id] = $row->getAttribute('dt_'.$i);
+                $row->offsetUnset('dt_'.$i);
+            }$row->setAttribute('cells', $cells);
+
+            return $row;
+        });
+        $saved = $request->user()->display_preferences['tables'][$table] ?? [];
+        if (! $saved && $table === 'leads' && isset($request->user()->display_preferences['columns'])) {
+            $saved['columns'] = $request->user()->display_preferences['columns'];
+        }
+        $saved['columns'] = array_values(array_filter($saved['columns'] ?? $defaults, fn ($key) => isset($columns[$key])));
+        if (! $saved['columns']) {
+            $saved['columns'] = $defaults;
+        }
+
+        $saved['pinned'] = array_values(array_filter($saved['pinned'] ?? [], fn ($key) => isset($columns[$key])));
+        $saved['widths'] = array_intersect_key($saved['widths'] ?? [], $columns);
+        $saved['views'] = array_map(function ($view) use ($columns, $defaults) {
+            $view['columns'] = array_values(array_filter($view['columns'], fn ($key) => isset($columns[$key])));
+            if (! $view['columns']) {
+                $view['columns'] = $defaults;
+            }
+            foreach (['sorts', 'filters'] as $key) {
+                $view['state'][$key] = array_values(array_filter($view['state'][$key] ?? [], fn ($entry) => isset($columns[$entry['id']])));
+            }
+
+            return $view;
+        }, $saved['views'] ?? []);
+
+        return ['id' => $table, 'page' => $page, 'columns' => array_map(fn ($c) => [...$c->metadata(), 'operators' => $c->operators()], array_values($columns)), 'state' => $state, 'preferences' => $saved, 'defaultColumns' => $defaults];
+    }
+
+    /**
+     * Reuse identical permission-scoped field validation and filters for streamed exports.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    public function filtered(Builder $query, string $table, Request $request): Builder
+    {
+        $columns = $this->catalog->columns($table, $request->user());
+
+        return $this->prepare($query, $columns, $this->state($request->all(), $columns), $request);
+    }
+
+    /**
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  array<string,Column>  $columns
+     * @return Builder<TModel>
+     */
+    private function prepare(Builder $query, array $columns, array $state, Request $request): Builder
+    {
         $base = $query->getModel()->getTable();
         $query->select("$base.*");
         foreach (array_values($columns) as $i => $column) {
@@ -47,40 +112,8 @@ class Query
             }$query->orderByRaw("($sql) {$sort['direction']} NULLS LAST");
         }
         $query->orderBy("$base.id");
-        $page = $query->paginate($state['per_page'], ['*'], $pageName)->withQueryString();
-        $page->getCollection()->transform(function ($row) use ($columns) {
-            $cells = [];
-            foreach (array_keys($columns) as $i => $id) {
-                $cells[$id] = $row->getAttribute('dt_'.$i);
-                $row->offsetUnset('dt_'.$i);
-            }$row->setAttribute('cells', $cells);
 
-            return $row;
-        });
-        $saved = $request->user()->display_preferences['tables'][$table] ?? [];
-        if (! $saved && $table === 'leads' && isset($request->user()->display_preferences['columns'])) {
-            $saved['columns'] = $request->user()->display_preferences['columns'];
-        }
-        $saved['columns'] = array_values(array_filter($saved['columns'] ?? $this->catalog->defaults($table), fn ($key) => isset($columns[$key])));
-        if (! $saved['columns']) {
-            $saved['columns'] = $this->catalog->defaults($table);
-        }
-
-        $saved['pinned'] = array_values(array_filter($saved['pinned'] ?? [], fn ($key) => isset($columns[$key])));
-        $saved['widths'] = array_intersect_key($saved['widths'] ?? [], $columns);
-        $saved['views'] = array_map(function ($view) use ($columns, $table) {
-            $view['columns'] = array_values(array_filter($view['columns'], fn ($key) => isset($columns[$key])));
-            if (! $view['columns']) {
-                $view['columns'] = $this->catalog->defaults($table);
-            }
-            foreach (['sorts', 'filters'] as $key) {
-                $view['state'][$key] = array_values(array_filter($view['state'][$key] ?? [], fn ($entry) => isset($columns[$entry['id']])));
-            }
-
-            return $view;
-        }, $saved['views'] ?? []);
-
-        return ['id' => $table, 'page' => $page, 'columns' => array_map(fn ($c) => [...$c->metadata(), 'operators' => $c->operators()], array_values($columns)), 'state' => $state, 'preferences' => $saved, 'defaultColumns' => $this->catalog->defaults($table)];
+        return $query;
     }
 
     /** @param array<string,Column> $columns */
@@ -89,7 +122,8 @@ class Query
         $data = validator($input, ['q' => 'nullable|string|max:160', 'sorts' => 'sometimes|array|max:5', 'sorts.*.id' => ['required', Rule::in(array_keys($columns))], 'sorts.*.direction' => ['required', Rule::in(['asc', 'desc'])], 'filters' => 'sometimes|array|max:20', 'filters.*.id' => ['required', Rule::in(array_keys($columns))], 'filters.*.op' => 'required|string', 'filters.*.value' => 'nullable', 'filters.*.value2' => 'nullable', 'match' => ['sometimes', Rule::in(['all', 'any'])], 'per_page' => ['sometimes', Rule::in([10, 20, 25, 50, 100])], 'sort' => ['nullable', Rule::in(array_keys($columns))], 'direction' => ['nullable', Rule::in(['asc', 'desc'])]])->validate();
         $sorts = $data['sorts'] ?? (isset($data['sort']) ? [['id' => $data['sort'], 'direction' => $data['direction'] ?? 'asc']] : []);
         if (! $sorts) {
-            $sorts = [['id' => isset($columns['due_at']) ? 'due_at' : 'created_at', 'direction' => isset($columns['due_at']) ? 'asc' : 'desc']];
+            $default = isset($columns['due_at']) ? 'due_at' : (isset($columns['created_at']) ? 'created_at' : array_key_first($columns));
+            $sorts = $default ? [['id' => $default, 'direction' => $default === 'created_at' ? 'desc' : 'asc']] : [];
         }
         foreach ($data['filters'] ?? [] as $i => $f) {
             $c = $columns[$f['id']];

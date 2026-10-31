@@ -1,11 +1,5 @@
 <?php
 
-require __DIR__.'/../vendor/autoload.php';
-$app = require __DIR__.'/../bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-if (getenv('CRM_REHEARSAL') !== '1' || ! str_starts_with(config('database.connections.pgsql.database'), 'base_rehearsal_')) {
-    throw new RuntimeException('Rehearsal databases only.');
-}
 use App\Models\User;
 use Awove\Core\Installation;
 use Awove\Core\Models\Contact;
@@ -16,6 +10,13 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+
+require __DIR__.'/../vendor/autoload.php';
+$app = require __DIR__.'/../bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
+if (getenv('CRM_REHEARSAL') !== '1' || ! str_starts_with(config('database.connections.pgsql.database'), 'base_rehearsal_')) {
+    throw new RuntimeException('Rehearsal databases only.');
+}
 
 if (($argv[1] ?? '') === 'seed') {
     Artisan::call('crm:install');
@@ -32,12 +33,21 @@ if (($argv[1] ?? '') === 'seed') {
     }
 }
 $data = [];
-foreach (['users', 'roles', 'permissions', 'model_has_roles', 'model_has_permissions', 'role_has_permissions', 'crm_contacts', 'crm_companies', 'crm_statuses', 'crm_settings', 'crm_leads', 'crm_tasks', 'crm_notes', 'crm_activity', 'service_details_leads'] as $table) {
+foreach (['users', 'roles', 'permissions', 'model_has_roles', 'model_has_permissions', 'role_has_permissions', 'crm_contacts', 'crm_companies', 'crm_statuses', 'crm_settings', 'crm_leads', 'crm_tasks', 'crm_notes', 'crm_activity', 'crm_contact_notes', 'crm_proposals', 'service_details_leads'] as $table) {
     if (! Schema::hasTable($table)) {
+        $data[$table] = [];
+
         continue;
-    }$rows = DB::table($table)->get()->map(function ($row) {
+    }$rows = DB::table($table)->get()->map(function ($row) use ($table) {
         $array = (array) $row;
-        unset($array['external_reference']);
+        // Normalize missing additive columns to their exact migration defaults.
+        // A non-default value after upgrade still changes the fingerprint.
+        if ($table === 'crm_leads') {
+            $array += ['external_reference' => null, 'attribution' => null, 'needs' => null, 'estimated_value' => null, 'closing_date' => null, 'final_value' => null, 'loss_reason' => null];
+        }
+        if ($table === 'crm_contacts') {
+            $array += ['secondary_phone' => null, 'secondary_phone_label' => null, 'preferred_contact_method' => null, 'preferred_contact_times' => '[]', 'preferred_contact_days' => '[]', 'address' => null, 'city' => null, 'country' => null, 'source' => null];
+        }
         ksort($array);
 
         return $array;

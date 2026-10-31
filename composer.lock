@@ -4,17 +4,48 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "537c9443fd528598579552597fb598b3",
+    "content-hash": "b457ade3fcb186e4420e426af5599b27",
     "packages": [
         {
-            "name": "awove/crm-core",
+            "name": "awove/assets",
             "version": "1.0.0",
             "dist": {
                 "type": "path",
-                "url": "packages/awove/crm-core",
-                "reference": "83b9a8a290727a6a1382f9714f02c3d2e9ea5bd2"
+                "url": "packages/awove/assets",
+                "reference": "8be75d7f84df08abeb3b5b866e5adbe42b2ba52e"
             },
             "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Assets\\AssetsProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Assets\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/crm-core",
+            "version": "1.1.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/crm-core",
+                "reference": "472b993f6b4c03293785a8848e6041a472dd2133"
+            },
+            "require": {
+                "brick/math": "^1.0",
                 "illuminate/auth": "^13.0",
                 "illuminate/database": "^13.0",
                 "illuminate/queue": "^13.0",
@@ -34,6 +65,36 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\Core\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/customer-service",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/customer-service",
+                "reference": "21d48ef27a1d8f0a1aa1cf128c3970b11a0fe09f"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\CustomerService\\CustomerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\CustomerService\\": "src/"
                 }
             },
             "transport-options": {
@@ -64,6 +125,217 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\ServiceDetails\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/executive",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/executive",
+                "reference": "4ac3d0c09b34f610a302260b70f53c090f2d92c7"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Executive\\ExecutiveProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Executive\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/finance",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/finance",
+                "reference": "77f48dc5bd91fff61cbcd163c19cd1ec3bf17285"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Finance\\FinanceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Finance\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/hr",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/hr",
+                "reference": "2f2d5d3c3a258d054347f4b5782274b1bf1732d8"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Hr\\HrProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Hr\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/knowledge",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/knowledge",
+                "reference": "e1d718fcc6aec53aa04d7f18f264ad3a701a7617"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Knowledge\\KnowledgeProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Knowledge\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/marketing",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/marketing",
+                "reference": "f863475825b15e338d973beb8b2b2f970f10094f"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "brick/math": "^1.0",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Marketing\\MarketingProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Marketing\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/nonprofit",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/nonprofit",
+                "reference": "f9e122ef38c32a62430784a98fb6e08858b3c353"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Nonprofit\\NonprofitProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Nonprofit\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/operations",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/operations",
+                "reference": "44666b5c5e56e8481a3be4e2980cfdc9580bf563"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "illuminate/support": "^13.0",
+                "php": "^8.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Operations\\OperationsProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Operations\\": "src/"
                 }
             },
             "transport-options": {
@@ -5751,16 +6023,16 @@
         },
         {
             "name": "symfony/mime",
-            "version": "v8.1.7",
+            "version": "v8.1.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/mime.git",
-                "reference": "773ac57f20e2795bdadb65b5b1b5f4850d498283"
+                "reference": "8d1232052c9cdef170ed9608b3147bca4f61ff69"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/mime/zipball/773ac57f20e2795bdadb65b5b1b5f4850d498283",
-                "reference": "773ac57f20e2795bdadb65b5b1b5f4850d498283",
+                "url": "https://api.github.com/repos/symfony/mime/zipball/8d1232052c9cdef170ed9608b3147bca4f61ff69",
+                "reference": "8d1232052c9cdef170ed9608b3147bca4f61ff69",
                 "shasum": ""
             },
             "require": {
@@ -5813,7 +6085,7 @@
                 "mime-type"
             ],
             "support": {
-                "source": "https://github.com/symfony/mime/tree/v8.1.7"
+                "source": "https://github.com/symfony/mime/tree/v8.1.10"
             },
             "funding": [
                 {
@@ -5833,7 +6105,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-04T11:02:17+00:00"
+            "time": "2026-10-28T17:58:38+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",

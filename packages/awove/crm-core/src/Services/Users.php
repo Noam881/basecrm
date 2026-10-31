@@ -2,11 +2,11 @@
 
 namespace Awove\Core\Services;
 
+use Awove\Core\Events\SignInLinkRequested;
 use Awove\Core\Models\Lead;
 use Awove\Core\Models\Task;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class Users
@@ -52,7 +52,7 @@ class Users
 
             return $u;
         });
-        Password::sendResetLink(['email' => $u->email]);
+        event(new SignInLinkRequested($u->id));
 
     }
 }

@@ -1,0 +1,13 @@
+# Payroll preparation
+
+Optional capability `finance:payroll`; independent of HR, recruitment, collections, expenses and Sales. It uses the shared minimal employee reference, including retained inactive employees for final periods. No login, contact copy, name merge, payroll formula or external transmission is created.
+
+`finance.payroll.view.own` / `view.all`, `create`, `edit.own` / `edit.all`, `assign`, `archive` and `export` are explicit grants. Every record, table, document redirect, export and dashboard uses current capability and ownership. Losing employee-reference access redacts the employee summary without erasing the parent link. An unchanged inactive/unassigned owner remains historical; reassignment requires its own grant and an already authorized active owner.
+
+A preparation is unique by employee and exact inclusive start/end dates, including archived preparations. Different overlapping ranges are not treated as identical; agree period conventions before use. Concurrent edits use versions; same-employee creation/period edits serialize before uniqueness validation. Archive retains inputs, documents and history.
+
+Deployment `payroll_inputs` defines at most20 agreed manual fields: stable key, label, type (`decimal`, `money`, `text`, `date`), unit, decimal scale0–4 and required flag. Each record snapshots its schema. The defaults are reported hours, absence days and reimbursable expenses, all optional. There is no pay-rate, statutory calculation or inferred total. Exact numeric strings reject floating-point JSON inputs, exponent notation, negative numbers and unsupported precision. Ready/Sent enforce required inputs. Marking Sent requires the actual date of manual transfer and sends nothing; prior sent-date/status history is retained when reopened.
+
+Supporting documents are append-only HTTPS references with a freshly scoped redirect, not remote downloads or a new storage service. CSV export supports up to5,000 filtered preparations, includes exact values and their schema snapshots, excludes document links and protects cells from formula injection. It is UTF-8 CSV, not XLS/XLSX. Period/owner/status filters and shared advanced-table state apply to the export.
+
+Status label overrides use manifest `payroll_statuses` while retaining `pending-input`, `ready-for-review` and `sent-to-payroll` keys. Currency is the installation's agreed single currency; retained-record mismatch blocks financial entry. Payroll preparation never creates ledger payments or supplier expenses. No reminders are inferred from period end dates, because the source specifies no payroll due-date rule.

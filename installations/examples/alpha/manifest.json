@@ -1,12 +1,13 @@
 {
   "id": "alpha",
   "name": "Alpha CRM",
-  "color": "#202020",
+  "color": "#6750A4",
   "logo": "/brands/alpha.svg",
   "favicon": "/brands/alpha.svg",
   "locale": "en",
   "timezone": "Asia/Nicosia",
   "lead_label": "Leads",
   "modules": [],
-  "custom_fields": {}
+  "custom_fields": {},
+  "legacy_sales_stages": true
 }

@@ -2,7 +2,7 @@
 
 An independent, newly created CRM foundation. Nothing is imported from, connected to, or migrated from any existing CRM. This repository root is the standalone application root.
 
-Checkpoint 1: shared host + versioned core + deployment-installed extensions + independent installation configuration. This is a local development checkpoint, not a production-readiness certification.
+The shared host/core and independent installations are retained. Local generic business-module implementation and checkpoint evidence are tracked in [module status](docs/module-status.md); all ten source modules and seven checkpoints are complete locally. Source-deferred features and production acceptance remain separate.
 
 ## Canonical source
 
@@ -14,7 +14,7 @@ Checkpoint 1: shared host + versioned core + deployment-installed extensions + i
 - Beta: http://127.0.0.1:8092 — grey brand, Enquiries terminology, different pipeline labels, custom field, optional service-details panel.
 - Development mail: http://127.0.0.1:8028 — Mailpit only; no real messages are sent.
 
-Run `php scripts/seed-local.php` and `php scripts/seed-local.php beta` for fictional review records. Private, randomly generated review credentials are saved in `.local-fixtures.json` (ignored, mode 0600). These are employee accounts, not an administrative bypass. Do not use synthetic fixtures in production.
+Run `php scripts/seed-local.php` and `php scripts/seed-local.php beta` for fictional review records. The shared catalog uses Jewish/Hebrew names written in English, including Noa Levi and Daniel Cohen, with companies such as Rimon Studio, Carmel Supply and Shaked & Co, emails on `example.test`, and fictional `+1 202-555-01xx` phone numbers. Run `php scripts/localize-fixtures.php alpha` and `php scripts/localize-fixtures.php beta` to update existing synthetic examples in place without replacing login credentials, relationships or history. Private, randomly generated review credentials are saved in `.local-fixtures.json` (ignored, mode 0600). These are employee accounts, not an administrative bypass. Do not use synthetic fixtures in production.
 
 ## Selected stack
 
@@ -62,12 +62,14 @@ APP_ENV=beta php artisan schedule:work
 
 ## First administrator
 
+Sign-in uses email links only. Enter an active account email at `/login` and click **Sign in to CRM** in the email to open the dashboard immediately. Links expire after ten minutes and work once. Passwords and authenticator challenges are unavailable. See [email sign-in and security behavior](docs/authentication.md).
+
 ```sh
-php artisan crm:bootstrap-admin owner@alpha.example.test --name="Alpha Owner"
-php artisan --env=beta crm:bootstrap-admin owner@beta.example.test --name="Beta Owner"
+php artisan crm:bootstrap-admin owner@alpha.example.test --name="Avraham Levi"
+php artisan --env=beta crm:bootstrap-admin owner@beta.example.test --name="Sarah Cohen"
 ```
 
-These commands create only the first administrator, using an unknown random password. Open the reset/onboarding link in local Mailpit within 60 minutes, set a password, sign in, confirm your password on Account security, and enroll/confirm MFA before using the CRM. Public registration and account deletion are unavailable. Administrator invitations use the same expiring reset mechanism. Recovery uses Fortify recovery codes, stored privately by the account holder; see the [operations runbook](docs/installations-and-upgrades.md).
+These commands create only the first administrator and send a ten-minute email sign-in link. Open it in local Mailpit to enter the CRM directly. Administrator invitations send the same sign-in link. Request a fresh link from `/login` when needed. Public registration and account deletion are unavailable; see the [operations runbook](docs/installations-and-upgrades.md).
 
 ## Repeatable container build
 
@@ -86,7 +88,25 @@ Run migrations and `crm:install` through deployment commands before opening a fr
 
 ## Material tables
 
-Leads, contacts, companies and follow-ups share an advanced neutral Material table with selectable/reorderable/resizable/pinnable columns, typed server-side filters, multi-sort, full-result search, per-user layouts and named views. Configured custom fields and authorized module fields are available in the column chooser. See [table controls and query contracts](docs/advanced-tables.md).
+The application uses a neutral black/grey palette with scoped purple buttons, notices and badges, plus Material 3 Standard motion physics, shared elevation levels and animated outlined fields. See the [shared design system](docs/material-design.md).
+
+Leads and follow-ups share an advanced Material 3 table with selectable/reorderable/resizable/pinnable columns, typed server-side filters, multi-sort, full-result search, per-user layouts and named views. Configured custom fields and authorized module fields are available in the column chooser. Lead tables start with contact and company names. The enquiry title is optional and hidden in the default layout; add it through Columns when useful. See [table controls and query contracts](docs/advanced-tables.md).
+
+## Customer details and shared controls
+
+Use Add new contact from Leads to open the contact/company intake form. The intake has no records table or separate sidebar entry. Creation opens the saved profile; existing profiles and their edit actions are available from a lead's Customer card. Ordinary profile edits stay on the profile, and Back returns to Leads. Contacts include primary and labelled secondary phones, preferred contact method, multiple time windows and specific days, address/city/country, company and a prefilled source list. Initial notes are saved during creation; the contact profile shows the full summary and an immediate authored-notes composer and history. Missing details can be added and existing details cleared. Saving from a lead returns to that lead. Editing follows the existing creator and identity-management permissions.
+
+Buttons, fields, cards and form spacing share `packages/awove/crm-core/resources/css/components.css`, including host account screens and extensions. Stacked forms use a 24px field-to-action gap. Follow the shared UI conventions in `AGENTS.md` for future changes.
+
+## Lead workflow and proposals
+
+Lead stages can be changed directly from the table or profile bubble, with permission and version checks. Profiles display creation time, and the Created and Proposal file columns are included in new default layouts. Existing saved layouts remain intact. PDF/DOC/DOCX proposals up to 10 MB are stored privately as immutable versions on each lead. Production PHP must allow at least 10 MB uploads and a larger total POST body. Generic source remains Core/Sales. Optional Marketing attribution captures/searches platform, campaign/ad IDs and names, originating page, referral and UTMs only with Marketing enabled, its grants and current Lead scope. The local additive extraction retains frozen Core storage and exact snapshots; it is not remotely deployed. See [the requested sales workflow, integration readiness and report definitions](docs/niva-sales-workflow.md).
+
+## Browser fixture cleanup
+
+Browser tests clean their dedicated project accounts before and after each workflow/contact test, including failed tests. A later run also clears leftovers from an interrupted process. Names stay natural; only fictional email addresses carry unique run markers. See the [clean review demo](docs/screenshots/clean-review-demo.png).
+
+`php scripts/clean-browser-fixtures.php alpha --legacy` previews recognized leftovers from older browser runs. Add `--apply` to remove only those synthetic rows and their dependent test records. The command checks the local database/role, refuses shared references, saves a private recovery copy before deleting, and verifies retained records are unchanged. Beta uses the same command with `beta`. Recovery copies are ignored under `storage/app/private/browser-fixture-recovery`; restore one with `php scripts/clean-browser-fixtures.php alpha --restore=/absolute/path/to/copy.json --apply`. Restore refuses to overwrite existing records.
 
 ## Verification
 
@@ -105,7 +125,9 @@ python3 scripts/rehearse-upgrade.py
 docker-compose --profile full config --quiet
 ```
 
-`--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need both web servers, synthetic local fixtures and the dedicated table fixture accounts created by `seed-table-e2e.php` for Alpha and Beta. Chromium must be available (`npx playwright install chromium` if needed). They invoke the real reminder command and queue worker. Screenshots are in `docs/screenshots/`. Core-only checks build a temporary copy with the optional module physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
+`--debug` makes PHPStan run without a local worker socket, useful in restricted shells. Browser tests need the Alpha/Beta previews, every isolated module preview/manifest required by the selected specs, and dedicated synthetic fixture accounts. The full suite uses the [documented profile/origin map](docs/module-operations.md#full-desktopmobile-regression-profiles); two servers alone are insufficient. Chromium must be available (`npx playwright install chromium` if needed). Tests invoke the real reminder command and queue worker. Keep current screenshots/traces and fixture recovery evidence private; historical screenshots in `docs/screenshots/` are illustrative. Core-only and selected-package checks build temporary copies with unrelated optional code physically removed; they do not modify this installation. Upgrade/restore checks use new scratch databases, never reset Alpha or Beta, and clean up only databases created by that invocation.
+
+Workflow and contact-edit browser tests use only the dedicated table account for their Playwright project (desktop/mobile), never the human review account. Strict `beforeEach` and `afterEach` cleanup must match reserved test ownership and exact fictional email/run identifiers while preserving canonical fixtures and unrelated records. Customer display names stay natural English spellings such as Noa Levi; device names, timestamps and run IDs belong only in fictional `example.test` email addresses. Keep local recovery snapshots private and Git-ignored; never publish backups or credentials.
 
 See [architecture](docs/architecture.md), [extension contract](docs/extensions.md), [installation/update/recovery runbook](docs/installations-and-upgrades.md), and [checkpoint evidence and limitations](docs/checkpoint-1.md).
 
@@ -115,4 +137,8 @@ To check real overlapping reminder workers against synthetic local Alpha data:
 python3 scripts/check-reminder-concurrency.py
 ```
 
-The command records a diagnostic result, completes and archives its fictional probe record, and never runs against another CRM database.
+The command uses the dedicated Alpha desktop table account created by `seed-table-e2e.php`, records a diagnostic result, and completes and archives its fictional probe record. It never writes to the human reviewer account or another CRM database.
+
+## Generic business modules
+
+The local modular implementation is tracked in [module status](docs/module-status.md), [requirements matrix](docs/requirements-matrix.md), [modular architecture](docs/modular-architecture.md), and [module operations](docs/module-operations.md). These record the completed seven checkpoints, exact verification, source-deferred features and separate production acceptance.

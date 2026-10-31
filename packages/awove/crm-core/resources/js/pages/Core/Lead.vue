@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage, router } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import {
     date,
     type Lead,
@@ -10,36 +10,173 @@ import {
     type Task,
 } from "../../types";
 import ExtensionPanel from "../../components/ExtensionPanel.vue";
+import StageControl from "../../components/StageControl.vue";
+import LeadProposals from "../../components/LeadProposals.vue";
+import SalesHistory, {
+    type Communication,
+    type Quotation,
+} from "../../components/SalesHistory.vue";
 const props = defineProps<{
     lead: Lead;
     owners: Person[];
     statuses: Stage[];
     fields: Record<string, Field>;
     editable: boolean;
+    proposals: {
+        id: number;
+        version: number;
+        original_name: string;
+        mime_type: string;
+        size_bytes: number;
+        created_at: string;
+        uploaded_by: { id: number; name: string } | null;
+        download_url: string;
+    }[];
+    sales: { communications: Communication[]; quotations: Quotation[] };
+    identityPermissions: { contact: boolean; company: boolean };
     panels: {
         id: string;
         label: string;
         component: string;
         endpoint: string;
-        permission: string;
     }[];
 }>();
 const page = usePage();
 const zone = (page.props.brand as { timezone: string }).timezone;
+const currency = (page.props.brand as { currency: string }).currency;
 const capabilities = page.props.capabilities as string[];
+const customerName = computed(
+    () =>
+        props.lead.contact?.name ??
+        props.lead.company?.name ??
+        props.lead.title,
+);
+function leadDetails(lead: Lead) {
+    return {
+        title: lead.title,
+        owner_id: lead.owner_id,
+        priority: lead.priority,
+        source: lead.source,
+        needs: lead.needs ?? "",
+        estimated_value: lead.estimated_value ?? "",
+        closing_date: lead.closing_date ?? "",
+        final_value: lead.final_value ?? "",
+        loss_reason: lead.loss_reason ?? "",
+        custom_fields: JSON.parse(
+            JSON.stringify(lead.custom_fields ?? {}),
+        ) as Lead["custom_fields"],
+    };
+}
+function detailFingerprint(details: ReturnType<typeof leadDetails>) {
+    const sorted = (values: object) =>
+        Object.entries(values).sort(([left], [right]) =>
+            left.localeCompare(right),
+        );
+    return JSON.stringify({
+        ...details,
+        custom_fields: sorted(details.custom_fields),
+    });
+}
 const form = useForm({
-    title: props.lead.title,
-    owner_id: props.lead.owner_id,
-    status_id: props.lead.status_id,
-    priority: props.lead.priority,
-    source: props.lead.source,
+    ...leadDetails(props.lead),
     version: props.lead.version,
-    custom_fields: props.lead.custom_fields ?? {},
 });
-const save = () => {
-    form.version = props.lead.version;
-    form.patch(`/leads/${props.lead.id}`, { preserveScroll: true });
-};
+let detailBaseline = detailFingerprint(leadDetails(props.lead));
+const detailsChanged = ref(false);
+const detailsWarning = ref("");
+const detailsPermissionDenied = ref(false);
+const reloadingDetails = ref(false);
+const detailsDisabled = computed(
+    () =>
+        !props.editable ||
+        form.processing ||
+        reloadingDetails.value ||
+        detailsPermissionDenied.value,
+);
+function markDetailsChanged(
+    message = "Lead details changed in another session. Your unsaved edits are kept. Reload lead details before saving. Reloading will replace your unsaved lead details.",
+) {
+    detailsChanged.value = true;
+    detailsWarning.value = message;
+}
+// A stage refresh may advance the row version without making an older detail draft safe to save.
+watch(
+    () =>
+        [
+            props.lead.version,
+            detailFingerprint(leadDetails(props.lead)),
+        ] as const,
+    ([version, fingerprint]) => {
+        if (detailsChanged.value) return;
+        if (fingerprint === detailBaseline) {
+            form.version = version;
+            form.defaults("version", version);
+        } else {
+            markDetailsChanged();
+        }
+    },
+);
+function acceptDetails(lead: Lead) {
+    const details = leadDetails(lead);
+    detailBaseline = detailFingerprint(details);
+    form.defaults({ ...details, version: lead.version });
+    form.reset();
+    form.clearErrors();
+    detailsChanged.value = false;
+    detailsWarning.value = "";
+    detailsPermissionDenied.value = false;
+}
+function detailsException(response: { status: number }) {
+    if (response.status === 409) {
+        markDetailsChanged();
+        return false;
+    }
+    if (response.status === 403) {
+        detailsPermissionDenied.value = true;
+        markDetailsChanged(
+            "You no longer have permission to edit this lead. Your unsaved details are kept and have not been saved.",
+        );
+        return false;
+    }
+}
+function save() {
+    if (detailsDisabled.value || detailsChanged.value) return;
+    form.patch(`/leads/${props.lead.id}`, {
+        preserveScroll: true,
+        errorBag: "lead_details",
+        onSuccess: (savedPage) => acceptDetails(savedPage.props.lead as Lead),
+        onHttpException: detailsException,
+        onNetworkError: () => {
+            markDetailsChanged(
+                "The connection was interrupted. Reload lead details to check whether your changes were saved. Reloading will replace your unsaved lead details.",
+            );
+            return false;
+        },
+    });
+}
+function reloadDetails() {
+    if (
+        form.processing ||
+        reloadingDetails.value ||
+        detailsPermissionDenied.value
+    )
+        return;
+    reloadingDetails.value = true;
+    router.reload({
+        only: ["lead", "editable"],
+        onSuccess: (savedPage) => acceptDetails(savedPage.props.lead as Lead),
+        onHttpException: detailsException,
+        onNetworkError: () => {
+            markDetailsChanged(
+                "Lead details could not be reloaded. Your unsaved edits are kept. Check your connection and try again.",
+            );
+            return false;
+        },
+        onFinish: () => {
+            reloadingDetails.value = false;
+        },
+    });
+}
 const note = useForm({ body: "" });
 const task = useForm({
     title: "",
@@ -91,19 +228,11 @@ function changeTask(t: Task) {
 }
 </script>
 <template>
-    <Head :title="lead.title" /><Link href="/leads" class="crm-back"
+    <Head :title="customerName" /><Link href="/leads" class="crm-back"
         >← Back to leads</Link
     >
     <div class="crm-heading">
-        <div>
-            <p class="crm-eyebrow">LEAD #{{ lead.id }}</p>
-            <h1>{{ lead.title }}</h1>
-            <p>
-                {{ lead.contact?.name ?? lead.company?.name }} ·
-                {{ lead.status.name }}
-                <span v-if="lead.archived_at">· Archived</span>
-            </p>
-        </div>
+        <h1>{{ customerName }}</h1>
         <button
             v-if="editable && capabilities.includes('records.archive')"
             class="crm-secondary"
@@ -114,32 +243,45 @@ function changeTask(t: Task) {
     </div>
     <div class="crm-profile-grid">
         <div class="crm-stack">
-            <section class="crm-card">
+            <section class="crm-card crm-flow">
                 <h2>Lead details</h2>
+                <p class="crm-muted">
+                    Lead #{{ lead.id }} ·
+                    {{ lead.contact?.name ?? lead.company?.name }} ·
+                    {{ lead.status.name }}
+                    <span v-if="lead.archived_at">· Archived</span>
+                </p>
+                <p class="crm-muted">
+                    Created
+                    <time :datetime="lead.created_at">{{
+                        date(lead.created_at, zone)
+                    }}</time>
+                </p>
+                <div class="crm-field">
+                    <span>Stage</span>
+                    <StageControl
+                        :lead-id="lead.id"
+                        :record-name="customerName"
+                        :status-id="lead.status_id"
+                        :version="lead.version"
+                        :statuses="statuses"
+                        :editable="editable"
+                    />
+                </div>
                 <form class="crm-form-grid" @submit.prevent="save">
                     <label
-                        ><span class="crm-field-label">Title</span
+                        ><span class="crm-field-label"
+                            >Enquiry title (optional)</span
                         ><input
                             v-model="form.title"
-                            :disabled="!editable"
-                            required /></label
-                    ><label
-                        ><span class="crm-field-label">Status</span
-                        ><select v-model="form.status_id" :disabled="!editable">
-                            <option
-                                v-for="s in statuses"
-                                :key="s.id"
-                                :value="s.id"
-                            >
-                                {{ s.name }}
-                            </option>
-                        </select></label
+                            :disabled="detailsDisabled"
+                            maxlength="160" /></label
                     ><label
                         ><span class="crm-field-label">Owner</span
                         ><select
                             v-model="form.owner_id"
                             :disabled="
-                                !editable ||
+                                detailsDisabled ||
                                 !capabilities.includes('leads.assign')
                             "
                         >
@@ -156,20 +298,75 @@ function changeTask(t: Task) {
                         ><span class="crm-field-label">Source</span
                         ><input
                             v-model="form.source"
-                            :disabled="!editable" /></label
+                            :disabled="detailsDisabled" /></label
                     ><label
                         ><span class="crm-field-label">Priority</span
-                        ><select v-model="form.priority" :disabled="!editable">
+                        ><select
+                            v-model="form.priority"
+                            :disabled="detailsDisabled"
+                        >
                             <option>low</option>
                             <option>normal</option>
                             <option>high</option>
                         </select></label
-                    ><label v-for="(field, key) in fields" :key="key"
+                    ><label
+                        ><span class="crm-field-label">Needs</span
+                        ><textarea
+                            v-model="form.needs"
+                            :disabled="detailsDisabled"
+                            maxlength="10000"
+                            rows="3"
+                        />
+                    </label>
+                    <label
+                        ><span class="crm-field-label"
+                            >Estimated value ({{ currency }})</span
+                        ><input
+                            v-model="form.estimated_value"
+                            :disabled="detailsDisabled"
+                            type="text"
+                            inputmode="decimal"
+                            pattern="[0-9]+([.][0-9]{1,2})?"
+                            maxlength="15"
+                    /></label>
+                    <label
+                        ><span class="crm-field-label">Closing date</span
+                        ><input
+                            v-model="form.closing_date"
+                            :disabled="detailsDisabled"
+                            type="date"
+                    /></label>
+                    <label
+                        ><span class="crm-field-label"
+                            >Final deal value ({{ currency }})</span
+                        ><input
+                            v-model="form.final_value"
+                            :disabled="detailsDisabled"
+                            type="text"
+                            inputmode="decimal"
+                            pattern="[0-9]+([.][0-9]{1,2})?"
+                            maxlength="15"
+                    /></label>
+                    <label
+                        ><span class="crm-field-label">Loss reason</span
+                        ><textarea
+                            v-model="form.loss_reason"
+                            :disabled="detailsDisabled"
+                            maxlength="10000"
+                            rows="2"
+                        />
+                    </label>
+                    <p class="crm-muted">
+                        Record the closing date and final value for won deals,
+                        or the reason when a deal is lost. Amounts use the
+                        installation currency.
+                    </p>
+                    <label v-for="(field, key) in fields" :key="key"
                         ><span class="crm-field-label">{{ field.label }}</span
                         ><select
                             v-if="field.type === 'select'"
                             v-model="form.custom_fields[key]"
-                            :disabled="!editable"
+                            :disabled="detailsDisabled"
                         >
                             <option v-for="o in field.options" :key="o">
                                 {{ o }}
@@ -178,23 +375,72 @@ function changeTask(t: Task) {
                             v-else-if="field.type === 'boolean'"
                             v-model="form.custom_fields[key]"
                             type="checkbox"
-                            :disabled="!editable" /><input
+                            :disabled="detailsDisabled" /><input
                             v-else
                             v-model="form.custom_fields[key]"
                             :type="field.type"
-                            :disabled="!editable"
+                            :disabled="detailsDisabled"
                     /></label>
+                    <div
+                        v-if="Object.keys(form.errors).length"
+                        class="crm-form-action crm-error"
+                        role="alert"
+                    >
+                        <p v-for="(error, field) in form.errors" :key="field">
+                            {{ error }}
+                        </p>
+                    </div>
+                    <div v-if="detailsWarning" class="crm-form-action">
+                        <div class="crm-notice-panel crm-flow" role="alert">
+                            <p>{{ detailsWarning }}</p>
+                            <div
+                                v-if="!detailsPermissionDenied"
+                                class="crm-form-action"
+                            >
+                                <button
+                                    type="button"
+                                    class="crm-secondary"
+                                    :disabled="reloadingDetails"
+                                    @click="reloadDetails"
+                                >
+                                    {{
+                                        reloadingDetails
+                                            ? "Reloading…"
+                                            : "Reload lead details"
+                                    }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div v-if="editable" class="crm-form-action">
-                        <button class="crm-button" :disabled="form.processing">
+                        <button
+                            class="crm-button"
+                            :disabled="detailsDisabled || detailsChanged"
+                        >
                             Save changes
                         </button>
                     </div>
                 </form>
             </section>
-            <section class="crm-card">
+            <LeadProposals
+                :lead-id="lead.id"
+                :editable="editable"
+                :proposals="proposals"
+                :timezone="zone"
+            />
+            <SalesHistory
+                :lead-id="lead.id"
+                :editable="editable"
+                :timezone="zone"
+                :communications="sales.communications"
+                :quotations="sales.quotations"
+                :proposals="proposals"
+            />
+            <section class="crm-card crm-flow">
                 <h2>Notes</h2>
                 <form
                     v-if="editable"
+                    class="crm-form"
                     @submit.prevent="
                         note.post(`/leads/${lead.id}/notes`, {
                             preserveScroll: true,
@@ -258,21 +504,44 @@ function changeTask(t: Task) {
             <section class="crm-card">
                 <h2>Customer</h2>
                 <div
-                    v-for="person in [lead.contact, lead.company].filter(
-                        Boolean,
-                    )"
-                    :key="person?.id"
+                    v-for="item in [
+                        {
+                            type: 'contacts',
+                            label: 'contact',
+                            person: lead.contact,
+                            editable: identityPermissions.contact,
+                        },
+                        {
+                            type: 'companies',
+                            label: 'company',
+                            person: lead.company,
+                            editable: identityPermissions.company,
+                        },
+                    ].filter((item) => item.person)"
+                    :key="item.type"
                     class="crm-note"
                 >
-                    <strong>{{ person?.name }}</strong>
-                    <p>{{ person?.email ?? "No email" }}</p>
-                    <p>{{ person?.phone ?? "No phone" }}</p>
+                    <strong
+                        ><Link
+                            :href="`/people/${item.type}/${item.person?.id}`"
+                            >{{ item.person?.name }}</Link
+                        ></strong
+                    >
+                    <p>{{ item.person?.email ?? "No email" }}</p>
+                    <p>{{ item.person?.phone ?? "No phone" }}</p>
+                    <div v-if="item.editable" class="crm-form-action">
+                        <Link
+                            :href="`/people/${item.type}/${item.person?.id}?from_lead=${lead.id}`"
+                            class="crm-secondary"
+                            >Edit {{ item.label }}</Link
+                        >
+                    </div>
                 </div>
             </section>
-            <section class="crm-card">
+            <section class="crm-card crm-flow">
                 <h2>Follow-ups</h2>
                 <p v-if="!lead.tasks?.length" class="crm-muted">
-                    Plan the next conversation.
+                    No follow-ups scheduled.
                 </p>
                 <article v-for="t in lead.tasks" :key="t.id" class="crm-note">
                     <strong>{{ t.title }}</strong>
@@ -293,6 +562,7 @@ function changeTask(t: Task) {
                     </div>
                     <form
                         v-if="reschedule === t.id"
+                        class="crm-form"
                         @submit.prevent="changeTask(t)"
                     >
                         <label
@@ -314,7 +584,7 @@ function changeTask(t: Task) {
                 </article>
                 <form
                     v-if="editable"
-                    class="crm-stack"
+                    class="crm-form"
                     @submit.prevent="addTask"
                 >
                     <h3>Schedule a follow-up</h3>

@@ -37,7 +37,7 @@ return [
 
         'paths' => [
             resource_path('js/pages'),
-            base_path('vendor/awove/crm-core/resources/js/pages'),
+            ...(glob(base_path('vendor/awove/*/resources/js/pages'), GLOB_ONLYDIR) ?: []),
         ],
 
         'extensions' => [

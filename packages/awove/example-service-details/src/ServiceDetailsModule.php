@@ -26,7 +26,7 @@ class ServiceDetailsModule implements LeadTableContributor, Module
 
     public function dependencies(): array
     {
-        return [];
+        return ['sales'];
     }
 
     public function permissions(): array

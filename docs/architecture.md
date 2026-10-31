@@ -6,9 +6,19 @@ This is a new standalone Laravel host. It shares no models, users, credentials, 
 
 `app/` and `bootstrap/` are shared host code: official Fortify authentication, account security, Inertia bridge and runtime integration. `packages/awove/crm-core` owns CRM models, policies, access scopes, domain services, events, migrations, Vue pages, shell and design tokens. `packages/awove/example-service-details` owns its optional table, routes, permissions, event subscriber and frontend panel. Installation manifests contain data, not PHP. This is not a shared-database tenant system; there is no tenant switcher, billing or seat system.
 
-Core and host release 1.0.0 are tracked together. Composer path repositories provide live development package links. Image builds set `COMPOSER_MIRROR_PATH_REPOS=1`, so installed package sources are copied into the image. Frontend page and panel resolution reads `vendor/awove/*` and compiles only installed package assets. No production symlink points outside the build context. Core never imports the optional module.
+Core and host release candidate 1.1.0 are tracked together in the local modular implementation (the prior deployed baseline was 1.0.0). Composer path repositories provide live development package links. Image builds set `COMPOSER_MIRROR_PATH_REPOS=1`, so installed package sources are copied into the image. Frontend page and panel resolution reads `vendor/awove/*` and compiles only installed package assets. No production symlink points outside the build context. Core never imports the optional module.
 
-Domains are represented by explicit models/services rather than separate packages: identity/access (Fortify, Spatie, policies, Users service), contacts/companies, leads/statuses (Leads service), notes/activity, follow-ups (Tasks service), persistent reminders (queue job), configuration and display preferences. HTTP handlers parse requests and compose scoped responses; consequential lead/task/user rules reside in services. There is no generic repository or plugin execution framework.
+Retained shared Core/Sales domains use explicit models/services within Core: identity/access (Fortify, Spatie, policies, Users service), contacts/companies, leads/statuses (Leads service), notes/activity, follow-ups (Tasks service), persistent reminders (queue job), configuration and display preferences. HTTP handlers parse requests and compose scoped responses; consequential lead/task/user rules reside in services. Optional reusable business domains use the packages and typed contracts described in [modular architecture](modular-architecture.md). There is no generic repository or plugin execution framework.
+
+## Business module ownership
+
+Classify new work by its business domain before implementing it. Tell the user **Marketing module** whenever a request includes marketing, and label its marketing scope clearly in specifications and PRs. Mixed requests can span modules; flagging ownership does not add an approval gate.
+
+The optional Marketing module owns acquisition and referral attribution, campaign/ad/landing-page/UTM details, advertising budgets and spend, marketing performance dashboards, qualification/nurture sequences and marketing AI drafts. Implement it through the [extension contract](extensions.md), using its own storage, routes, permissions, guarded jobs, panels and table contributions. Reuse core lead/contact services, access policies, events and the global design system. Marketing-specific behavior must not accumulate in core.
+
+Core retains generic contact/company records, lead ownership and stages, creation timestamps, notes, follow-up tasks and private proposal storage. Communication adapters can be shared, while the owning module controls purpose and orchestration. Promotional/nurture WhatsApp belongs to Marketing; requested appointments, contract/signature/payment processing and onboarding are transactional sales operations.
+
+Checkpoint 4 implements the data-preserving attribution extraction locally. The hidden original Core column is frozen; immutable exact Marketing snapshots retain the original JSON/Lead version/timestamps, and live edits use canonical Marketing storage. A separate CRM campaign relation never converts an external campaign ID. Existing Lead IDs and `attribution:*` layout IDs remain stable. This local implementation has not been pushed or remotely deployed.
 
 ## Configuration precedence
 
@@ -22,9 +32,9 @@ Modules, custom-field definitions and asset paths are locked by default. Secrets
 
 ## Authorization and historical integrity
 
-Administrator and Employee are permission presets. Employees view/edit owned leads by default. `leads.view.all` does not grant `leads.edit.all`. Assignment, archival, identities, settings and users have separate capabilities. Every CRM route is authenticated; privileged users must confirm MFA enrollment. Deactivation is checked against the current stored user and invalidates sessions/remember tokens. Historical users cannot be deleted; the last active administrator is protected by a transaction and PostgreSQL advisory lock.
+Administrator and Employee are permission presets. Employees view/edit owned leads by default. `leads.view.all` does not grant `leads.edit.all`. Assignment, archival, identities, settings and users have separate capabilities. Every CRM route is authenticated through single-use email links; privileges are enforced by role permissions. Deactivation is checked against the current stored user and invalidates sessions/remember tokens. Historical users cannot be deleted; the last active administrator is protected by a transaction and PostgreSQL advisory lock.
 
-All lead lists, dashboards, direct URLs, linked record lookups, notes, tasks, reminders and extension requests check server scopes/policies. A contact/company becomes visible through an accessible lead, or through creator/admin access; its profile data never includes unrelated leads. Duplicate warnings are scoped to visible identities and never silently merge. Shared identity editing is not exposed in this checkpoint.
+All lead lists, dashboards, direct URLs, linked record lookups, notes, tasks, reminders and extension requests check server scopes/policies. A contact/company becomes visible through an accessible lead, or through creator/admin access; its profile data never includes unrelated leads. Duplicate warnings are scoped to visible identities and never silently merge. Shared identity edits follow creator/identity-management policies and record authors, times and changed field names without copying private values into activity.
 
 Task assignment never grants record access. Assignees must be active and already able to view the parent lead. Ownership changes cancel open tasks whose assignees lose parent access. Deactivation cancels that user's remaining tasks, preserving attribution. Permissions are rechecked at reminder delivery and listing. Archive excludes records from active dashboards and prevents further edits; authorized historical read remains available.
 
@@ -39,3 +49,5 @@ A follow-up is not a calendar appointment. `next_action_at` is derived from open
 ## Release boundaries
 
 Installations use immutable host/core and approved extension versions, not client branches. Their environment, real manifests/brand assets, database contents and uploaded files live outside the release image. Fictional examples are the only client examples committed here. Promote a missing reusable behavior to a reviewed core contract, then implement the client variation above it. Do not patch vendor files or copy Vue profiles into client folders.
+
+Administrator bootstrap and invitations dispatch the core `SignInLinkRequested` event after account creation. The host listener issues a single-use link and sends the encrypted queued `MagicLoginLink` notification; the reusable core does not depend on host authentication classes.

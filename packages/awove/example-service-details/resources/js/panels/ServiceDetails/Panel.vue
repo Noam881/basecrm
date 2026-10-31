@@ -58,7 +58,7 @@ async function save() {
 </script>
 <template>
     <p v-if="loading">Loading service details…</p>
-    <form v-else class="crm-stack" @submit.prevent="save">
+    <form v-else class="crm-form" @submit.prevent="save">
         <label
             ><span class="crm-field-label">Service reference</span
             ><input
@@ -68,8 +68,10 @@ async function save() {
             ><span class="crm-field-label">Requested service</span
             ><textarea v-model="data.requested_service" :disabled="!canEdit" />
         </label>
-        <p v-if="error" role="alert">{{ error }}</p>
-        <p v-if="saved" role="status">Service details saved.</p>
+        <p v-if="error" class="crm-notice" role="alert">{{ error }}</p>
+        <p v-if="saved" class="crm-notice" role="status">
+            Service details saved.
+        </p>
         <button v-if="canEdit" class="crm-button">Save service details</button>
     </form>
 </template>

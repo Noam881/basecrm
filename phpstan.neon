@@ -11,9 +11,27 @@ parameters:
         - routes/
         - packages/awove/crm-core/src/
         - packages/awove/example-service-details/src/
+        - packages/awove/customer-service/src/
+        - packages/awove/executive/src/
+        - packages/awove/operations/src/
+        - packages/awove/hr/src/
+        - packages/awove/finance/src/
+        - packages/awove/knowledge/src/
+        - packages/awove/marketing/src/
+        - packages/awove/assets/src/
+        - packages/awove/nonprofit/src/
 
     level: 5
     databaseMigrationsPath:
         - database/migrations
         - packages/awove/crm-core/database/migrations
         - packages/awove/example-service-details/database/migrations
+        - packages/awove/customer-service/database/migrations
+        - packages/awove/executive/database/migrations
+        - packages/awove/operations/database/migrations
+        - packages/awove/hr/database/migrations
+        - packages/awove/finance/database/migrations
+        - packages/awove/knowledge/database/migrations
+        - packages/awove/marketing/database/migrations
+        - packages/awove/assets/database/migrations
+        - packages/awove/nonprofit/database/migrations

@@ -44,6 +44,11 @@ export interface TableRow {
     title?: string;
     name?: string;
     lead_id?: number;
+    status_id?: string;
+    version?: number;
+    editable?: boolean;
+    record_url?: string | null;
+    record_link_column?: string | null;
     cells: Record<string, Value>;
 }
 export interface TablePayload {

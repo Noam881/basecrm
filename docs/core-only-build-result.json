@@ -1,8 +1,22 @@
 {
   "optional_package_absent": true,
+  "kept_packages": [],
+  "removed_packages": [
+    "awove/example-service-details",
+    "awove/customer-service",
+    "awove/executive",
+    "awove/operations",
+    "awove/hr",
+    "awove/finance",
+    "awove/knowledge",
+    "awove/marketing",
+    "awove/assets",
+    "awove/nonprofit"
+  ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",
+  "backend_filter": "FoundationTest|CurrencyRegistryTest|WorkCapabilityScopeTest|SharedWorkTest|WorkReferenceContributionTest",
   "frontend_production_build": "passed",
-  "core_version": "1.0.0",
+  "core_version": "1.1.0",
   "mirrored_path_packages": true
 }

@@ -1,0 +1,19 @@
+# Executive Management (M02)
+
+Optional `awove/executive` 1.0.0 requires `awove/crm-core ^1.1`. Enable `executive` explicitly in the installation manifest. It does not require Sales, Operations or Finance. Installation never grants optional permissions to existing roles automatically.
+
+Management tasks use the shared core work-item entity and global controls: name, description, owner, priority, due date and an optional authorized goal link. Stable status IDs are `not-started`, `in-progress`, `blocked`, `done`; a completed task retains a dated completion event when reopened. Goal link changes are retained separately. If a linked goal becomes inaccessible, its ID and label are hidden; unrelated task edits preserve the restricted relationship unless explicitly cleared. Assignment requires `executive.assign` and an active recipient with module access. Unchanged historical owners remain valid.
+
+Goals store a responsible person, target date, success criterion, manually entered target/current values in one explicit unit and a manual status. Values use exact `decimal(18,4)` storage and string serialization. Results never infer status or financial performance. Stable statuses are `not-started`, `in-progress`, `achieved`, `on-hold`. Display labels may be customized through `executive_goal_statuses`; task labels through `executive_task_statuses`, without changing stable IDs.
+
+Routines use shared core routines with an owner, descriptive frequency and manually scheduled next date. Completing an occurrence retains its scheduled date, actual completion date, staff member and version. The user may choose the next date explicitly; leaving it blank leaves the routine unscheduled. Frequency is never interpreted as a recurrence rule. Existing routine checklists remain editable and retained if supplied through shared services; M02 does not require one.
+
+`/executive` has Tasks, Goals and Routines tables with shared search, column selection, saved views, advanced filters, sorting and pagination. Owner and period filters apply to each section's due/target/next date; priority applies only to tasks. The overview shows open/overdue/blocked work, active goals and routines scheduled from today through seven days ahead. Date-only classifications consistently use the installation timezone; timestamp rendering follows the user's display preference.
+
+`executive.view.own`/`.view.all`, `.create`, `.edit.own`/`.edit.all`, `.assign`, `.archive` and `.export` are separate grants. Tables, profiles, metrics, CSV and freshly generated reminders enforce the same record scope and module availability. Due active goals and work/routine sources use the shared reminder service. Disabling the module removes its contributions and denies its endpoints without deleting records. Writes use optimistic versions and append-only history; there is no destructive delete UI.
+
+Scoped CSV exports use the current section, overview filters and full table search/filter/sort state, with a 10,000-row preflight limit and shared spreadsheet formula defense. Exports contain the module's business fields, not unrelated contacts, private documents or secrets. No direct CSV import is added.
+
+Validation: `tests/Feature/ExecutiveTest.php` covers exact goal values, scope and assignment, historical owners and fresh actor checks, optimistic versions, restricted goal links and rollback, dated completions, manual routines, filters, reminders, disabled-module behavior and bounded CSV exports. `tests/e2e/executive.spec.ts` exercises actual desktop/mobile create/save/reload and CSV workflows on the isolated Executive-only local installation at `127.0.0.1:8094`, using guarded reserved fictional accounts and private recovery snapshots.
+
+Deferred: cascading goals, recurring task generation, weighted scores and consolidated financial reporting.

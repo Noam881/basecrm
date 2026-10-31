@@ -1,0 +1,23 @@
+{
+  "optional_package_absent": true,
+  "kept_packages": [
+    "awove/nonprofit"
+  ],
+  "removed_packages": [
+    "awove/example-service-details",
+    "awove/customer-service",
+    "awove/executive",
+    "awove/operations",
+    "awove/hr",
+    "awove/finance",
+    "awove/knowledge",
+    "awove/marketing",
+    "awove/assets"
+  ],
+  "php_package_discovery": "passed",
+  "backend_core_workflow": "passed",
+  "backend_filter": "NonprofitProgramsTest|persists fundraising contexts and exact restricted pledges without other business modules or copied contacts|NonprofitProjectsTest|WorkCapabilityScopeTest",
+  "frontend_production_build": "passed",
+  "core_version": "1.1.0",
+  "mirrored_path_packages": true
+}

@@ -1,0 +1,989 @@
+/* One Material 3 component system for host, core, installed modules and portals. */
+:root {
+    --crm-space-2: 8px;
+    --crm-space-3: 12px;
+    --crm-space-4: 16px;
+    --crm-space-6: 24px;
+    --crm-control-height: 40px;
+    --crm-field-height: 56px;
+    --crm-field-padding: 16px;
+    --crm-field-surface: var(--crm-canvas-color);
+}
+.crm-control,
+.crm-button,
+.crm-secondary,
+.crm-tonal,
+.crm-elevated,
+.crm-destructive,
+.crm-ghost,
+.crm-text {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--crm-space-2);
+    min-height: var(--crm-control-height);
+    max-width: 100%;
+    padding: 0 var(--crm-button-padding-inline, var(--crm-space-6));
+    border: 1px solid transparent;
+    border-radius: var(--md-sys-shape-corner-full);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: var(--md-sys-elevation-level0);
+    transition:
+        background-color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        color var(--crm-motion-effects-fast-duration)
+            var(--crm-motion-effects-fast-easing),
+        box-shadow var(--crm-motion-effects-default-duration)
+            var(--crm-motion-effects-default-easing);
+}
+.crm-button {
+    color: var(--crm-on-accent);
+    background: var(--crm-accent);
+}
+.crm-destructive {
+    color: var(--md-sys-color-on-error);
+    background: var(--md-sys-color-error);
+}
+.crm-secondary {
+    color: var(--crm-accent);
+    background: transparent;
+    border-color: var(--crm-accent);
+}
+.crm-tonal {
+    color: var(--crm-on-accent-container);
+    background: var(--crm-accent-container);
+}
+.crm-elevated {
+    color: var(--crm-accent);
+    background: var(--md-sys-color-surface-container-low);
+    box-shadow: var(--md-sys-elevation-level1);
+}
+.crm-ghost,
+.crm-text {
+    color: var(--crm-accent);
+    background: transparent;
+    padding-inline: var(--crm-button-padding-inline, var(--crm-space-3));
+}
+.crm-text {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+/* Accent scope is explicit: ordinary typography, fields and surfaces stay neutral. */
+.crm-notice {
+    color: var(--crm-accent);
+}
+.crm-notice-panel {
+    color: var(--crm-on-accent-container);
+    background: var(--crm-accent-container);
+    border: 1px solid var(--crm-accent);
+    border-radius: var(--md-sys-shape-corner-medium);
+    padding: var(--crm-space-4);
+}
+[data-slot="badge"] {
+    color: var(--crm-on-accent-container);
+    background: var(--crm-accent-container);
+    border-color: var(--crm-accent);
+}
+.crm-control-start {
+    justify-content: flex-start;
+}
+.crm-control-sm {
+    --crm-button-padding-inline: var(--crm-space-3);
+}
+.crm-control-lg {
+    min-height: 48px;
+}
+.crm-control-icon,
+.crm-control-icon-sm,
+.crm-control-icon-lg {
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+}
+.crm-control-icon-sm {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+}
+.crm-control svg {
+    pointer-events: none;
+    flex-shrink: 0;
+}
+.crm-control svg:not([class*="size-"]) {
+    width: 18px;
+    height: 18px;
+}
+@media (hover: hover) {
+    :is(.crm-button, .crm-tonal, .crm-destructive):hover:not(:disabled) {
+        box-shadow: var(--md-sys-elevation-level1);
+    }
+    .crm-elevated:hover:not(:disabled) {
+        box-shadow: var(--md-sys-elevation-level2);
+    }
+}
+:is(
+    .crm-control,
+    .crm-button,
+    .crm-secondary,
+    .crm-tonal,
+    .crm-elevated,
+    .crm-destructive,
+    .crm-ghost,
+    .crm-text
+):is(:disabled, [aria-disabled="true"]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface) 12%,
+        transparent
+    );
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+}
+:is(.crm-secondary, .crm-ghost, .crm-text):disabled {
+    background: transparent;
+}
+.crm-secondary:disabled {
+    border-color: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface) 12%,
+        transparent
+    );
+}
+:where(.crm-icon-control, .md-icon-button, .crm-material-popup-close) {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--crm-control-height);
+    height: var(--crm-control-height);
+    min-width: var(--crm-control-height);
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    color: var(--md-sys-color-on-surface-variant);
+    background: transparent;
+    cursor: pointer;
+}
+/* A single on-color state layer, driven by interruptible Standard springs in material.ts. */
+.crm-interactive {
+    position: relative;
+    isolation: isolate;
+    -webkit-tap-highlight-color: transparent;
+}
+.crm-state-layer {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    pointer-events: none;
+}
+.crm-interactive:is(:disabled, [aria-disabled="true"], [data-disabled])
+    > .crm-state-layer {
+    display: none;
+}
+:is(.crm, .crm-auth, .md-table-dialog)
+    :is(button, a, summary, [role="button"]):focus-visible,
+.crm-control:focus-visible,
+.crm-material-menu-item:focus-visible {
+    outline: 3px solid var(--md-sys-color-secondary);
+    outline-offset: 2px;
+}
+.crm-card {
+    --crm-field-surface: var(--md-sys-color-surface);
+    background: var(--crm-field-surface);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-corner-medium);
+    padding: var(--crm-space-6);
+    min-width: 0;
+}
+.crm-card-filled {
+    --crm-field-surface: var(--md-sys-color-surface-container-highest);
+    border-color: transparent;
+}
+.crm-card-elevated {
+    --crm-field-surface: var(--md-sys-color-surface-container-low);
+    border-color: transparent;
+    box-shadow: var(--md-sys-elevation-level1);
+}
+.crm-form,
+.crm-form-grid {
+    display: grid;
+    gap: var(--crm-space-6);
+    min-width: 0;
+}
+.crm-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 28px;
+    padding-block-start: var(--crm-space-2);
+}
+.crm-form-action {
+    grid-column: 1/-1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--crm-space-3);
+}
+:is(.crm-form, .crm-form-grid) > :is(button, .crm-button, .crm-secondary) {
+    justify-self: start;
+    align-self: start;
+}
+.crm-field,
+.crm-flow {
+    display: grid;
+    min-width: 0;
+    gap: var(--crm-space-2);
+}
+.crm-flow {
+    gap: var(--crm-space-6);
+}
+.crm-flow > :is(h2, h3, p) {
+    margin: 0;
+}
+.crm label,
+.md-table-dialog label,
+.crm-label {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--crm-space-2);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--md-sys-color-on-surface-variant);
+}
+.crm-label {
+    user-select: none;
+}
+.crm-input,
+:where(.crm, .md-table-dialog)
+    :where(
+        input:not([type="checkbox"]):not([type="radio"]):not(
+                [type="color"]
+            ):not([type="range"]):not([type="hidden"]):not(
+                [autocomplete="one-time-code"]
+            )
+    ),
+:where(.crm, .md-table-dialog) :is(select, textarea) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--crm-field-height);
+    max-width: 100%;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    background-color: transparent;
+    padding: calc(
+            (
+                    var(--crm-field-height) -
+                        var(--crm-field-line-height, 24px) - 2px
+                ) /
+                2
+        )
+        var(--crm-field-padding);
+    font-family: inherit;
+    font-size: var(--crm-field-font-size, 16px);
+    font-weight: 400;
+    line-height: var(--crm-field-line-height, 24px);
+    letter-spacing: 0.5px;
+    color: var(--md-sys-color-on-surface);
+    caret-color: var(--md-sys-color-primary);
+    transition:
+        border-color 150ms var(--md-sys-motion-easing-standard),
+        box-shadow 150ms var(--md-sys-motion-easing-standard),
+        background-color 150ms var(--md-sys-motion-easing-standard);
+}
+.crm-input::placeholder {
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 1;
+}
+.crm-input::selection {
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+}
+.crm-input::file-selector-button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    margin-inline-end: var(--crm-space-3);
+}
+:is(.crm-input, .crm input, .crm select, .crm textarea):disabled {
+    background: transparent;
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    border-color: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface) 12%,
+        transparent
+    );
+    cursor: default;
+}
+:is(.crm-input, .crm input, .crm select, .crm textarea):focus {
+    outline: 0;
+    border-color: var(--md-sys-color-primary);
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+@media (hover: hover) {
+    :is(.crm-input, .crm input, .crm select, .crm textarea):hover:not(
+            :disabled
+        ):not(:focus) {
+        border-color: var(--md-sys-color-on-surface);
+    }
+}
+/* Existing semantic label/input markup is enhanced without reparenting Vue-owned nodes. */
+.crm-outlined-field {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+.crm-outlined-field .crm-floating-label {
+    position: absolute;
+    z-index: 1;
+    inset-inline-start: 12px;
+    top: 28px;
+    max-width: calc(100% - 32px);
+    display: block;
+    width: max-content;
+    padding: 0 4px;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--md-sys-color-on-surface-variant);
+    background: var(--crm-field-surface);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    letter-spacing: 0.5px;
+    transform: translateY(-50%);
+    transform-origin: left center;
+    pointer-events: none;
+    transition:
+        top 150ms var(--md-sys-motion-easing-standard),
+        transform 150ms var(--md-sys-motion-easing-standard),
+        color 150ms var(--md-sys-motion-easing-standard);
+}
+[dir="rtl"] .crm-floating-label {
+    transform-origin: right center;
+}
+.crm-outlined-field:is(:focus-within, [data-filled="true"]) .crm-floating-label,
+.crm-outlined-field:has(input:-webkit-autofill) .crm-floating-label {
+    top: 0;
+    transform: translateY(-50%) scale(0.75);
+}
+.crm-outlined-field:focus-within .crm-floating-label {
+    color: var(--md-sys-color-primary);
+}
+.crm-outlined-field :is(input, textarea)::placeholder {
+    opacity: 0;
+    transition: opacity 150ms var(--md-sys-motion-easing-standard);
+}
+.crm-outlined-field:focus-within :is(input, textarea)::placeholder {
+    opacity: 1;
+}
+.crm-outlined-field[data-disabled="true"] .crm-floating-label {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+.crm-outlined-field[data-invalid="true"] .crm-floating-label {
+    color: var(--md-sys-color-primary);
+}
+.crm-outlined-field[data-invalid="true"] :is(input, textarea, select),
+.crm-input[aria-invalid="true"] {
+    border-color: var(--md-sys-color-primary);
+    caret-color: var(--md-sys-color-primary);
+}
+.crm-outlined-field[data-invalid="true"] :is(input, textarea, select):focus {
+    box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+.crm-field-supporting-action {
+    justify-self: end;
+    padding-block: 4px;
+    font-size: 12px;
+}
+[data-slot="input-error"] {
+    padding-inline: 16px;
+    color: var(--md-sys-color-error);
+    font-size: 12px;
+    line-height: 16px;
+}
+.crm label:has(input[type="checkbox"]),
+.crm-label.crm-checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--crm-space-3);
+    min-height: 48px;
+}
+.crm input:is([type="checkbox"], [type="radio"]) {
+    accent-color: var(--md-sys-color-primary);
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.crm input[type="range"] {
+    accent-color: var(--md-sys-color-primary);
+}
+.crm input[type="color"] {
+    height: 56px;
+    width: 100%;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: 4px;
+    padding: 12px;
+}
+.crm textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+.crm select:not([multiple]):not([size]),
+.md-table-dialog select:not([multiple]):not([size]) {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23525252' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 24px;
+    background-position: right 12px center;
+}
+.dark :is(.crm, .md-table-dialog) select:not([multiple]):not([size]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C7C7C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+}
+[dir="rtl"] :is(.crm, .md-table-dialog) select:not([multiple]):not([size]) {
+    background-position: left 12px center;
+}
+:where(select) option {
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface);
+}
+.crm input:is([type="email"], [type="tel"]),
+.crm-input:is([type="email"], [type="tel"]) {
+    direction: ltr;
+    text-align: start;
+}
+.crm-password {
+    position: relative;
+    min-width: 0;
+}
+.crm-input-password {
+    padding-inline-end: 56px;
+}
+.crm-password .crm-password-toggle {
+    position: absolute;
+    inset-block: 4px;
+    inset-inline-end: 4px;
+    width: 48px;
+    padding: 12px;
+    border: 0;
+    border-radius: var(--md-sys-shape-corner-full);
+    color: var(--md-sys-color-on-surface-variant);
+    background: transparent;
+    cursor: pointer;
+}
+.crm-ghost[aria-current="page"] {
+    background: var(--crm-accent-container);
+    color: var(--crm-on-accent-container);
+    font-weight: 500;
+}
+/* Portaled host menus/dialogs use the same roles, elevations, fields and motion as core dialogs. */
+.crm-material-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+}
+.crm-material-dialog,
+.crm-material-sheet {
+    --crm-field-surface: var(--md-sys-color-surface-container-high);
+    position: fixed;
+    z-index: 51;
+    display: grid;
+    gap: 24px;
+    padding: 24px;
+    color: var(--md-sys-color-on-surface);
+    background: var(--crm-field-surface);
+    box-shadow: var(--md-sys-elevation-level3);
+}
+.crm-material-dialog {
+    top: 50%;
+    left: 50%;
+    width: min(560px, calc(100vw - 48px));
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    border-radius: 28px;
+    transform: translate(-50%, -50%);
+}
+.crm-material-dialog-scroll {
+    position: relative;
+    inset: auto;
+    margin: 24px;
+    transform: none;
+}
+.crm-material-dialog-header {
+    display: grid;
+    gap: 16px;
+    padding-inline-end: 32px;
+}
+.crm-material-dialog-title {
+    color: var(--md-sys-color-on-surface);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 32px;
+    letter-spacing: 0;
+}
+.crm-material-dialog-description {
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 14px;
+    line-height: 20px;
+}
+.crm-material-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.crm-material-popup-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+}
+.crm-material-popup-close svg {
+    width: 20px;
+    height: 20px;
+}
+.crm-material-sheet {
+    gap: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-shadow: var(--md-sys-elevation-level1);
+}
+.crm-material-sheet[data-side="right"] {
+    inset: 0 0 0 auto;
+    width: min(400px, calc(100vw - 32px));
+    border-radius: 16px 0 0 16px;
+}
+.crm-material-sheet[data-side="left"] {
+    inset: 0 auto 0 0;
+    width: min(400px, calc(100vw - 32px));
+    border-radius: 0 16px 16px 0;
+}
+.crm-material-sheet[data-side="bottom"] {
+    inset: auto 0 0;
+    max-height: calc(100dvh - 72px);
+    border-radius: 28px 28px 0 0;
+}
+.crm-material-sheet[data-side="top"] {
+    inset: 0 0 auto;
+    max-height: calc(100dvh - 72px);
+    border-radius: 0 0 28px 28px;
+}
+.crm-material-menu {
+    --crm-field-surface: var(--md-sys-color-surface-container);
+    z-index: 60;
+    min-width: 112px;
+    max-width: min(360px, calc(100vw - 24px));
+    max-height: var(
+        --reka-select-content-available-height,
+        var(--reka-dropdown-menu-content-available-height, min(60vh, 480px))
+    );
+    overflow-y: auto;
+    padding: 8px 0;
+    border-radius: 4px;
+    background: var(--crm-field-surface);
+    color: var(--md-sys-color-on-surface);
+    box-shadow: var(--md-sys-elevation-level2);
+    transform-origin: var(
+        --reka-dropdown-menu-content-transform-origin,
+        var(--reka-select-content-transform-origin, top center)
+    );
+}
+.crm-menu-item,
+.crm-material-menu-item {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    font: inherit;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: start;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+}
+.crm-material-menu-item[data-highlighted]:not(.crm-interactive) {
+    background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface) 10%,
+        transparent
+    );
+}
+.crm-material-menu-item[data-disabled] {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    pointer-events: none;
+}
+.crm-material-menu-item[data-variant="destructive"] {
+    color: var(--md-sys-color-error);
+}
+.crm-material-menu-item[data-inset],
+.crm-material-menu-choice {
+    padding-inline-start: 48px;
+}
+.crm-material-menu-choice-end {
+    padding-inline-start: 16px;
+    padding-inline-end: 48px;
+}
+.crm-material-menu-item svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.crm-material-menu-indicator {
+    position: absolute;
+    inset-inline-start: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+.crm-material-menu-indicator[data-align="end"] {
+    inset-inline-start: auto;
+    inset-inline-end: 16px;
+}
+.crm-material-menu-label {
+    padding: 8px 16px;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+}
+.crm-material-menu-separator {
+    height: 1px;
+    margin: 8px 0;
+    background: var(--md-sys-color-outline-variant);
+}
+.crm-material-menu-shortcut {
+    margin-inline-start: auto;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 12px;
+}
+.crm-material-menu-scroll {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 32px;
+}
+.crm-material-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: start;
+}
+.crm-material-select-trigger[data-size="sm"] {
+    --crm-field-height: 40px;
+    --crm-field-font-size: 14px;
+    --crm-field-line-height: 20px;
+}
+.crm-material-select-trigger svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: var(--md-sys-color-on-surface-variant);
+}
+.crm-material-tooltip {
+    z-index: 70;
+    max-width: 240px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--md-sys-color-inverse-on-surface);
+    background: var(--md-sys-color-inverse-surface);
+    font-size: 12px;
+    line-height: 16px;
+}
+.crm-material-tooltip-arrow {
+    display: none;
+}
+.crm-material-overlay[data-state="open"] {
+    animation: crm-fade-in var(--crm-motion-effects-default-duration)
+        var(--crm-motion-effects-default-easing);
+}
+.crm-material-overlay[data-state="closed"] {
+    animation: crm-fade-out var(--crm-motion-effects-fast-duration)
+        var(--crm-motion-effects-fast-easing);
+}
+:is(
+    .crm-material-dialog,
+    .crm-material-menu,
+    .crm-material-tooltip
+)[data-state="open"] {
+    animation: crm-popup-in var(--crm-motion-spatial-fast-duration)
+        var(--crm-motion-spatial-fast-easing);
+}
+:is(
+    .crm-material-dialog,
+    .crm-material-menu,
+    .crm-material-tooltip
+)[data-state="closed"] {
+    animation: crm-popup-out var(--crm-motion-effects-fast-duration)
+        var(--crm-motion-effects-fast-easing);
+}
+.crm-material-sheet[data-state="open"] {
+    animation: crm-sheet-in var(--crm-motion-spatial-default-duration)
+        var(--crm-motion-spatial-default-easing);
+}
+.crm-material-sheet[data-state="closed"] {
+    animation: crm-sheet-out var(--crm-motion-effects-default-duration)
+        var(--crm-motion-effects-default-easing);
+}
+.crm-material-sheet {
+    --crm-sheet-x: 0;
+    --crm-sheet-y: 0;
+}
+.crm-material-sheet[data-side="right"] {
+    --crm-sheet-x: 100%;
+}
+.crm-material-sheet[data-side="left"] {
+    --crm-sheet-x: -100%;
+}
+.crm-material-sheet[data-side="top"] {
+    --crm-sheet-y: -100%;
+}
+.crm-material-sheet[data-side="bottom"] {
+    --crm-sheet-y: 100%;
+}
+@keyframes crm-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes crm-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+@keyframes crm-popup-in {
+    from {
+        opacity: 0;
+        scale: 0.95;
+    }
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+@keyframes crm-popup-out {
+    to {
+        opacity: 0;
+        scale: 0.97;
+    }
+}
+@keyframes crm-sheet-in {
+    from {
+        translate: var(--crm-sheet-x) var(--crm-sheet-y);
+    }
+    to {
+        translate: 0 0;
+    }
+}
+@keyframes crm-sheet-out {
+    to {
+        translate: var(--crm-sheet-x) var(--crm-sheet-y);
+    }
+}
+@media (max-width: 839px) {
+    .crm-card {
+        padding: 20px;
+    }
+}
+@media (max-width: 599px) {
+    :root {
+        --crm-control-height: 48px;
+    }
+    .crm-card {
+        padding: 20px 16px;
+    }
+    .crm-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .crm-material-dialog {
+        width: calc(100vw - 32px);
+        max-height: calc(100dvh - 32px);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+@media (forced-colors: active) {
+    .crm-state-layer {
+        display: none;
+    }
+    :is(.crm, .md-table-dialog) select:not([multiple]):not([size]) {
+        appearance: auto;
+        -webkit-appearance: auto;
+        background-image: none;
+    }
+}
+.crm-flow > .crm-note:first-of-type {
+    margin-block-start: 0;
+}
+
+[data-slot="dropdown-menu-radio-item"] .crm-material-menu-indicator svg {
+    width: 8px;
+    height: 8px;
+}
+
+/* Host checkbox uses the same roles and spring state layer as native CRM controls. */
+.crm-check {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 2px solid var(--md-sys-color-on-surface-variant);
+    border-radius: 2px;
+    color: var(--md-sys-color-on-surface-variant);
+    background: transparent;
+    cursor: pointer;
+}
+.crm-check:is([data-state="checked"], [data-state="indeterminate"]) {
+    border-color: var(--md-sys-color-primary);
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+}
+.crm-check > .crm-state-layer {
+    inset: -13px;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-on-surface);
+}
+.crm-check:is([data-state="checked"], [data-state="indeterminate"])
+    > .crm-state-layer {
+    background: var(--md-sys-color-primary);
+}
+.crm-check:disabled {
+    opacity: var(--md-sys-state-disabled-content-opacity);
+    cursor: default;
+}
+.crm-check[aria-invalid="true"] {
+    border-color: var(--md-sys-color-primary);
+}
+.crm-check-indicator {
+    display: grid;
+    place-content: center;
+    color: inherit;
+}
+/* Native checkbox/radio focus must remain visible outside their filled mark. */
+:is(.crm, .md-table-dialog) input:is([type="checkbox"], [type="radio"]):focus {
+    box-shadow: none;
+}
+:is(.crm, .md-table-dialog)
+    input:is([type="checkbox"], [type="radio"]):focus-visible {
+    outline: 3px solid var(--md-sys-color-secondary);
+    outline-offset: 3px;
+}
+
+/* Reusable grouped choices and record summaries, shared by customer forms. */
+.crm-choice-group {
+    display: grid;
+    gap: var(--crm-space-3);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.crm-choice-group legend {
+    margin-block-end: var(--crm-space-3);
+    padding: 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface);
+}
+.crm-detail-item dt {
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--md-sys-color-on-surface-variant);
+}
+.crm-detail-item dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+/* Status bubbles share the button and menu primitives on records and tables. */
+.crm-stage-control {
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+.crm-stage-bubble {
+    --crm-button-padding-inline: var(--crm-space-3);
+    border-radius: var(--md-sys-shape-corner-full);
+}
+.crm-stage-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.crm-stage-control small {
+    max-width: 100%;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: normal;
+}
+
+.crm-form-disclosure > summary {
+    padding: var(--crm-space-3);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    cursor: pointer;
+}
+.crm-form-disclosure[open] > summary {
+    margin-block-end: var(--crm-space-6);
+}

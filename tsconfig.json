@@ -122,6 +122,8 @@
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
         "resources/js/**/*.tsx",
-        "resources/js/**/*.vue"
+        "resources/js/**/*.vue",
+        "packages/awove/*/resources/js/**/*.ts",
+        "packages/awove/*/resources/js/**/*.vue"
     ]
 }
