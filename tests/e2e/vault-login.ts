@@ -105,7 +105,7 @@ export async function signInVault(
         "php",
         [
             "artisan",
-            "--env=alpha",
+            loginOrigin === origin ? "--env=alpha" : "--env=previewAlpha",
             "queue:work",
             "database",
             "--stop-when-empty",

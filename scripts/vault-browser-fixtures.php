@@ -37,7 +37,7 @@ foreach (['CRM_MANIFEST' => $manifest, 'VAULT_KEY_FILE' => $keyFile] as $name =>
     $_ENV[$name] = $_SERVER[$name] = $value;
 }
 $app = require __DIR__.'/../bootstrap/app.php';
-$app->loadEnvironmentFrom('.env.alpha');
+$app->loadEnvironmentFrom($riddle ? '.env.previewAlpha' : '.env.alpha');
 $app->make(Kernel::class)->bootstrap();
 config(['vault.auth_mode' => $authMode]);
 FictionalCrmFixtures::assertLocalExample('alpha');
@@ -112,13 +112,13 @@ function vaultFixturePath(string $path): void
 $result = DB::transaction(function () use ($mode, $project, $email, $contactEmail, $name, $privateFile, $user, $riddle, $riddleQuestion) {
     DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ['basecrm-vault-browser-fixtures']);
     if ($mode === 'setup') {
-        Artisan::call('crm:install');
         if (Member::where('installation_id', 'alpha')->exists()) {
             throw new RuntimeException('Clean the known fictional Vault fixtures first. Existing Vault enrollments are preserved.');
         }
         if ($riddle && DB::table('vault_riddle_settings')->where('installation_id', 'alpha')->exists()) {
             throw new RuntimeException('An existing Vault riddle policy is protected; fixture setup refused.');
         }
+        Artisan::call('crm:install');
         $fixture = $user ?? User::factory()->create(['name' => $name, 'email' => $email, 'email_verified_at' => now(), 'active' => true]);
         $fixture->assignRole($riddle ? 'Administrator' : 'Employee');
         $fixture->syncPermissions((new VaultModule)->permissions());
