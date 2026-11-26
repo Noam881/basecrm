@@ -10,6 +10,7 @@ import {
     VaultRequestError,
 } from "../security";
 import type { AuthStatus } from "../types";
+import VaultEmailChallenge from "./VaultEmailChallenge.vue";
 const emit = defineEmits<{ close: []; unlocked: [] }>();
 const password = ref("");
 const confirmation = ref("");
@@ -38,6 +39,7 @@ function clear() {
 const security = useVaultSecurity(clear);
 const status = security.status;
 const step = computed(() => status.value?.step ?? "password");
+const emailRiddle = computed(() => status.value?.auth_mode === "email_riddle");
 function failed(e: unknown) {
     error.value =
         e instanceof VaultRequestError
@@ -172,11 +174,81 @@ function close() {
         </p>
         <p v-else-if="!status?.approved" class="crm-muted">
             {{
-                t(
-                    "An authorized Vault administrator must approve enrollment and provide an invitation before you can continue.",
-                )
+                emailRiddle
+                    ? t(
+                          "Contact the installation operator to approve Vault access for this administrator account.",
+                      )
+                    : t(
+                          "An authorized Vault administrator must approve enrollment and provide an invitation before you can continue.",
+                      )
             }}
         </p>
+        <template v-else-if="emailRiddle">
+            <form
+                v-if="step === 'email_start'"
+                class="crm-form"
+                @submit.prevent="authenticate('email-start', {})"
+            >
+                <p>
+                    {{
+                        t(
+                            "Confirm your email, then enter the Vault passphrase.",
+                        )
+                    }}
+                </p>
+                <div class="crm-form-action">
+                    <button class="crm-button" :disabled="busy">
+                        {{
+                            busy
+                                ? t("Working…")
+                                : t("Send Vault confirmation email")
+                        }}
+                    </button>
+                </div>
+            </form>
+            <VaultEmailChallenge
+                v-else-if="step === 'email'"
+                :busy="busy"
+                :can-resend="!!status?.challenge_id"
+                @check="security.refreshStatus().catch(failed)"
+                @resend="
+                    authenticate('resend', {
+                        challenge_id: status?.challenge_id,
+                    })
+                "
+            />
+            <form
+                v-else-if="step === 'riddle'"
+                class="crm-form"
+                @submit.prevent="
+                    authenticate('factor', {
+                        challenge_id: status?.challenge_id,
+                        answer,
+                    })
+                "
+            >
+                <p v-if="status?.question" dir="auto">{{ status.question }}</p>
+                <label class="crm-field"
+                    ><span class="crm-field-label">{{
+                        t("Vault passphrase")
+                    }}</span
+                    ><input
+                        v-model="answer"
+                        data-vault-sensitive
+                        type="password"
+                        required
+                        autocomplete="off"
+                        spellcheck="false"
+                        dir="auto"
+                        :disabled="busy"
+                /></label>
+                <div class="crm-form-action">
+                    <button class="crm-button" :disabled="busy">
+                        {{ busy ? t("Working…") : t("Unlock for 300 seconds") }}
+                    </button>
+                </div>
+            </form>
+        </template>
         <template v-else-if="recoveryCodes.length">
             <h3>{{ t("Save your recovery codes") }}</h3>
             <p>
@@ -333,36 +405,15 @@ function close() {
                 </button>
             </div>
         </form>
-        <div v-else-if="step === 'email'" class="crm-flow">
-            <p>
-                {{
-                    t(
-                        "Open the new Vault confirmation email in the same browser session. The link requires an explicit confirmation before the authenticator step.",
-                    )
-                }}
-            </p>
-            <div class="crm-form-action">
-                <button
-                    class="crm-secondary"
-                    type="button"
-                    :disabled="busy"
-                    @click="security.refreshStatus().catch(failed)"
-                >
-                    {{ t("Check email confirmation") }}</button
-                ><button
-                    class="crm-secondary"
-                    type="button"
-                    :disabled="busy || !status?.challenge_id"
-                    @click="
-                        authenticate('resend', {
-                            challenge_id: status?.challenge_id,
-                        })
-                    "
-                >
-                    {{ t("Send a new confirmation link") }}
-                </button>
-            </div>
-        </div>
+        <VaultEmailChallenge
+            v-else-if="step === 'email'"
+            :busy="busy"
+            :can-resend="!!status?.challenge_id"
+            @check="security.refreshStatus().catch(failed)"
+            @resend="
+                authenticate('resend', { challenge_id: status?.challenge_id })
+            "
+        />
         <form
             v-else
             class="crm-form"

@@ -24,7 +24,7 @@ To preview the separate 20-lead Israeli-style demonstration catalog, run `php sc
 
 ## Selected stack
 
-PHP 8.5; Laravel 13.38.0; official Laravel Vue starter source pinned at `d282e817c6c2fa1bd475f7c42ea785ccfc67d0ab`; Vue 3 / TypeScript / Inertia 3.5.2; Tailwind 4 / official starter shadcn-vue components; Fortify 1.41.0; Spatie Permission 8.3.2; PostgreSQL 18.6; Pest 4; Playwright. Exact resolved PHP/JS dependencies are in `composer.lock` and `package-lock.json`.
+PHP 8.5; Laravel 13.40.0; official Laravel Vue starter source pinned at `d282e817c6c2fa1bd475f7c42ea785ccfc67d0ab`; Vue 3 / TypeScript / Inertia 3.5.2; Tailwind 4 / official starter shadcn-vue components; Fortify 1.41.0; Spatie Permission 8.3.2; PostgreSQL 18.6; Pest 4; Playwright. Exact resolved PHP/JS dependencies are in `composer.lock` and `package-lock.json`.
 
 The Composer-tagged starter is outdated. The current official starter was downloaded at the pinned revision above. Its bundled Vite Plus 0.3.0 dependency had audit findings; this build uses standard Vite 8 with Prettier instead. No prerelease dependency constraints were added. See [official starter documentation](https://laravel.com/starter-kits) and [Spatie compatibility](https://spatie.be/docs/laravel-permission/v8/prerequisites).
 

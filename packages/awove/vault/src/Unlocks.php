@@ -10,12 +10,22 @@ use Awove\Vault\Models\UnlockGrant;
 use Awove\Vault\Notifications\EmailChallenge;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Mail\MailManager;
+use Illuminate\Mail\Transport\ArrayTransport;
+use Illuminate\Mail\Transport\CloudflareTransport;
+use Illuminate\Mail\Transport\ResendTransport;
+use Illuminate\Mail\Transport\SesTransport;
+use Illuminate\Mail\Transport\SesV2Transport;
+use Illuminate\Support\ConfigurationUrlParser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PragmaRX\Google2FA\Google2FA;
+use Symfony\Component\Mailer\Transport\SendmailTransport;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 
 class Unlocks
 {
@@ -49,7 +59,8 @@ class Unlocks
     {
         $permissions = $user->getAllPermissions()->pluck('name')->filter(fn ($permission) => str_starts_with($permission, 'vault.'))->sort()->values()->all();
 
-        return hash_hmac('sha256', json_encode([strtolower($user->email), $user->email_verified_at?->toISOString(), $permissions, $member->factor_generation, $member->password_hash], JSON_THROW_ON_ERROR), config('app.key'));
+        return hash_hmac('sha256', json_encode([AuthMode::current(), strtolower($user->email), $user->email_verified_at?->toISOString(), $permissions,
+            $member->factor_generation, AuthMode::riddle() ? app(Riddle::class)->fingerprint() : $member->password_hash], JSON_THROW_ON_ERROR), config('app.key'));
     }
 
     private function grants(Request $request, User $user)
@@ -64,7 +75,8 @@ class Unlocks
 
     private function valid(Member $member, User $user, Challenge|UnlockGrant $record): bool
     {
-        return $member->confirmed_at !== null && $record->expires_at->isFuture()
+        return (AuthMode::riddle() ? $member->riddle_approved_at !== null : $member->confirmed_at !== null)
+            && $record->auth_mode === AuthMode::current() && $record->expires_at->isFuture()
             && $record->factor_generation === $member->factor_generation
             && hash_equals($record->credential_fingerprint, self::fingerprint($user, $member));
     }
@@ -83,6 +95,7 @@ class Unlocks
     /** @return array{grant_id:string,expires_at:CarbonImmutable,member:Member,fingerprint:string} */
     public function administrativeProof(Request $request): array
     {
+        AuthMode::requireStrong();
         $user = $this->actor($request);
         abort_unless($user->can('vault.admin'), 403);
         $member = Enrollment::members()->where('user_id', $user->id)->lockForUpdate()->firstOrFail();
@@ -126,29 +139,107 @@ class Unlocks
         if ($challenge && (! $member || ! $this->valid($member, $user, $challenge))) {
             $challenge = null;
         }
-        $development = DevQuestion::enabled();
+        $riddle = AuthMode::riddle();
+        $development = ! $riddle && DevQuestion::enabled();
+        $approved = $riddle ? $member?->riddle_approved_at !== null : $member !== null;
+        $riddleConfigured = $riddle && app(Riddle::class)->configured();
 
-        return ['enrolled' => $member?->confirmed_at !== null, 'approved' => $member !== null,
+        return ['auth_mode' => AuthMode::current(), 'enrolled' => $riddle ? $approved : $member?->confirmed_at !== null, 'approved' => $approved,
             'unlocked' => (bool) $unlocked, 'issued_at' => $unlocked ? $grant->issued_at->toISOString() : null,
             'expires_at' => $unlocked ? $grant->expires_at->toISOString() : null, 'server_now' => now()->toISOString(),
-            'step' => $challenge ? ($challenge->email_verified_at ? 'totp' : 'email') : 'password',
+            'step' => $challenge ? ($challenge->email_verified_at ? ($riddle ? 'riddle' : 'totp') : 'email') : ($riddle ? 'email_start' : 'password'),
             'challenge_id' => $challenge?->id, 'dev_question_mode' => $development,
-            'question' => $development ? DevQuestion::QUESTION : null, 'can_admin' => $user->can('vault.admin')];
+            'question' => $riddleConfigured ? app(Riddle::class)->setting()?->question : ($development ? DevQuestion::QUESTION : null),
+            'riddle_configured' => $riddleConfigured, 'can_admin' => ! $riddle && $user->can('vault.admin')];
     }
 
     /** Non-delivering transports must never receive usable challenge tokens outside tests. */
     public static function assertMailTransport(): void
     {
-        $driver = config('mail.default');
-        if (app()->environment('testing')) {
-            abort_unless($driver === 'array', 503, __('Vault tests require the non-delivering test mail transport.'));
+        $testing = app()->environment('testing');
+        $local = app()->isLocal();
+        $allowed = false;
+        try {
+            $allowed = self::directMailTransportAllowed($testing, $local);
+        } catch (\Throwable) {
+            // Transport construction/DSN errors may contain credentials. Never
+            // report, chain or return them from this security boundary.
+        }
+        $message = $testing ? 'Vault tests require the non-delivering test mail transport.'
+            : ($local ? 'Local vault authentication requires the isolated development mail transport.'
+                : 'Configure a delivering email transport before using vault authentication.');
+        abort_unless($allowed, 503, __($message));
+    }
 
-            return;
+    private static function directMailTransportAllowed(bool $testing, bool $local): bool
+    {
+        $name = config('mail.default');
+        $mailers = config('mail.mailers');
+        // Vault deliberately requires modern, explicit, direct configuration.
+        // Legacy driver overrides and composite fallback chains are not accepted.
+        if (config('mail.driver') !== null || ! is_string($name) || $name === ''
+            || ! is_array($mailers) || ! is_array($configuration = $mailers[$name] ?? null)) {
+            return false;
         }
-        abort_if(in_array($driver, ['array', 'log', null, ''], true), 503, __('Configure a delivering email transport before using vault authentication.'));
-        if (app()->isLocal()) {
-            abort_unless($driver === 'smtp' && in_array(config('mail.mailers.smtp.host'), ['127.0.0.1', 'localhost', 'mailpit'], true), 503, __('Local vault authentication requires the isolated development mail transport.'));
+        if (($testing && $name !== 'array') || ($local && $name !== 'smtp')) {
+            return false;
         }
+        if (isset($configuration['url'])) {
+            $url = $configuration['url'];
+            if (($configuration['transport'] ?? null) !== 'smtp' || ! is_string($url)
+                || ! in_array(parse_url($url, PHP_URL_SCHEME), ['smtp', 'smtps'], true)) {
+                return false;
+            }
+            // Mirror Laravel's URL/query precedence, including a query-string
+            // driver override; trusting only MAIL_URL's scheme is insufficient.
+            $configuration = array_merge($configuration, (new ConfigurationUrlParser)->parseConfiguration($configuration));
+            $configuration['transport'] = $configuration['driver'] ?? null;
+        }
+        $driver = $configuration['transport'] ?? null;
+        $classes = [
+            'smtp' => [EsmtpTransport::class],
+            'sendmail' => [SendmailTransport::class],
+            'mail' => [SendmailTransport::class],
+            'ses' => [SesTransport::class],
+            'ses-v2' => [SesV2Transport::class],
+            'resend' => [ResendTransport::class],
+            'cloudflare' => [CloudflareTransport::class],
+        ];
+        if ($testing) {
+            $classes = ['array' => [ArrayTransport::class]];
+        } elseif ($local) {
+            $classes = ['smtp' => $classes['smtp']];
+        }
+        if (! is_string($driver) || ! isset($classes[$driver])) {
+            return false;
+        }
+        $host = $configuration['host'] ?? null;
+        if ($driver === 'smtp' && (! is_string($host) || $host === ''
+            || ! in_array($configuration['scheme'] ?? 'smtp', ['smtp', 'smtps'], true)
+            || ($local && ! in_array($host, ['127.0.0.1', 'localhost', 'mailpit'], true)))) {
+            return false;
+        }
+        $manager = app('mail.manager');
+        if ($manager::class !== MailManager::class) {
+            return false;
+        }
+        // Inspect the actual cached instance too: a custom creator or previously
+        // resolved log transport must not bypass the configuration checks.
+        $transport = $manager->mailer($name)->getSymfonyTransport();
+        if (! in_array($transport::class, $classes[$driver], true)) {
+            return false;
+        }
+        if ($driver === 'smtp') {
+            if (! $transport instanceof EsmtpTransport) {
+                return false;
+            }
+            $stream = $transport->getStream();
+
+            return $stream instanceof SocketStream
+                && $stream->getHost() === $host;
+        }
+
+        return true;
     }
 
     private function attempt(User $user, string $event, callable $callback): mixed
@@ -166,6 +257,7 @@ class Unlocks
 
     public function password(Request $request, #[\SensitiveParameter] array $input): array
     {
+        AuthMode::requireStrong();
         $user = $this->actor($request);
 
         return $this->attempt($user, 'vault.unlock_password', function () use ($request, $user, $input) {
@@ -183,9 +275,37 @@ class Unlocks
                 $this->challenges($request, $user)->delete();
 
                 return Challenge::create(['id' => (string) Str::uuid(), 'installation_id' => Enrollment::installation(), 'user_id' => $user->id,
-                    'session_hash' => self::sessionHash($request), 'factor_generation' => $member->factor_generation,
+                    'auth_mode' => AuthMode::current(), 'session_hash' => self::sessionHash($request), 'factor_generation' => $member->factor_generation,
                     'credential_fingerprint' => self::fingerprint($user, $member), 'token_hash' => hash('sha256', $token),
                     'password_verified_at' => now(), 'expires_at' => now()->addSeconds(self::CHALLENGE_SECONDS), 'created_at' => now()]);
+            });
+            $this->send($user, $challenge, $token);
+
+            return $this->status($request);
+        });
+    }
+
+    public function emailStart(Request $request): array
+    {
+        abort_unless(AuthMode::riddle(), 403);
+        $user = $this->actor($request);
+
+        return $this->attempt($user, 'vault.unlock_email_started', function () use ($request, $user) {
+            self::throttle($user, 'email-send', 3, 600);
+            self::assertMailTransport();
+            abort_unless(app(Riddle::class)->configured(), 503, __('Vault authentication is unavailable. Contact the installation operator.'));
+            $token = Str::random(64);
+            $challenge = DB::transaction(function () use ($request, $user, $token) {
+                $member = Enrollment::members()->where('user_id', $user->id)->lockForUpdate()->first();
+                abort_unless($member?->riddle_approved_at, 403, __('An operator must approve this Vault administrator before continuing.'));
+                $user = $this->actor($request);
+                $this->grants($request, $user)->delete();
+                $this->challenges($request, $user)->delete();
+
+                return Challenge::create(['id' => (string) Str::uuid(), 'installation_id' => Enrollment::installation(), 'user_id' => $user->id,
+                    'auth_mode' => AuthMode::current(), 'session_hash' => self::sessionHash($request), 'factor_generation' => $member->factor_generation,
+                    'credential_fingerprint' => self::fingerprint($user, $member), 'token_hash' => hash('sha256', $token),
+                    'password_verified_at' => null, 'expires_at' => now()->addSeconds(self::CHALLENGE_SECONDS), 'created_at' => now()]);
             });
             $this->send($user, $challenge, $token);
 
@@ -197,7 +317,13 @@ class Unlocks
     {
         $url = rtrim(config('app.url'), '/').'/vault/confirm#challenge='.rawurlencode($challenge->id).'&token='.rawurlencode($token);
         try {
-            $user->notifyNow(new EmailChallenge($url));
+            // A stale actor must never choose the recipient of proof bound to a fresh email.
+            $recipient = Access::actor($user);
+            $member = Enrollment::member($recipient);
+            $current = $challenge->fresh();
+            abort_unless($member && $current && $this->valid($member, $recipient, $current)
+                && $current->token_hash && hash_equals($current->token_hash, hash('sha256', $token)), 503);
+            $recipient->notifyNow(new EmailChallenge($url));
         } catch (\Throwable) {
             Challenge::where('id', $challenge->id)->where('installation_id', Enrollment::installation())->delete();
             abort(503, __('The vault email could not be delivered. Request a new challenge.'));
@@ -263,15 +389,22 @@ class Unlocks
 
         return $this->attempt($user, 'vault.unlock_factor', function () use ($request, $user, $input) {
             self::throttle($user, 'factor');
-            $data = validator($input, ['challenge_id' => 'required|uuid', 'code' => 'nullable|string|regex:/^[0-9]{6}$/D',
-                'recovery_code' => 'nullable|string|size:24', 'answer' => 'nullable|string|max:1024'])->validate();
+            $data = validator($input, AuthMode::riddle()
+                ? ['challenge_id' => 'required|uuid', 'answer' => 'required|string|min:3|max:1024', 'code' => 'prohibited', 'recovery_code' => 'prohibited']
+                : ['challenge_id' => 'required|uuid', 'code' => 'nullable|string|regex:/^[0-9]{6}$/D',
+                    'recovery_code' => 'nullable|string|size:24', 'answer' => 'nullable|string|max:1024'])->validate();
+            if (AuthMode::riddle()) {
+                app(Riddle::class)->throttle();
+            }
             DB::transaction(function () use ($request, $user, $data) {
                 $member = Enrollment::members()->where('user_id', $user->id)->lockForUpdate()->first();
                 $challenge = $this->challenge($request, $user, $member, $data['challenge_id']);
                 if (! $challenge->email_verified_at || $challenge->token_hash !== null) {
-                    throw ValidationException::withMessages(['vault' => __('Confirm the dedicated vault email before submitting an authenticator code.')]);
+                    throw ValidationException::withMessages(['vault' => AuthMode::riddle() ? __('Confirm the dedicated Vault email before answering the riddle.') : __('Confirm the dedicated vault email before submitting an authenticator code.')]);
                 }
-                if (DevQuestion::enabled()) {
+                if (AuthMode::riddle()) {
+                    app(Riddle::class)->verify($data['answer']);
+                } elseif (DevQuestion::enabled()) {
                     if (! $member->dev_question_hash || ! is_string($data['answer'] ?? null) || ! Hash::driver('argon2id')->check($data['answer'], $member->dev_question_hash)) {
                         throw ValidationException::withMessages(['vault' => __('The development-only vault answer is invalid.')]);
                     }
@@ -303,7 +436,7 @@ class Unlocks
                 $this->grants($request, $user)->delete();
                 $issued = now()->toImmutable();
                 UnlockGrant::create(['id' => (string) Str::uuid(), 'installation_id' => Enrollment::installation(), 'user_id' => $user->id,
-                    'session_hash' => self::sessionHash($request), 'factor_generation' => $member->factor_generation,
+                    'auth_mode' => AuthMode::current(), 'session_hash' => self::sessionHash($request), 'factor_generation' => $member->factor_generation,
                     'credential_fingerprint' => self::fingerprint($user, $member), 'issued_at' => $issued, 'expires_at' => $issued->addSeconds(self::LIFETIME_SECONDS)]);
             });
 

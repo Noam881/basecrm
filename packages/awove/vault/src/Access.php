@@ -17,7 +17,7 @@ final class Access
     {
         abort_unless(app(Modules::class)->enabled('vault'), 404);
         $user = $user?->fresh();
-        abort_unless($user && $user->active && $user->hasVerifiedEmail(), 403);
+        abort_unless($user && $user->active && $user->hasVerifiedEmail() && AuthMode::permits($user), 403);
 
         return $user;
     }
@@ -26,7 +26,7 @@ final class Access
     {
         $user = $user?->fresh();
 
-        return $user && $user->active && $user->hasVerifiedEmail() && app(Modules::class)->enabled('vault') && $user->can('vault.'.$action);
+        return $user && $user->active && $user->hasVerifiedEmail() && app(Modules::class)->enabled('vault') && AuthMode::permits($user) && $user->can('vault.'.$action);
     }
 
     public static function restricted($user): bool

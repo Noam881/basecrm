@@ -1,6 +1,12 @@
 import { expect, type Page } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 const origin = "http://127.0.0.1:8110";
+const localOrigins = [
+    origin,
+    "http://127.0.0.1:8111",
+    "http://127.0.0.1:8120",
+    "http://127.0.0.1:8121",
+];
 const mailpit = "http://127.0.0.1:8028";
 export async function inboxIds(page: Page): Promise<Set<string>> {
     const result = await (
@@ -51,9 +57,7 @@ export async function findMailLink(
                             try {
                                 const url = new URL(candidate);
                                 return (
-                                    [origin, "http://127.0.0.1:8111"].includes(
-                                        url.origin,
-                                    ) &&
+                                    localOrigins.includes(url.origin) &&
                                     (path === "login"
                                         ? /^\/magic-login\/[A-Za-z0-9]{64}$/.test(
                                               url.pathname,
@@ -74,13 +78,22 @@ export async function findMailLink(
         .toBe(true);
     return link;
 }
-export async function signInVault(page: Page, email: string) {
-    if (!/^vault-(desktop|mobile)@alpha\.example\.test$/.test(email))
+export async function signInVault(
+    page: Page,
+    email: string,
+    loginOrigin = origin,
+) {
+    if (
+        !/^vault-(riddle-)?(desktop|mobile)@alpha\.example\.test$/.test(
+            email,
+        ) ||
+        !localOrigins.includes(loginOrigin)
+    )
         throw new Error(
             "Only reserved fictional Vault fixture accounts may be used.",
         );
     const before = await inboxIds(page);
-    await page.goto(`${origin}/login`);
+    await page.goto(`${loginOrigin}/login`);
     await page.getByLabel("Email address", { exact: true }).fill(email);
     await page
         .getByRole("button", { name: "Email me a sign-in link", exact: true })
@@ -92,7 +105,7 @@ export async function signInVault(page: Page, email: string) {
         "php",
         [
             "artisan",
-            "--env=alpha",
+            loginOrigin === origin ? "--env=alpha" : "--env=previewAlpha",
             "queue:work",
             "database",
             "--stop-when-empty",
@@ -101,5 +114,5 @@ export async function signInVault(page: Page, email: string) {
         { stdio: "ignore", timeout: 15000 },
     );
     await page.goto(await findMailLink(page, email, before, "login"));
-    await expect(page).toHaveURL(`${origin}/dashboard`);
+    await expect(page).toHaveURL(`${loginOrigin}/dashboard`);
 }

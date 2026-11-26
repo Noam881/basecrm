@@ -33,6 +33,7 @@ class DevQuestion
 
     public static function set(User $user, #[\SensitiveParameter] string $answer): void
     {
+        AuthMode::requireStrong();
         abort_unless(self::enabled(), 403);
         validator(['answer' => $answer], ['answer' => 'required|string|min:1|max:1024'])->validate();
         Unlocks::assertMailTransport();

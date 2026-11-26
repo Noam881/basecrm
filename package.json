@@ -44,6 +44,11 @@
     "vite": "^8.0.0",
     "vue-tsc": "^2.2.4"
   },
+  "overrides": {
+    "@vue/language-core": {
+      "minimatch": "11.0.1"
+    }
+  },
   "optionalDependencies": {
     "@laravel/multiplex": "^0.4.1",
     "@rollup/rollup-linux-x64-gnu": "4.9.5",

@@ -1,28 +1,34 @@
 # Vault activation decisions — basics.awove.dev
 
-Owner decisions confirmed on 26 November 2026. This records the intended installation setup; it does not grant permissions, enroll users, provision keys or activate Vault.
+Owner decisions confirmed and simplified on 26 November 2026. This records the intended installation setup; operational deployment and activation evidence is kept in the private installation ledger.
 
 ## Administrators and item levels
 
 | Existing CRM account | Approved Vault access | Recovery responsibility |
 | --- | --- | --- |
-| `noam@awove.com` | First Vault administrator; full Vault actions for Level 1 and Level 2 items | Encryption-key backup custody and recovery authorization |
-| `niva@mymisrad.co.il` | Additional Vault administrator; the same full Vault actions | Encryption-key backup custody and recovery authorization |
+| `noam@awove.com` | First Vault administrator; full Vault actions for Level 1 and Level 2 items | Recovery authorization |
+| `niva@mymisrad.co.il` | Additional Vault administrator; the same full Vault actions | Recovery authorization |
 
 Other users initially receive no Vault permissions or enrollment approval. Both named administrators are to receive the complete Vault permission set, including `vault.admin` and every action permission. Additional-administrator enrollment approval alone does not grant those permissions. Verify their existing CRM customer access as part of provisioning; Vault retains the shared customer policies and installation boundary.
 
 Each item must have a selected Level 1 or Level 2. This requirement already exists in the form, API and database. In the owner's terminology, administrators have “Tier 1 / full access”: both administrators may work with both item levels after completing the required authentication. Levels classify Vault items; there is no new user-tier field or role to add.
 
-Further tier-specific rules and non-administrator assignments are deferred. No access-rule implementation or production permission change is requested by these decisions. Preserve the existing authorization checks while only the two full administrators are provisioned.
+Further tier-specific rules and non-administrator assignments are deferred. Preserve the existing customer, action, level and installation checks while only the two approved full administrators are provisioned.
 
-## Recovery ownership
+## Simplified administrator sign-in
 
-Both named administrators are approved operational owners of the separately protected encryption-key backup and recovery/reset authorization. Record the actual custody location, protected access and identity-verification procedure in the private operations runbook before activation. No key material or backup credentials belong in this repository.
+Select the optional deployment-controlled `email_riddle` authentication mode for this installation. The normal CRM email-link sign-in remains unchanged. Vault then requires a fresh, dedicated email confirmation in the initiating CRM session followed by the configured shared riddle passphrase. A successful unlock lasts exactly 300 seconds; activity does not extend it.
 
-Use the existing verified administrator/operator recovery process. Each user enrolls their own Vault password, authenticator and recovery codes. The personal unlock sequence and exact 300-second expiry remain required for administrators. Factor resets and encryption-key recovery remain distinct operations; key backup custody does not bypass authentication or restore missing key material.
+This mode is limited to verified, active CRM Administrators with explicit Vault administrator/action permissions and operator-approved Vault membership. Each administrator uses their own email confirmation. There is no personal Vault-password or authenticator enrollment in this mode. The shared answer is entered privately through the operator configuration command and stored only as an Argon2id verifier; it cannot be configured or reset through an email-only flow. Changing it revokes current challenges and unlocks.
 
-## Activation state and remaining work
+This explicit production mode is separate from the fictional local development-question option, which remains disabled. The stronger password/email/TOTP mode remains the reusable Base default. Do not describe the shared riddle as an authenticator code or as equivalent assurance to TOTP.
 
-Vault code and migrations were deployed on 26 November 2026; the live module remains disabled. These decisions resolve the administrator identities, initial access scope and recovery ownership. Live activation remains a separate step after technical readiness is established.
+## Encryption, backups and recovery
 
-Before enabling real-secret use, complete dependency remediation/review, protected keyring provisioning and separate backup, enrollment and explicit grants for both administrators, production email/queue and host checks, restore/recovery rehearsal, and the required independent security assessment. Follow the [Vault security and activation runbook](../packages/awove/vault/README.md) for the complete requirements.
+Vault content and attachments remain encrypted on the server with a dedicated random key. The persistent keyring is outside the repository/releases/public root, in the website's private installation directory, with owner-only permissions.
+
+The owner deferred the separate encrypted-key backup setup and external server-directory requirement. Use the existing private website backup process for now. Those archives include both encrypted Vault content and its keyring; they do not provide separate key custody. Access to the archives must remain protected. No local key export was completed. Both named administrators remain recovery owners; recovery follows the controlled operator process and must reconcile authentication/permission changes made after the restored snapshot.
+
+## Activation checks
+
+Complete the targeted dependency patches, protected persistent keyring, operator configuration of the shared riddle, explicit full grants and approval for both administrators, production mail/queue/host checks and the documented security review/tests. Verify the actual email flow with the intended user before claiming delivery. Follow the [Vault security and activation runbook](../packages/awove/vault/README.md). The original brief requires security review and hardening; it does not mandate an external assessor.

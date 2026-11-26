@@ -79,6 +79,7 @@ export function adoptStatus(next: AuthStatus, started = performance.now()) {
     // Explicit authentication results supersede every poll already in flight.
     statusRevision++;
     applyStatus(next, started);
+    channel?.postMessage({ kind: "refresh" });
 }
 function applyStatus(next: AuthStatus, started: number) {
     const left = Math.max(
@@ -279,6 +280,8 @@ export function useVaultSecurity(cleaner: () => void) {
                 channel = new BroadcastChannel("basecrm-vault-lock");
                 channel.onmessage = (event) => {
                     if (event.data?.kind === "locked") clearSensitive(true);
+                    else if (event.data?.kind === "refresh")
+                        void refreshStatus().catch(() => clearSensitive(true));
                 };
             }
         }

@@ -68,13 +68,14 @@ export interface InitialData extends Options {
     table: TablePayload;
 }
 export interface AuthStatus {
+    auth_mode?: "password_email_totp" | "email_riddle";
     enrolled: boolean;
     approved: boolean;
     unlocked: boolean;
     issued_at: string | null;
     expires_at: string | null;
     server_now: string;
-    step: "password" | "email" | "totp";
+    step: "password" | "email" | "totp" | "email_start" | "riddle";
     challenge_id: string | null;
     dev_question_mode: boolean;
     question: string | null;
