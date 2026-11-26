@@ -5,6 +5,7 @@ namespace Awove\Vault\Console;
 use App\Models\User;
 use Awove\Vault\Access;
 use Awove\Vault\AuditLog;
+use Awove\Vault\AuthMode;
 use Awove\Vault\Cipher;
 use Awove\Vault\Enrollment;
 use Awove\Vault\Unlocks;
@@ -23,6 +24,7 @@ class Operator
 
     public static function authenticate(Command $command): User
     {
+        AuthMode::requireStrong();
         self::installation($command);
         $email = $command->option('operator');
         abort_unless(is_string($email) && $email !== '', 403);

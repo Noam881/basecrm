@@ -38,6 +38,7 @@ beforeEach(function () {
         'session.encrypt' => true, 'session.secure' => true, 'session.http_only' => true, 'session.same_site' => 'lax',
         'queue.default' => 'database', 'queue.connections.database.connection' => null,
         'mail.default' => 'array', 'mail.mailers.array.transport' => 'array',
+        'cache.default' => 'database', 'cache.stores.database.connection' => null,
         'filesystems.disks.local.driver' => 'local', 'filesystems.disks.local.root' => $this->vaultOperationsDirectory.'/private',
         'hashing.argon.memory' => 1024, 'hashing.argon.time' => 1, 'hashing.argon.threads' => 1]);
     $this->artisan('crm:install')->assertSuccessful();

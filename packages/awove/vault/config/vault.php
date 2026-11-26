@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'auth_mode' => env('VAULT_AUTH_MODE', 'password_email_totp'),
     // Supply a protected deployment-controlled keyring outside the web/document root.
     'key_file' => env('VAULT_KEY_FILE'),
     'active_key' => env('VAULT_ACTIVE_KEY'),

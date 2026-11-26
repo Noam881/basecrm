@@ -13,6 +13,7 @@ Route::middleware(['web', NoStore::class, 'auth', 'verified', 'crm.module:vault'
         Route::post('/enroll', [AuthController::class, 'enroll']);
         Route::post('/enroll/confirm', [AuthController::class, 'confirmEnrollment']);
         Route::post('/password', [AuthController::class, 'password']);
+        Route::post('/email-start', [AuthController::class, 'emailStart']);
         Route::post('/resend', [AuthController::class, 'resend']);
         Route::post('/email', [AuthController::class, 'email']);
         Route::post('/factor', [AuthController::class, 'factor']);

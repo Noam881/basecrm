@@ -47,7 +47,7 @@ final class Readiness
 
     public static function schemaReady(): bool
     {
-        foreach (['vault_members', 'vault_unlocks', 'vault_challenges', 'vault_recovery_codes', 'vault_items', 'vault_files', 'vault_audits', 'sessions', 'magic_login_tokens', 'jobs'] as $table) {
+        foreach (['vault_members', 'vault_unlocks', 'vault_challenges', 'vault_recovery_codes', 'vault_riddle_settings', 'vault_items', 'vault_files', 'vault_audits', 'sessions', 'magic_login_tokens', 'jobs', 'cache', 'cache_locks'] as $table) {
             if (! Schema::hasTable($table)) {
                 return false;
             }
@@ -58,7 +58,7 @@ final class Readiness
 
     public static function installationDataMatches(): bool
     {
-        foreach (['vault_members', 'vault_unlocks', 'vault_challenges', 'vault_items', 'vault_files', 'vault_audits'] as $table) {
+        foreach (['vault_members', 'vault_unlocks', 'vault_challenges', 'vault_riddle_settings', 'vault_items', 'vault_files', 'vault_audits'] as $table) {
             if (DB::table($table)->where('installation_id', '!=', Installation::manifest()['id'])->exists()) {
                 return false;
             }
@@ -71,10 +71,10 @@ final class Readiness
     public function report(?string $confirmation, int $minimumAdmins = 1): array
     {
         $checks = array_fill_keys(['installation_confirmed', 'module_enabled', 'production_runtime', 'https_url_configured',
-            'debug_disabled', 'application_key_configured', 'secure_database_sessions', 'database_boundary_verified', 'notice_queue_configured',
+            'debug_disabled', 'application_key_configured', 'secure_database_sessions', 'database_boundary_verified', 'notice_queue_configured', 'persistent_limiter_store_configured',
             'sodium_available', 'argon2id_available', 'external_protected_keyring', 'encryption_configured',
             'private_local_storage', 'delivering_mail_transport_configured', 'development_question_disabled',
-            'schema_ready', 'vault_installation_scope_verified', 'minimum_full_admins_enrolled'], false);
+            'schema_ready', 'vault_installation_scope_verified', 'authentication_policy_configured', 'minimum_full_admins_enrolled'], false);
         $checks['installation_confirmed'] = self::installationConfirmed($confirmation);
         if ($checks['installation_confirmed'] && $minimumAdmins > 0) {
             $checks['module_enabled'] = $this->check(fn () => app(Modules::class)->enabled('vault'));
@@ -94,6 +94,7 @@ final class Readiness
             $checks['notice_queue_configured'] = config('queue.default') === 'database'
                 && config('queue.connections.database.driver') === 'database'
                 && in_array(config('queue.connections.database.connection'), [null, config('database.default')], true);
+            $checks['persistent_limiter_store_configured'] = $this->persistentLimiterStore();
             $checks['sodium_available'] = extension_loaded('sodium');
             $checks['argon2id_available'] = in_array('argon2id', password_algos(), true);
             $checks['external_protected_keyring'] = $this->check(fn () => $this->protectedKeyring());
@@ -105,6 +106,7 @@ final class Readiness
                 return ! app()->environment('testing');
             });
             $checks['development_question_disabled'] = ! config('vault.development_question', false) && ! config('vault.fictional_only', false);
+            $checks['authentication_policy_configured'] = $this->check(fn () => ! AuthMode::riddle() || app(Riddle::class)->configured());
             $checks['schema_ready'] = $this->check(fn () => self::schemaReady());
             if ($checks['schema_ready']) {
                 $checks['vault_installation_scope_verified'] = $this->check(fn () => self::installationDataMatches());
@@ -113,7 +115,8 @@ final class Readiness
         }
 
         return [...$checks, 'automated_checks_passed' => ! in_array(false, $checks, true),
-            'mail_delivery_verified' => false, 'separate_key_backup_verified' => false, 'restore_rehearsal_verified' => false,
+            'mail_delivery_verified' => false, 'separate_key_backup_required' => $this->check(fn () => ! AuthMode::riddle()),
+            'separate_key_backup_verified' => false, 'ordinary_backup_verified' => false, 'restore_rehearsal_verified' => false,
             'proxy_tls_and_monitoring_verified' => false, 'post_snapshot_authority_reconciled' => false,
             'manual_verification_required' => true];
     }
@@ -139,6 +142,18 @@ final class Readiness
         return $parent !== false && (fileperms($path) & 0777) === 0600 && (fileperms($parent) & 0077) === 0;
     }
 
+    private function persistentLimiterStore(): bool
+    {
+        $name = config('cache.limiter') ?: config('cache.default');
+        if (! is_string($name) || $name === '') {
+            return false;
+        }
+
+        return config('cache.stores.'.$name.'.driver') === 'database'
+            && in_array(config('cache.stores.'.$name.'.connection'), [null, config('database.default')], true)
+            && config('cache.stores.'.$name.'.table') === 'cache';
+    }
+
     private function privateStorage(): bool
     {
         $root = config('filesystems.disks.local.root');
@@ -156,11 +171,16 @@ final class Readiness
     {
         $permissions = app(Modules::class)->installed()['vault']->permissions();
         $count = 0;
-        foreach (Member::where('installation_id', Installation::manifest()['id'])->whereNotNull('confirmed_at')
-            ->whereNotNull('password_hash')->whereNotNull('encrypted_totp')->whereNotNull('totp_key_version')->get() as $member) {
+        $members = Member::where('installation_id', Installation::manifest()['id']);
+        if (AuthMode::riddle()) {
+            $members->whereNotNull('riddle_approved_at');
+        } else {
+            $members->whereNotNull('confirmed_at')->whereNotNull('password_hash')->whereNotNull('encrypted_totp')->whereNotNull('totp_key_version');
+        }
+        foreach ($members->get() as $member) {
             $user = User::find($member->user_id);
             if ($user && $user->active && $user->hasVerifiedEmail() && $user->hasAllPermissions($permissions)
-                && $user->can('identities.manage')) {
+                && $user->can('identities.manage') && AuthMode::permits($user)) {
                 $count++;
             }
         }

@@ -4,6 +4,7 @@ namespace Awove\Vault\Notifications;
 
 use Awove\Core\Installation;
 use Awove\Core\Modules;
+use Awove\Vault\AuthMode;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,7 +38,7 @@ class FactorsChanged extends Notification implements ShouldBeEncrypted, ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)->subject(__('Your vault authentication factors changed'))
-            ->line(__('An authorized administrative process replaced your vault enrollment. Existing vault unlocks and challenges were cancelled.'))
+            ->line(AuthMode::riddle() ? __('An authorized operator changed the shared Vault riddle. Existing Vault unlocks and challenges were cancelled.') : __('An authorized administrative process replaced your vault enrollment. Existing vault unlocks and challenges were cancelled.'))
             ->line(__('If you did not expect this change, contact your administrator immediately. No secrets are included in this message.'));
     }
 }

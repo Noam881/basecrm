@@ -3,6 +3,7 @@
 namespace Awove\Vault\Http;
 
 use App\Models\User;
+use Awove\Vault\AuthMode;
 use Awove\Vault\Enrollment;
 use Awove\Vault\Unlocks;
 use Illuminate\Http\Request;
@@ -29,6 +30,11 @@ class AuthController
         return response()->json($unlocks->password($request, $request->all()));
     }
 
+    public function emailStart(Request $request, Unlocks $unlocks)
+    {
+        return response()->json($unlocks->emailStart($request));
+    }
+
     public function resend(Request $request, Unlocks $unlocks)
     {
         return response()->json($unlocks->resend($request, $request->all()));
@@ -51,6 +57,7 @@ class AuthController
 
     public function approve(Request $request, Unlocks $unlocks, Enrollment $enrollment)
     {
+        AuthMode::requireStrong();
         $unlocks->requireUnlocked($request);
         $actor = $unlocks->actor($request);
         abort_unless($actor->can('vault.admin'), 403);
@@ -62,6 +69,7 @@ class AuthController
 
     public function reset(Request $request, Unlocks $unlocks, Enrollment $enrollment)
     {
+        AuthMode::requireStrong();
         $unlocks->requireUnlocked($request);
         $actor = $unlocks->actor($request);
         abort_unless($actor->can('vault.admin'), 403);

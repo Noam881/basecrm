@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * @property string $auth_mode
  * @property CarbonImmutable $issued_at
  * @property CarbonImmutable $expires_at
  */

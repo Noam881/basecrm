@@ -37,6 +37,7 @@ class Enrollment
     /** Trusted operator bootstrap, explicitly selecting an existing verified account. */
     public function bootstrap(User $target): array
     {
+        AuthMode::requireStrong();
         $target = $this->target($target);
 
         return DB::transaction(function () use ($target) {
@@ -64,6 +65,7 @@ class Enrollment
     /** This trusted service is reached by an unlocked administrator or protected operator command. */
     public function approve(User $actor, User $target, bool $reset = false, ?Request $request = null): array
     {
+        AuthMode::requireStrong();
         $actor = Access::actor($actor);
         abort_unless($actor->can('vault.admin'), 403);
         abort_unless(! $request || $request->user()?->getAuthIdentifier() === $actor->id, 403);
@@ -148,6 +150,7 @@ class Enrollment
 
     public function begin(Request $request, #[\SensitiveParameter] array $input): array
     {
+        AuthMode::requireStrong();
         $actor = app(Unlocks::class)->actor($request);
         Unlocks::throttle($actor, 'enrollment', 5, 600);
         $data = validator($input, ['invitation' => 'required|string|size:64', 'password' => 'required|string|min:12|max:1024|confirmed', 'password_confirmation' => 'required|string'])->validate();
@@ -178,6 +181,7 @@ class Enrollment
 
     public function confirm(Request $request, #[\SensitiveParameter] array $input): array
     {
+        AuthMode::requireStrong();
         $actor = app(Unlocks::class)->actor($request);
         Unlocks::throttle($actor, 'enrollment-factor', 5, 600);
         $data = validator($input, ['code' => 'required|string|regex:/^[0-9]{6}$/D'])->validate();
