@@ -100,6 +100,7 @@ class Identities
             'phone' => 'nullable|string|max:40',
             'company_id' => $type === 'contacts' ? 'nullable|integer|min:1' : 'prohibited',
             'accept_duplicate' => 'sometimes|boolean',
+            'registration_number' => $type === 'companies' ? 'sometimes|nullable|string|max:80' : 'prohibited',
         ];
         if ($type === 'contacts') {
             $rules = [...$rules,
@@ -130,18 +131,18 @@ class Identities
         $acceptDuplicate = $data['accept_duplicate'] ?? false;
         unset($data['accept_duplicate']);
         if ($type === 'companies') {
-            $data = array_intersect_key($data, array_flip(['name', 'email', 'phone', 'notes']));
+            $data = array_intersect_key($data, array_flip([...Company::ATTRIBUTES, 'notes']));
         }
         if ($identity) {
             unset($data['notes']);
         }
-        $data = [...($identity?->only($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone']) ?? []), ...$data];
+        $data = [...($identity?->only($type === 'contacts' ? ContactDetails::ATTRIBUTES : Company::ATTRIBUTES) ?? []), ...$data];
         $data['name'] = trim($data['name']);
         if ($data['name'] === '') {
             throw ValidationException::withMessages(['name' => __('Enter a name.')]);
         }
         $data['email'] = ! empty($data['email']) ? mb_strtolower(trim($data['email'])) : null;
-        foreach ($type === 'contacts' ? ['phone', 'secondary_phone', 'address', 'city', 'country', 'notes'] : ['phone', 'notes'] as $field) {
+        foreach ($type === 'contacts' ? ['phone', 'secondary_phone', 'address', 'city', 'country', 'notes'] : ['phone', 'notes', 'registration_number'] as $field) {
             if (array_key_exists($field, $data)) {
                 $data[$field] = filled($data[$field]) ? trim($data[$field]) : null;
             }

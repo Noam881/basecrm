@@ -23,8 +23,8 @@ class Leads
 
         return DB::transaction(function () use ($user, $data) {
             $data = $this->withOptionalTitle($user, $data);
-            $data = [...$data, ...validator($data, Sales::opportunityRules())->validate()];
-            validator($data, ['attribution' => 'missing'])->validate();
+            $data = [...$data, ...Sales::opportunityData($data)];
+            validator($data, ['attribution' => 'missing', 'created_at' => 'missing', 'updated_at' => 'missing'])->validate();
             $data['custom_fields'] = CustomFields::validate($data['custom_fields'] ?? []);
             $lead = Lead::create([...$data, 'created_by' => $user->id]);
             $this->log($lead, $user, 'lead.created', []);
@@ -41,8 +41,8 @@ class Leads
             Gate::forUser($user)->authorize('update', $lead);
             abort_unless((int) $data['version'] === $lead->version, 409, __('This lead changed. Reload before saving.'));
             unset($data['version']);
-            $data = [...$data, ...validator($data, Sales::opportunityRules())->validate()];
-            validator($data, ['attribution' => 'missing'])->validate();
+            $data = [...$data, ...Sales::opportunityData($data)];
+            validator($data, ['attribution' => 'missing', 'created_at' => 'missing', 'updated_at' => 'missing'])->validate();
             if (array_key_exists('owner_id', $data) && $data['owner_id'] != $lead->owner_id) {
                 Gate::forUser($user)->authorize('leads.assign');
             }
@@ -61,7 +61,7 @@ class Leads
                     }
                 }
             }
-            $salesChanges = array_intersect(array_keys($lead->getChanges()), ['needs', 'estimated_value', 'closing_date', 'final_value', 'loss_reason']);
+            $salesChanges = array_intersect(array_keys($lead->getChanges()), array_keys(Sales::opportunityRules()));
             if ($salesChanges !== []) {
                 $this->log($lead, $user, 'lead.sales_details_updated', ['fields' => array_values($salesChanges)]);
             }

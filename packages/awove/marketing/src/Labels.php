@@ -19,7 +19,7 @@ class Labels
         return $labels;
     }
 
-    public const ATTRIBUTION = ['platform' => 'Media / platform', 'landing_page_url' => 'Website / landing page', 'campaign_id' => 'Campaign ID', 'campaign_name' => 'Campaign name', 'ad_id' => 'Ad ID', 'ad_name' => 'Ad name', 'referrer_name' => 'Referred by', 'utm_source' => 'UTM source', 'utm_medium' => 'UTM medium', 'utm_campaign' => 'UTM campaign', 'utm_content' => 'UTM content'];
+    public const ATTRIBUTION = LeadFields::LABELS;
 
     public const CHANNELS = ['website', 'facebook', 'instagram', 'linkedin', 'google', 'referral', 'email', 'direct', 'other'];
 }

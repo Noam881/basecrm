@@ -173,3 +173,111 @@ it('refuses local adapter symlink roots directory components and final files dur
         }
     }
 })->with(['root', 'directory', 'file']);
+
+function browserSignedContractRow(int $leadId, string $uuid, string $content): array
+{
+    return ['lead_id' => $leadId, 'private_path' => 'signed-contracts/'.$leadId.'/'.$uuid.'.pdf', 'sha256' => hash('sha256', $content), 'size_bytes' => strlen($content)];
+}
+
+it('recovers exact signed-contract bytes in their own namespace while preserving proposal and unrelated files', function () {
+    $content = '%PDF-1.4 Fictional signed contract';
+    $contract = browserSignedContractRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15b', $content);
+    $proposal = browserProposalRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15b', 'Preserved fictional proposal');
+    $disk = Storage::disk('local');
+    $disk->put($contract['private_path'], $content, 'private');
+    $disk->put($proposal['private_path'], 'Preserved fictional proposal', 'private');
+    $disk->put('unrelated-private-file.pdf', 'Preserved fictional file', 'private');
+    $snapshot = BrowserProposalFiles::snapshot([$contract], 'signed-contracts');
+    expect(base64_decode($snapshot[$contract['private_path']]['content'], true))->toBe($content);
+    BrowserProposalFiles::remove([$contract], 'signed-contracts');
+    $disk->assertMissing($contract['private_path']);
+    $created = BrowserProposalFiles::restore([$contract], $snapshot, 'signed-contracts');
+    expect($created)->toBe([$contract['private_path']])
+        ->and($disk->get($contract['private_path']))->toBe($content)
+        ->and($disk->getVisibility($contract['private_path']))->toBe('private')
+        ->and(BrowserProposalFiles::restore([$contract], $snapshot, 'signed-contracts'))->toBe([]);
+    BrowserProposalFiles::discardCreated($created, [$contract], 'signed-contracts');
+    $disk->assertMissing($contract['private_path']);
+    expect($disk->get($proposal['private_path']))->toBe('Preserved fictional proposal')
+        ->and($disk->get('unrelated-private-file.pdf'))->toBe('Preserved fictional file');
+});
+
+it('refuses signed-contract traversal and proposal namespace confusion before reading writing or removing files', function () {
+    $content = '%PDF-1.4 Fictional signed contract';
+    $contract = browserSignedContractRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15b', $content);
+    Storage::disk('local')->put($contract['private_path'], $content, 'private');
+    $snapshot = BrowserProposalFiles::snapshot([$contract], 'signed-contracts');
+    foreach (['../outside.pdf', '/signed-contracts/7/7e3ee91c-00f9-407a-9722-27f86752c15b.pdf', 'signed-contracts/7/../../outside.pdf', 'signed-contracts/8/7e3ee91c-00f9-407a-9722-27f86752c15b.pdf', str_replace('signed-contracts/', 'proposals/', $contract['private_path'])] as $path) {
+        $row = [...$contract, 'private_path' => $path];
+        expect(BrowserProposalFiles::pathMatches($path, 7, 'signed-contracts'))->toBeFalse();
+        expect(fn () => BrowserProposalFiles::snapshot([$row], 'signed-contracts'))->toThrow(RuntimeException::class);
+        expect(fn () => BrowserProposalFiles::remove([$row], 'signed-contracts'))->toThrow(RuntimeException::class);
+        expect(fn () => BrowserProposalFiles::restore([$row], [$path => $snapshot[$contract['private_path']]], 'signed-contracts'))->toThrow(RuntimeException::class);
+    }
+    // Neither the legacy default nor any unsupported directory may access contract bytes.
+    expect(fn () => BrowserProposalFiles::snapshot([$contract]))->toThrow(RuntimeException::class);
+    expect(fn () => BrowserProposalFiles::restore([$contract], $snapshot))->toThrow(RuntimeException::class);
+    expect(fn () => BrowserProposalFiles::remove([$contract]))->toThrow(RuntimeException::class);
+    expect(fn () => BrowserProposalFiles::snapshot([$contract], 'other-documents'))->toThrow(RuntimeException::class);
+    expect(Storage::disk('local')->get($contract['private_path']))->toBe($content);
+});
+
+it('rejects corrupt signed-contract backups and recovery collisions before touching any selected file', function () {
+    $first = browserSignedContractRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15b', 'First fictional signed contract');
+    $second = browserSignedContractRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15c', 'Second fictional signed contract');
+    $disk = Storage::disk('local');
+    $disk->put($first['private_path'], 'First fictional signed contract', 'private');
+    $disk->put($second['private_path'], 'Second fictional signed contract', 'private');
+    $snapshot = BrowserProposalFiles::snapshot([$first, $second], 'signed-contracts');
+    $disk->delete($first['private_path']);
+    $changed = $snapshot;
+    $changed[$first['private_path']]['content'] = base64_encode('Untrusted replacement');
+    expect(fn () => BrowserProposalFiles::restore([$first, $second], $changed, 'signed-contracts'))->toThrow(RuntimeException::class);
+    $disk->assertMissing($first['private_path']);
+    expect(fn () => BrowserProposalFiles::restore([$first, $second], [], 'signed-contracts'))->toThrow(RuntimeException::class);
+    $disk->put($second['private_path'], 'Preserved conflicting contract', 'private');
+    expect(fn () => BrowserProposalFiles::restore([$first, $second], $snapshot, 'signed-contracts'))->toThrow(RuntimeException::class);
+    expect(fn () => BrowserProposalFiles::remove([$first, $second], 'signed-contracts'))->toThrow(RuntimeException::class);
+    $disk->assertMissing($first['private_path']);
+    expect($disk->get($second['private_path']))->toBe('Preserved conflicting contract');
+});
+
+it('refuses symlink roots directory components and final files for signed-contract recovery', function (string $kind) {
+    $content = '%PDF-1.4 Preserved outside signed contract';
+    $row = browserSignedContractRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15b', $content);
+    $files = [$row['private_path'] => ['content' => base64_encode($content), 'sha256' => $row['sha256'], 'size_bytes' => $row['size_bytes']]];
+    $local = Storage::disk('local');
+    $outside = Storage::fake('signed-contract-outside');
+    $outside->put(basename($row['private_path']), $content, 'private');
+    $localRoot = rtrim($local->path(''), DIRECTORY_SEPARATOR);
+    $outsideRoot = rtrim($outside->path(''), DIRECTORY_SEPARATOR);
+    $heldRoot = $localRoot.'-contract-held';
+    if ($kind === 'root') {
+        rename($localRoot, $heldRoot);
+        $link = $localRoot;
+        $target = $outsideRoot;
+    } elseif ($kind === 'directory') {
+        $local->makeDirectory('signed-contracts');
+        $link = $local->path('signed-contracts/7');
+        $target = $outsideRoot;
+    } else {
+        $local->makeDirectory('signed-contracts/7');
+        $link = $local->path($row['private_path']);
+        $target = $outside->path(basename($row['private_path']));
+    }
+    try {
+        expect(symlink($target, $link))->toBeTrue();
+        expect(fn () => BrowserProposalFiles::snapshot([$row], 'signed-contracts'))->toThrow(RuntimeException::class);
+        expect(fn () => BrowserProposalFiles::restore([$row], $files, 'signed-contracts'))->toThrow(RuntimeException::class);
+        expect(fn () => BrowserProposalFiles::remove([$row], 'signed-contracts'))->toThrow(RuntimeException::class);
+        expect($outside->get(basename($row['private_path'])))->toBe($content)
+            ->and($outside->allFiles())->toBe([basename($row['private_path'])]);
+    } finally {
+        if (is_link($link)) {
+            unlink($link);
+        }
+        if ($kind === 'root') {
+            rename($heldRoot, $localRoot);
+        }
+    }
+})->with(['root', 'directory', 'file']);

@@ -8,6 +8,8 @@ The shared host/core and independent installations are retained. Local generic b
 
 [Noam881/basecrm on GitHub](https://github.com/Noam881/basecrm) is the source of truth for this application. All CRM source and CI live in this standalone repository. See [source and release policy](docs/source-of-truth.md). Secrets and live installation data stay outside Git.
 
+The canonical [lead field schema](docs/lead-field-schema.json) maps the 42 supplied workbook headers to 41 distinct field meanings. It reuses existing contact, company, lead, follow-up, quotation and proposal storage; adds nullable lifecycle/consent fields and private signed-contract versions; and keeps attribution/qualification keys in the optional Marketing module. Existing fields, stage keys and saved table layouts are retained. This schema update does not import customer rows or activate integrations.
+
 ## Open the local examples
 
 - Alpha: http://127.0.0.1:8091 — base CRM, charcoal brand, no enabled demonstration module.

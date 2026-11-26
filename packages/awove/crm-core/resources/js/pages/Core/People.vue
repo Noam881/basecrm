@@ -17,22 +17,25 @@ const title = computed(() =>
 );
 const form = useForm({
     ...contactFormData(),
+    registration_number: "",
     notes: "",
     accept_duplicate: false,
 });
 watch(type, () => form.clearErrors());
 function createCustomer() {
-    form.transform((data) =>
-        type.value === "contacts"
-            ? data
+    form.transform((data) => {
+        const { registration_number, ...contact } = data;
+        return type.value === "contacts"
+            ? contact
             : {
                   name: data.name,
                   email: data.email,
                   phone: data.phone,
+                  registration_number,
                   notes: data.notes,
                   accept_duplicate: data.accept_duplicate,
-              },
-    ).post(`/people/${type.value}`, { onSuccess: () => form.reset() });
+              };
+    }).post(`/people/${type.value}`, { onSuccess: () => form.reset() });
 }
 </script>
 <template>
@@ -116,6 +119,23 @@ function createCustomer() {
                         data-slot="input-error"
                         role="alert"
                         >{{ form.errors.phone }}</small
+                    >
+                </label>
+                <label class="crm-field">
+                    <span class="crm-field-label">{{
+                        t("Company registration number")
+                    }}</span>
+                    <input
+                        v-model="form.registration_number"
+                        maxlength="80"
+                        dir="ltr"
+                        :aria-invalid="!!form.errors.registration_number"
+                    />
+                    <small
+                        v-if="form.errors.registration_number"
+                        data-slot="input-error"
+                        role="alert"
+                        >{{ form.errors.registration_number }}</small
                     >
                 </label>
             </template>

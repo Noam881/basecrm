@@ -27,7 +27,7 @@ foreach (array_slice($argv, 2) as $argument) {
 $app->loadEnvironmentFrom('.env.'.$installation);
 $app->make(Kernel::class)->bootstrap();
 FictionalCrmFixtures::assertLocalExample($installation);
-$tables = ['crm_company_notes', 'crm_identity_activity', 'sales_communications', 'sales_quotations', 'crm_contact_notes', 'crm_reminders', 'service_details_leads', 'crm_proposals', 'crm_notes', 'crm_activity', 'crm_tasks', 'crm_leads', 'crm_contacts', 'crm_companies'];
+$tables = ['crm_company_notes', 'crm_identity_activity', 'sales_communications', 'sales_quotations', 'crm_contact_notes', 'crm_reminders', 'service_details_leads', 'crm_proposals', 'crm_signed_contracts', 'crm_notes', 'crm_activity', 'crm_tasks', 'crm_leads', 'crm_contacts', 'crm_companies'];
 $tables = array_values(array_filter($tables, fn ($table) => Schema::hasTable($table)));
 $directory = storage_path('app/private/browser-fixture-recovery');
 
@@ -45,7 +45,7 @@ function protectedBrowserRows(array $tables, array $excluded): array
 }
 
 /** Recovery copies are private, ignored local data and contain only selected synthetic rows. */
-function saveBrowserRecovery(string $directory, string $installation, array $rows, array $proposalFiles): string
+function saveBrowserRecovery(string $directory, string $installation, array $rows, array $proposalFiles, array $signedContractFiles): string
 {
     $previousMask = umask(0077);
     try {
@@ -53,8 +53,8 @@ function saveBrowserRecovery(string $directory, string $installation, array $row
             throw new RuntimeException('Could not create the private recovery directory.');
         }
         $file = $directory.'/'.$installation.'-'.gmdate('Ymd-His').'-'.bin2hex(random_bytes(6)).'.json';
-        $payload = ['rows' => $rows, 'proposal_files' => $proposalFiles];
-        $snapshot = ['version' => 2, 'installation' => $installation, ...$payload, 'sha256' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR))];
+        $payload = ['rows' => $rows, 'proposal_files' => $proposalFiles, 'signed_contract_files' => $signedContractFiles];
+        $snapshot = ['version' => 3, 'installation' => $installation, ...$payload, 'sha256' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR))];
         if (file_put_contents($file, json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), LOCK_EX) === false || ! chmod($file, 0600)) {
             throw new RuntimeException('Could not save the private recovery copy.');
         }
@@ -67,8 +67,10 @@ function saveBrowserRecovery(string $directory, string $installation, array $row
 
 $restoredProposalFiles = [];
 $restoredProposalRows = [];
+$restoredContractFiles = [];
+$restoredContractRows = [];
 try {
-    $result = DB::transaction(function () use ($installation, $options, $tables, $directory, &$restoredProposalFiles, &$restoredProposalRows) {
+    $result = DB::transaction(function () use ($installation, $options, $tables, $directory, &$restoredProposalFiles, &$restoredProposalRows, &$restoredContractFiles, &$restoredContractRows) {
         DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ['basecrm-browser-fixture-cleanup']);
         // A plan call verifies the effective connection as well as the configured installation.
         $project = $options['project'] ?? null;
@@ -86,12 +88,14 @@ try {
             $snapshot = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
             $rows = $snapshot['rows'] ?? [];
             $version = $snapshot['version'] ?? null;
-            $proposalFiles = $version === 2 ? ($snapshot['proposal_files'] ?? null) : [];
-            $payload = $version === 2 ? ['rows' => $rows, 'proposal_files' => $proposalFiles] : $rows;
-            if (! in_array($version, [1, 2], true) || ! is_array($proposalFiles) || ! is_array($rows) || ($snapshot['installation'] ?? '') !== $installation || array_diff(array_keys($rows), $tables) || ! hash_equals($snapshot['sha256'] ?? '', hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR)))) {
+            $proposalFiles = in_array($version, [2, 3], true) ? ($snapshot['proposal_files'] ?? null) : [];
+            $signedContractFiles = $version === 3 ? ($snapshot['signed_contract_files'] ?? null) : [];
+            $payload = $version === 3 ? ['rows' => $rows, 'proposal_files' => $proposalFiles, 'signed_contract_files' => $signedContractFiles] : ($version === 2 ? ['rows' => $rows, 'proposal_files' => $proposalFiles] : $rows);
+            if (! in_array($version, [1, 2, 3], true) || ! is_array($signedContractFiles) || ! is_array($proposalFiles) || ! is_array($rows) || ($snapshot['installation'] ?? '') !== $installation || array_diff(array_keys($rows), $tables) || ! hash_equals($snapshot['sha256'] ?? '', hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR)))) {
                 throw new RuntimeException('The recovery copy is invalid or belongs to a different installation.');
             }
             BrowserProposalFiles::validate($rows['crm_proposals'] ?? [], $proposalFiles);
+            BrowserProposalFiles::validate($rows['crm_signed_contracts'] ?? [], $signedContractFiles, 'signed-contracts');
             foreach ($rows as $table => $records) {
                 if (DB::table($table)->whereIn('id', array_column($records, 'id'))->exists()) {
                     throw new RuntimeException('Restore would overwrite an existing record; nothing was changed.');
@@ -101,6 +105,8 @@ try {
                 $before = protectedBrowserRows($tables, []);
                 $restoredProposalRows = $rows['crm_proposals'] ?? [];
                 $restoredProposalFiles = BrowserProposalFiles::restore($restoredProposalRows, $proposalFiles);
+                $restoredContractRows = $rows['crm_signed_contracts'] ?? [];
+                $restoredContractFiles = BrowserProposalFiles::restore($restoredContractRows, $signedContractFiles, 'signed-contracts');
                 foreach (array_reverse($tables) as $table) {
                     foreach ($rows[$table] ?? [] as $row) {
                         DB::table($table)->insert($row);
@@ -141,7 +147,8 @@ try {
         }
         $before = protectedBrowserRows($tables, $plan);
         $proposalFiles = BrowserProposalFiles::snapshot($rows['crm_proposals'] ?? []);
-        $recovery = saveBrowserRecovery($directory, $installation, $rows, $proposalFiles);
+        $signedContractFiles = BrowserProposalFiles::snapshot($rows['crm_signed_contracts'] ?? [], 'signed-contracts');
+        $recovery = saveBrowserRecovery($directory, $installation, $rows, $proposalFiles, $signedContractFiles);
         foreach ($tables as $table) {
             $deleted = DB::table($table)->whereIn('id', $plan[$table] ?? [])->delete();
             if ($deleted !== $counts[$table]) {
@@ -152,10 +159,11 @@ try {
             throw new RuntimeException('A retained record changed; cleanup rolled back.');
         }
 
-        return ['installation' => $installation, 'applied' => true, 'rows' => $counts, 'recovery' => $recovery, 'retained_records_unchanged' => true, '_proposal_rows_to_remove' => $rows['crm_proposals'] ?? []];
+        return ['installation' => $installation, 'applied' => true, 'rows' => $counts, 'recovery' => $recovery, 'retained_records_unchanged' => true, '_proposal_rows_to_remove' => $rows['crm_proposals'] ?? [], '_contract_rows_to_remove' => $rows['crm_signed_contracts'] ?? []];
     });
 } catch (Throwable $error) {
     BrowserProposalFiles::discardCreated($restoredProposalFiles, $restoredProposalRows);
+    BrowserProposalFiles::discardCreated($restoredContractFiles, $restoredContractRows, 'signed-contracts');
     throw $error;
 }
 // File removal follows the successful row transaction; the recovery copy contains every byte.
@@ -167,6 +175,15 @@ if ($proposalRowsToRemove !== []) {
     }
     BrowserProposalFiles::remove($proposalRowsToRemove);
     $result['proposal_files_removed'] = count($proposalRowsToRemove);
+}
+$contractRowsToRemove = $result['_contract_rows_to_remove'] ?? [];
+unset($result['_contract_rows_to_remove']);
+if ($contractRowsToRemove !== []) {
+    if (DB::table('crm_signed_contracts')->whereIn('private_path', array_column($contractRowsToRemove, 'private_path'))->exists()) {
+        throw new RuntimeException('A retained signed contract references a cleanup file; private files were preserved.');
+    }
+    BrowserProposalFiles::remove($contractRowsToRemove, 'signed-contracts');
+    $result['signed_contract_files_removed'] = count($contractRowsToRemove);
 }
 if (($options['apply'] ?? false) && isset($options['project']) && ! ($options['legacy'] ?? false)) {
     // The local guard and validated plan above restrict this to one reserved table account.

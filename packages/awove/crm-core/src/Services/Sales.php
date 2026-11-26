@@ -20,7 +20,28 @@ class Sales
             'closing_date' => 'sometimes|nullable|date_format:Y-m-d',
             'final_value' => 'sometimes|nullable|numeric|decimal:0,2|min:0|max:999999999999.99',
             'loss_reason' => 'sometimes|nullable|string|max:10000',
+            'business_sector' => 'sometimes|nullable|string|max:120',
+            'product_sold' => 'sometimes|nullable|string|max:1000',
+            'contract_sent_on' => 'sometimes|nullable|date_format:Y-m-d',
+            'invoice_sent_on' => 'sometimes|nullable|date_format:Y-m-d',
+            'payment_received_on' => 'sometimes|nullable|date_format:Y-m-d',
+            'process_started_on' => 'sometimes|nullable|date_format:Y-m-d',
+            'contract_url' => 'sometimes|nullable|url:http,https|max:2048',
+            'privacy_policy_accepted' => 'sometimes|nullable|boolean',
         ];
+    }
+
+    /** Validate only the opportunity fields, including direct service calls without HTTP middleware. */
+    public static function opportunityData(array $input): array
+    {
+        $data = array_intersect_key($input, self::opportunityRules());
+        foreach ($data as $field => $value) {
+            if ($value === '') {
+                $data[$field] = null;
+            }
+        }
+
+        return validator($data, self::opportunityRules())->validate();
     }
 
     public function details($user, Lead $lead): array
