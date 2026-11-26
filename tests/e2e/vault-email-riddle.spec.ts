@@ -125,6 +125,14 @@ async function unlock(page: Page, language: "en" | "he", wrongAnswer = false) {
             { exact: true },
         ),
     ).toBeVisible();
+    const notifications = await confirmation.evaluate(
+        () =>
+            (window as unknown as { vaultChannelMessages: unknown[] })
+                .vaultChannelMessages,
+    );
+    expect(notifications).toContainEqual({ kind: "refresh" });
+    for (const message of notifications)
+        expect(Object.keys(message as object)).toEqual(["kind"]);
     await confirmation.close();
     await page.bringToFront();
     await expect(
@@ -132,7 +140,7 @@ async function unlock(page: Page, language: "en" | "he", wrongAnswer = false) {
             name: he ? "נעילת הכספת" : "Lock Vault",
             exact: true,
         }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 4000 });
     await expect(
         page.getByRole("heading", {
             name: he ? "פתיחת הכספת" : "Unlock Vault",
@@ -159,11 +167,25 @@ test.afterEach(async () => {
 
 test("administrator Vault email and shared passphrase unlock, save and clear correctly in English and Hebrew RTL", async ({
     page,
+    context,
 }, info) => {
     test.setTimeout(150000);
     page.setDefaultTimeout(8000);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    await context.addInitScript(() => {
+        const state = window as unknown as { vaultChannelMessages: unknown[] };
+        state.vaultChannelMessages = [];
+        const post = BroadcastChannel.prototype.postMessage;
+        BroadcastChannel.prototype.postMessage = function (
+            this: BroadcastChannel,
+            message: unknown,
+        ) {
+            if (this.name === "basecrm-vault-lock")
+                state.vaultChannelMessages.push(structuredClone(message));
+            return post.call(this, message);
+        };
+    });
     await signInVault(page, fixture.email, origin);
     await page.goto(`${origin}/vault`);
     const initial = await status(page);
@@ -224,15 +246,15 @@ test("administrator Vault email and shared passphrase unlock, save and clear cor
     ).toBeVisible();
     expect((await status(page)).expires_at).toBe(firstWindow.expires_at);
     expect(await page.content()).not.toContain(marker);
-    expect(
-        await page.evaluate(() =>
-            JSON.stringify({
-                history: history.state,
-                local: { ...localStorage },
-                session: { ...sessionStorage },
-            }),
-        ),
-    ).not.toContain(fixture.answer);
+    const persisted = await page.evaluate(() =>
+        JSON.stringify({
+            history: history.state,
+            local: { ...localStorage },
+            session: { ...sessionStorage },
+        }),
+    );
+    expect(persisted).not.toContain(fixture.answer.trim());
+    expect(persisted).not.toContain(marker);
     await page.goto(`${hebrew}/people/contacts/${fixture.contact_id}`);
     await expect(page.locator("html")).toHaveAttribute("lang", "he");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
@@ -246,10 +268,36 @@ test("administrator Vault email and shared passphrase unlock, save and clear cor
     await expect(field.getByText("הערך מוסתר", { exact: true })).toBeVisible();
     await field.getByRole("button", { name: "הצגת הערך", exact: true }).click();
     await expect(field.locator("pre")).toHaveText(marker);
+    const mirror = await context.newPage();
+    await mirror.goto(page.url());
+    await mirror
+        .getByRole("link", { name: "Fictional portal access", exact: true })
+        .click();
+    const mirrorItem = mirror.locator(
+        'section[aria-labelledby="vault-item-title"]',
+    );
+    await mirrorItem
+        .locator("article")
+        .filter({ has: mirror.getByText("Review secret", { exact: true }) })
+        .getByRole("button", { name: "הצגת הערך", exact: true })
+        .click();
+    await expect(mirrorItem.locator("pre")).toHaveText(marker);
+    await page.bringToFront();
     await page
         .getByRole("button", { name: "נעילת הכספת", exact: true })
         .click();
     await expect(item).toHaveCount(0);
+    await expect(mirrorItem).toHaveCount(0, { timeout: 4000 });
+    await mirror.close();
+    await page.bringToFront();
+    const lockNotifications = await page.evaluate(
+        () =>
+            (window as unknown as { vaultChannelMessages: unknown[] })
+                .vaultChannelMessages,
+    );
+    expect(lockNotifications).toContainEqual({ kind: "locked" });
+    for (const message of lockNotifications)
+        expect(Object.keys(message as object)).toEqual(["kind"]);
     expect(await page.content()).not.toContain(marker);
     expect(
         await page.evaluate(async (id: string) => {
