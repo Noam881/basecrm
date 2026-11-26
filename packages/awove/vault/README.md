@@ -61,6 +61,18 @@ php artisan vault:reset-factors member@example.test --operator=admin@example.tes
 
 Those console operations prompt privately for an enrolled administrator's Vault password and fresh unused TOTP. Approval is distinct from action permission grants; provision exact permissions with the existing `crm:permissions` tool. Factor replacement revokes challenges/grants and notifies the target without secret values. Losing the sole administrator's password requires an independently verified infrastructure/operator recovery procedure; no automated email-only reset is provided. Agree and rehearse that operator identity/recovery policy before real use.
 
+### Read-only activation preflight
+
+Run as the actual PHP service/deployment user, using the installation's private configuration:
+
+```sh
+php artisan vault:preflight --confirm-installation=installation-id --minimum-admins=2
+```
+
+The optional administrator minimum defaults to one; two is the approved initial profile for `basics.awove.dev`, not a global authorization rule. A qualifying full administrator is active and verified, has completed enrollment, holds every Vault action permission and has the shared `identities.manage` permission needed to update all customers. `vault.admin` alone is insufficient. Bootstrap grants the first administrator's Vault permissions; explicitly grant the same complete set to the second administrator before their authorized enrollment. Keep the item-level selector unchanged.
+
+The command is read-only and prints only JSON booleans. Exit zero / `automated_checks_passed: true` means its configuration checks passed. It does not send email, start workers, inspect backup archives, test restoration, grant permissions or enable the module. Delivery, separate key backup, restore rehearsal, proxy/TLS/monitoring and post-snapshot authority reconciliation remain explicitly unverified in its output; record that evidence privately. It cannot establish that the host's backup system excludes a directory. A keyring outside a release can still be inside a full website backup: verify the actual exclusion/custody boundary and keep an independently protected backup under the approved owners' control before storing real secrets.
+
 ## Authentication and 300-second unlock
 
 The sequence is CRM session → Vault password → fresh email confirmation → TOTP (or one-time recovery code). Passwords require 12–1024 characters and preserve exact spaces. Ten randomly generated recovery codes are displayed once and stored as Argon2id hashes. A recovery code replaces only TOTP, not the password or fresh email step.
@@ -83,6 +95,17 @@ The installed PHP Sodium extension supplies authenticated XChaCha20-Poly1305 wit
 
 Back up the installation database and complete private storage together, recording release/manifest/key-version identifiers. Back up the keyring through a separate protected process with independent access controls. Restore into an isolated installation with its matching ID/key versions; validate fictional markers before enabling traffic. Without matching keys, recovery is intentionally impossible; a user-factor reset cannot decrypt lost encryption keys.
 
+A restored database also restores authentication history: sessions, outstanding enrollment invitations, factor hashes, consumed recovery-code state and old authorization assignments. Do not expose restored traffic immediately. Stop the scheduler and queue workers, keep the installation isolated, and enter Laravel maintenance mode. Confirm that this is the installation's dedicated database with database sessions and the expected manifest identity, then explicitly invalidate restored temporary authentication:
+
+```sh
+php artisan down
+php artisan vault:invalidate-restored-auth --confirm-installation=installation-id --confirm-restore
+```
+
+This command refuses an unconfirmed installation, incompatible database/session configuration or an application outside maintenance mode. It runs one transaction, increments Vault security generations, removes grants/challenges and pending invitations/setup state, deletes restored CRM database sessions and magic-login links, and writes a metadata-only audit event. Every CRM user must request a fresh login link. It works while Vault is disabled and is never invoked automatically by deployment, key setup or an ordinary login. It preserves active Vault password/TOTP/recovery hashes, permissions, encrypted content, files and keys. Pending users need fresh explicit enrollment approval.
+
+Temporary-authentication invalidation cannot identify factor resets, recovery codes used, account changes or permission revocations that happened after the backup. Before reopening traffic, reconcile those changes against the incident/administrative record and reapply revocations through the supported model/permission services. When a restored factor or recovery-code history is uncertain or compromised, perform a verified reset/re-enrollment through the other enrolled administrator or the protected operator recovery procedure. Restoring an old database must never silently restore authority known to have been revoked. If neither administrator's factors remain trustworthy, keep the installation isolated until the documented infrastructure-owner identity process restores controlled administration; email access alone remains insufficient. Rehearse this procedure with fictional data and retain the evidence privately, then restart workers/scheduler and leave maintenance mode only after the review is complete.
+
 Perform rotation as a controlled maintenance change without concurrent keyring edits. To rotate, retain old key versions, add and activate a new random version, verify all envelopes, then apply:
 
 ```sh
@@ -97,4 +120,4 @@ Rotation covers item payloads, encrypted files/names and active/pending TOTP see
 
 See repository tests `VaultDataTest`, `VaultCipherTest`, `VaultAuthenticationTest`, `VaultBoundaryTest`, `IdentityPanelTest`, and the desktop/mobile browser acceptance. Test secrets are deliberate fictional markers or ephemeral random values; no real customer secret or email is used. Exact completed results are recorded in the PR after checks finish.
 
-The 26 November 2026 Composer audit of the unchanged locked baseline reported 26 advisories across nine packages. This task adds only `awove/vault` and uses existing Sodium/Google2FA versions; it does not upgrade the framework or unrelated dependencies. An up-to-date dependency remediation/review is a prerequisite before real-secret use, alongside HTTPS, trusted proxy/host configuration, verified mail delivery, independently protected key backups, tested restore/operator recovery, host/temporary-upload permissions, and independent security assessment. For example, see the [Symfony filesystem advisory](https://symfony.com/cve-2026-135803) and [Laravel concurrency advisory](https://github.com/laravel/framework/security/advisories/GHSA-63hm-g96r-2m2q). Passing tests is not a security certification, penetration test or guarantee against compromise. No live activation, real-secret import, PCI attestation or customer-installation change is included.
+The 26 November 2026 Composer audit of the unchanged locked baseline reported 26 advisories across nine packages. This task adds only `awove/vault` and uses existing Sodium/Google2FA versions; it does not upgrade the framework or unrelated dependencies. An up-to-date dependency remediation/review is a prerequisite before real-secret use, alongside HTTPS, trusted proxy/host configuration, verified mail delivery, independently protected key backups, tested restore/operator recovery, host/temporary-upload permissions, and documented security review and hardening. For example, see the [Symfony filesystem advisory](https://symfony.com/cve-2026-135803) and [Laravel concurrency advisory](https://github.com/laravel/framework/security/advisories/GHSA-63hm-g96r-2m2q). Passing tests is not a security certification, penetration test or guarantee against compromise. This source change does not itself activate an installation, import real secrets or establish PCI compliance.
