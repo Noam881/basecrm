@@ -1,0 +1,720 @@
+{
+  "schema_version": 1,
+  "source": {
+    "file_name": "Niva's lead data.xlsx",
+    "sha256": "1a23776205007afcec9c2eb0fadb48e3276cf3f4580bb4264592ff28bef36880",
+    "sheet": "הצעות מחיר מאנדיי 2026",
+    "header_range": "A1:AP1",
+    "column_count": 42
+  },
+  "distinct_field_count": 41,
+  "policy": {
+    "additive": true,
+    "customer_rows_imported": false,
+    "existing_fields_preserved": true,
+    "existing_stage_keys_preserved": true,
+    "existing_table_layouts_preserved": true,
+    "marketing_requires_module_and_permissions": true
+  },
+  "fields": [
+    {
+      "key": "contact_name",
+      "source_columns": [
+        "A"
+      ],
+      "source_headers": [
+        "שם הפונה"
+      ],
+      "module": "core",
+      "storage": {
+        "table": "crm_contacts",
+        "column": "name"
+      },
+      "table_column_id": "contact",
+      "type": "text"
+    },
+    {
+      "key": "owner_id",
+      "source_columns": [
+        "B"
+      ],
+      "source_headers": [
+        "מי מטפל"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "owner_id"
+      },
+      "table_column_id": "owner",
+      "type": "reference"
+    },
+    {
+      "key": "contact_phone",
+      "source_columns": [
+        "C"
+      ],
+      "source_headers": [
+        "נייד"
+      ],
+      "module": "core",
+      "storage": {
+        "table": "crm_contacts",
+        "column": "phone"
+      },
+      "table_column_id": "contact_phone",
+      "type": "text"
+    },
+    {
+      "key": "contact_email",
+      "source_columns": [
+        "D"
+      ],
+      "source_headers": [
+        "מייל"
+      ],
+      "module": "core",
+      "storage": {
+        "table": "crm_contacts",
+        "column": "email"
+      },
+      "table_column_id": "contact_email",
+      "type": "email"
+    },
+    {
+      "key": "business_sector",
+      "source_columns": [
+        "E"
+      ],
+      "source_headers": [
+        "תחום העסק"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "business_sector"
+      },
+      "table_column_id": "business_sector",
+      "type": "text"
+    },
+    {
+      "key": "status_id",
+      "source_columns": [
+        "F"
+      ],
+      "source_headers": [
+        "סטטוס ליד"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "status_id"
+      },
+      "table_column_id": "status",
+      "type": "reference"
+    },
+    {
+      "key": "product_sold",
+      "source_columns": [
+        "G"
+      ],
+      "source_headers": [
+        "מה נמכר?"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "product_sold"
+      },
+      "table_column_id": "product_sold",
+      "type": "text"
+    },
+    {
+      "key": "follow_up_due_at",
+      "source_columns": [
+        "H"
+      ],
+      "source_headers": [
+        "תאריך פולאו אפ"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_tasks",
+        "column": "due_at"
+      },
+      "table_column_id": "next_action_at",
+      "type": "datetime",
+      "projection": "Earliest open follow-up; edit individual tasks."
+    },
+    {
+      "key": "source",
+      "source_columns": [
+        "I"
+      ],
+      "source_headers": [
+        "מקור הליד"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "source"
+      },
+      "table_column_id": "source",
+      "type": "text"
+    },
+    {
+      "key": "created_at",
+      "source_columns": [
+        "J"
+      ],
+      "source_headers": [
+        "תאריך כניסת הליד"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "created_at"
+      },
+      "table_column_id": "created_at",
+      "type": "datetime",
+      "read_only": true
+    },
+    {
+      "key": "proposal_link",
+      "source_columns": [
+        "K"
+      ],
+      "source_headers": [
+        "לינק להצעה"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "sales_quotations",
+        "column": "document_url"
+      },
+      "table_column_id": "proposal_link",
+      "type": "url",
+      "projection": "Latest quotation by ID; edit in quotation history."
+    },
+    {
+      "key": "proposal_sent_date",
+      "source_columns": [
+        "L",
+        "R"
+      ],
+      "source_headers": [
+        "תאריך שליחת ההצעה",
+        "ת. שליחת ההצעה"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "sales_quotations",
+        "column": "sent_date"
+      },
+      "table_column_id": "proposal_sent_date",
+      "type": "date",
+      "projection": "Same latest quotation as proposal_link; two equivalent source headers."
+    },
+    {
+      "key": "contract_sent_on",
+      "source_columns": [
+        "M"
+      ],
+      "source_headers": [
+        "תאריך שליחת החוזה"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "contract_sent_on"
+      },
+      "table_column_id": "contract_sent_on",
+      "type": "date"
+    },
+    {
+      "key": "invoice_sent_on",
+      "source_columns": [
+        "N"
+      ],
+      "source_headers": [
+        "תאריך שליחת החשבונית"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "invoice_sent_on"
+      },
+      "table_column_id": "invoice_sent_on",
+      "type": "date"
+    },
+    {
+      "key": "payment_received_on",
+      "source_columns": [
+        "O"
+      ],
+      "source_headers": [
+        "תאריך קבלת התשלום"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "payment_received_on"
+      },
+      "table_column_id": "payment_received_on",
+      "type": "date"
+    },
+    {
+      "key": "process_started_on",
+      "source_columns": [
+        "P"
+      ],
+      "source_headers": [
+        "תאריך התנעת התהליך"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "process_started_on"
+      },
+      "table_column_id": "process_started_on",
+      "type": "date"
+    },
+    {
+      "key": "contract_url",
+      "source_columns": [
+        "Q"
+      ],
+      "source_headers": [
+        "לינק לחוזה"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "contract_url"
+      },
+      "table_column_id": "contract_url",
+      "type": "url"
+    },
+    {
+      "key": "signed_contract",
+      "source_columns": [
+        "S"
+      ],
+      "source_headers": [
+        "קובת החוזה החתום"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_signed_contracts",
+        "column": "private_path"
+      },
+      "table_column_id": "signed_contract",
+      "type": "private_file",
+      "projection": "Latest immutable version; table shows filename, never private_path."
+    },
+    {
+      "key": "proposal",
+      "source_columns": [
+        "T"
+      ],
+      "source_headers": [
+        "קובץ ההצעה"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_proposals",
+        "column": "private_path"
+      },
+      "table_column_id": "proposal",
+      "type": "private_file",
+      "projection": "Latest immutable version; table shows filename, never private_path."
+    },
+    {
+      "key": "closing_date",
+      "source_columns": [
+        "U"
+      ],
+      "source_headers": [
+        "תאריך סגירת העסקה"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "closing_date"
+      },
+      "table_column_id": "closing_date",
+      "type": "date"
+    },
+    {
+      "key": "company_name",
+      "source_columns": [
+        "V"
+      ],
+      "source_headers": [
+        "שם החברה המלא"
+      ],
+      "module": "core",
+      "storage": {
+        "table": "crm_companies",
+        "column": "name"
+      },
+      "table_column_id": "company",
+      "type": "text"
+    },
+    {
+      "key": "company_registration_number",
+      "source_columns": [
+        "W"
+      ],
+      "source_headers": [
+        "ח.פ"
+      ],
+      "module": "core",
+      "storage": {
+        "table": "crm_companies",
+        "column": "registration_number"
+      },
+      "table_column_id": "company_registration_number",
+      "type": "text"
+    },
+    {
+      "key": "needs",
+      "source_columns": [
+        "X"
+      ],
+      "source_headers": [
+        "מה הכי דחוף לפתור כרגע"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "needs"
+      },
+      "table_column_id": "needs",
+      "type": "text"
+    },
+    {
+      "key": "privacy_policy_accepted",
+      "source_columns": [
+        "Y"
+      ],
+      "source_headers": [
+        "אישור מדיניות פרטיות"
+      ],
+      "module": "sales",
+      "storage": {
+        "table": "crm_leads",
+        "column": "privacy_policy_accepted"
+      },
+      "table_column_id": "privacy_policy_accepted",
+      "type": "boolean",
+      "nullable": true
+    },
+    {
+      "key": "marketing_consent",
+      "source_columns": [
+        "Z"
+      ],
+      "source_headers": [
+        "הסכמה אופציונלית לקבלת תוכן שיווקי"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:marketing_consent",
+      "type": "boolean",
+      "json_key": "marketing_consent",
+      "nullable": true
+    },
+    {
+      "key": "utm_source",
+      "source_columns": [
+        "AA"
+      ],
+      "source_headers": [
+        "utm_source"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:utm_source",
+      "type": "text",
+      "json_key": "utm_source",
+      "nullable": true
+    },
+    {
+      "key": "utm_medium",
+      "source_columns": [
+        "AB"
+      ],
+      "source_headers": [
+        "utm_medium"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:utm_medium",
+      "type": "text",
+      "json_key": "utm_medium",
+      "nullable": true
+    },
+    {
+      "key": "utm_campaign",
+      "source_columns": [
+        "AC"
+      ],
+      "source_headers": [
+        "- utm_campaign"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:utm_campaign",
+      "type": "text",
+      "json_key": "utm_campaign",
+      "nullable": true
+    },
+    {
+      "key": "utm_content",
+      "source_columns": [
+        "AD"
+      ],
+      "source_headers": [
+        "utm_content"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:utm_content",
+      "type": "text",
+      "json_key": "utm_content",
+      "nullable": true
+    },
+    {
+      "key": "utm_term",
+      "source_columns": [
+        "AE"
+      ],
+      "source_headers": [
+        "- utm_term"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:utm_term",
+      "type": "text",
+      "json_key": "utm_term",
+      "nullable": true
+    },
+    {
+      "key": "fbclid",
+      "source_columns": [
+        "AF"
+      ],
+      "source_headers": [
+        "fbclid"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:fbclid",
+      "type": "text",
+      "json_key": "fbclid",
+      "nullable": true
+    },
+    {
+      "key": "gclid",
+      "source_columns": [
+        "AG"
+      ],
+      "source_headers": [
+        "gclid"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:gclid",
+      "type": "text",
+      "json_key": "gclid",
+      "nullable": true
+    },
+    {
+      "key": "landing_page_url",
+      "source_columns": [
+        "AH"
+      ],
+      "source_headers": [
+        "landing_page"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:landing_page_url",
+      "type": "url",
+      "json_key": "landing_page_url",
+      "nullable": true
+    },
+    {
+      "key": "referrer",
+      "source_columns": [
+        "AI"
+      ],
+      "source_headers": [
+        "referrer"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:referrer",
+      "type": "url",
+      "json_key": "referrer",
+      "nullable": true
+    },
+    {
+      "key": "qualification_reason",
+      "source_columns": [
+        "AJ"
+      ],
+      "source_headers": [
+        "שאלון: סיבת הפנייה"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_reason",
+      "type": "textarea",
+      "json_key": "qualification_reason",
+      "nullable": true
+    },
+    {
+      "key": "qualification_business_description",
+      "source_columns": [
+        "AK"
+      ],
+      "source_headers": [
+        "שאלון: תיאור העסק"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_business_description",
+      "type": "textarea",
+      "json_key": "qualification_business_description",
+      "nullable": true
+    },
+    {
+      "key": "qualification_improvement_topics",
+      "source_columns": [
+        "AL"
+      ],
+      "source_headers": [
+        "שאלון: נושאים לשיפור"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_improvement_topics",
+      "type": "textarea",
+      "json_key": "qualification_improvement_topics",
+      "nullable": true
+    },
+    {
+      "key": "qualification_help_type",
+      "source_columns": [
+        "AM"
+      ],
+      "source_headers": [
+        "שאלון: סוג העזרה המבוקשת"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_help_type",
+      "type": "textarea",
+      "json_key": "qualification_help_type",
+      "nullable": true
+    },
+    {
+      "key": "qualification_current_handler",
+      "source_columns": [
+        "AN"
+      ],
+      "source_headers": [
+        "שאלון: מי מטפל כיום"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_current_handler",
+      "type": "textarea",
+      "json_key": "qualification_current_handler",
+      "nullable": true
+    },
+    {
+      "key": "qualification_desired_outcome",
+      "source_columns": [
+        "AO"
+      ],
+      "source_headers": [
+        "שאלון: תוצאה רצויה מהשיחה"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_desired_outcome",
+      "type": "textarea",
+      "json_key": "qualification_desired_outcome",
+      "nullable": true
+    },
+    {
+      "key": "qualification_current_processes",
+      "source_columns": [
+        "AP"
+      ],
+      "source_headers": [
+        "שאלון: תהליך וכלים כיום"
+      ],
+      "module": "marketing",
+      "storage": {
+        "table": "marketing_attributions",
+        "column": "payload"
+      },
+      "table_column_id": "attribution:qualification_current_processes",
+      "type": "textarea",
+      "json_key": "qualification_current_processes",
+      "nullable": true
+    }
+  ]
+}

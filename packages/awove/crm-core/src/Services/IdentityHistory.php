@@ -17,7 +17,7 @@ class IdentityHistory
         if (! in_array($event, ['identity.created', 'identity.updated'], true)) {
             throw new \InvalidArgumentException('Unsupported identity history event.');
         }
-        $allowed = $identity instanceof Contact ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone'];
+        $allowed = $identity instanceof Contact ? ContactDetails::ATTRIBUTES : Company::ATTRIBUTES;
         $fields = array_values(array_intersect($allowed, $fields));
         if ($event === 'identity.created') {
             // Normalized nulls and empty defaults were not entered as creation details.

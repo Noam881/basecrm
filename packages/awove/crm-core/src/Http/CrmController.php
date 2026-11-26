@@ -18,6 +18,7 @@ use Awove\Core\Services\IdentityHistory;
 use Awove\Core\Services\Leads;
 use Awove\Core\Services\Proposals;
 use Awove\Core\Services\Sales;
+use Awove\Core\Services\SignedContracts;
 use Awove\Core\Services\Tasks;
 use Awove\Core\Services\Users;
 use Awove\Core\Services\WorkReminders;
@@ -152,7 +153,7 @@ class CrmController
         $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name');
         $lead->setRelation('status', $lead->status ? StatusDisplay::copy($lead->status) : null);
 
-        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead, 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'sales' => app(Sales::class)->details($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
+        return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead, 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'signed_contracts' => app(SignedContracts::class)->forLead($r->user(), $lead), 'sales' => app(Sales::class)->details($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);
     }
 
     public function update(Request $r, Lead $lead, Leads $service)
@@ -273,7 +274,7 @@ class CrmController
 
         $returnTo = $this->identityReturnTo($r);
         $context = $r->filled('from_lead') ? '?from_lead='.$r->integer('from_lead') : '';
-        $details = $identity->only(['id', ...($type === 'contacts' ? ContactDetails::ATTRIBUTES : ['name', 'email', 'phone'])]);
+        $details = $identity->only(['id', ...($type === 'contacts' ? ContactDetails::ATTRIBUTES : Company::ATTRIBUTES)]);
         if ($identity instanceof Contact) {
             $details['company'] = $companies->firstWhere('id', $identity->getAttribute('company_id'))?->only(['id', 'name']);
         }

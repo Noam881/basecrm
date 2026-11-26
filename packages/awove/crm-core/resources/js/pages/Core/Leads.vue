@@ -2,9 +2,17 @@
 import { t } from "@/lib/i18n";
 import { Head, Link, useForm, usePage } from "@inertiajs/vue3";
 import { ref } from "vue";
-import type { Lead, Page, Person, Stage, Field } from "../../types";
+import {
+    leadLifecycleFormData,
+    type Lead,
+    type Page,
+    type Person,
+    type Stage,
+    type Field,
+} from "../../types";
 import DataTable from "../../components/table/DataTable.vue";
 import StageControl from "../../components/StageControl.vue";
+import LeadLifecycleFields from "../../components/LeadLifecycleFields.vue";
 import type { TablePayload } from "../../components/table/types";
 const props = defineProps<{
     table: TablePayload;
@@ -28,10 +36,20 @@ const form = useForm({
     status_id: props.statuses[0]?.id ?? "new",
     source: "Direct",
     needs: "",
+    ...leadLifecycleFormData(),
     estimated_value: "",
     priority: "normal",
     custom_fields: {} as Record<string, string | number | boolean>,
 });
+function externalLink(value: unknown): string {
+    if (typeof value !== "string") return "";
+    try {
+        const url = new URL(value);
+        return ["https:", "http:"].includes(url.protocol) ? url.href : "";
+    } catch {
+        return "";
+    }
+}
 </script>
 <template>
     <Head :title="brand.lead_label" />
@@ -143,7 +161,13 @@ const form = useForm({
                     <option value="normal">{{ t("normal") }}</option>
                     <option value="high">{{ t("high") }}</option>
                 </select></label
-            ><label v-for="(field, key) in fields" :key="key"
+            >
+            <LeadLifecycleFields
+                :form="form"
+                :errors="form.errors"
+                :disabled="form.processing"
+            />
+            <label v-for="(field, key) in fields" :key="key"
                 ><span class="crm-field-label">{{ field.label }}</span
                 ><select
                     v-if="field.type === 'select'"
@@ -202,6 +226,31 @@ const form = useForm({
                 :href="`/leads/${row.id}#proposals`"
                 class="md-table-record"
                 >{{ row.cells.proposal }}</Link
+            >
+            <span v-else>—</span>
+        </template>
+        <template
+            v-for="id in ['proposal_link', 'contract_url']"
+            :key="id"
+            #[`cell-${id}`]="{ row }"
+        >
+            <a
+                v-if="externalLink(row.cells[id])"
+                :href="externalLink(row.cells[id])"
+                class="md-table-record"
+                target="_blank"
+                rel="noopener noreferrer"
+                dir="ltr"
+                >{{ row.cells[id] }}</a
+            >
+            <span v-else>{{ row.cells[id] || "—" }}</span>
+        </template>
+        <template #cell-signed_contract="{ row }">
+            <Link
+                v-if="row.cells.signed_contract"
+                :href="`/leads/${row.id}#signed-contracts`"
+                class="md-table-record"
+                >{{ row.cells.signed_contract }}</Link
             >
             <span v-else>—</span>
         </template>

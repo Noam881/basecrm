@@ -15,6 +15,8 @@
       "2026_10_24_000620_create_identity_relationships",
       "2026_10_24_000650_create_shared_work",
       "2026_10_24_000800_create_employee_references",
+      "2026_11_26_001400_add_lead_baseline_fields",
+      "2026_11_26_001410_create_signed_contracts",
       "2026_10_24_000600_create_customer_service",
       "2026_10_24_000700_create_executive",
       "2026_10_24_000900_create_finance_ledger",
@@ -33,7 +35,7 @@
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "6f581ce3a866a771e144b5aaf9aac11d2f03168e50782189fd5aae275e5ac79e"
+    "fingerprint": "1cc99ab0b408211caca6afb74b9e5ce14fab8296997c0795e4440d7066309f22"
   },
   {
     "installation": "beta",
@@ -51,6 +53,8 @@
       "2026_10_24_000620_create_identity_relationships",
       "2026_10_24_000650_create_shared_work",
       "2026_10_24_000800_create_employee_references",
+      "2026_11_26_001400_add_lead_baseline_fields",
+      "2026_11_26_001410_create_signed_contracts",
       "2026_10_24_000600_create_customer_service",
       "2026_10_24_000700_create_executive",
       "2026_10_24_000900_create_finance_ledger",
@@ -69,6 +73,6 @@
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "32a8943ef39579e7e4a59a987f1dacae2937c2122ea0cfdcb4cbc07bf771cb39"
+    "fingerprint": "79f69dd79bf1e3ad5f622c88743df32d0edd45686d9ec619f53bd069d3441f69"
   }
 ]

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
+    public const ATTRIBUTES = ['name', 'email', 'phone', 'registration_number'];
+
     protected $table = 'crm_companies';
 
     protected $guarded = [];

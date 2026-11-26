@@ -8,10 +8,17 @@ use Awove\Core\Modules;
 use Awove\Marketing\Models\Attribution;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 
 class Attributions
 {
+    public const FIELD_ALIASES = LeadFields::ALIASES;
+
+    /** Canonical keys are stored in marketing_attributions.payload, independently of Core. */
+    public static function fieldSchema(): array
+    {
+        return LeadFields::schema();
+    }
+
     public function lead($u, int $id, bool $edit = false): Lead
     {
         $u = Access::actor($u);
@@ -32,13 +39,13 @@ class Attributions
         $campaign = $r?->linked_campaign_id ? app(Work::class)->campaigns($u)->find($r->linked_campaign_id) : null;
         $raw = $r?->payload;
         $fields = [];
-        foreach (Labels::ATTRIBUTION as $key => $label) {
-            if (is_array($raw) && array_key_exists($key, $raw) && (is_string($raw[$key]) || $raw[$key] === null)) {
+        foreach (self::fieldSchema() as $key => $field) {
+            if (is_array($raw) && array_key_exists($key, $raw) && ($raw[$key] === null || ($field['type'] === 'boolean' ? is_bool($raw[$key]) : is_string($raw[$key])))) {
                 $fields[$key] = $raw[$key];
             }
         }
 
-        return ['version' => $r->version ?? 0, 'history' => $r ? Models\History::where('kind', 'attribution')->where('record_id', $r->id)->orderByDesc('id')->get()->map(fn (Models\History $h) => ['id' => $h->id, 'event' => $h->event, 'version' => $h->version, 'changed_fields' => array_values(array_intersect($h->details['changed_fields'] ?? [], [...array_keys(Labels::ATTRIBUTION), 'linked_campaign_id'])), 'actor' => ($actor = User::find($h->actor_id)) ? ['id' => $actor->id, 'name' => $actor->name] : null, 'created_at' => $h->created_at->toIso8601String()])->all() : [], 'fields' => $fields, 'linked_campaign_id' => $campaign?->id, 'linked_campaign' => $campaign?->name, 'has_hidden_campaign' => $r?->linked_campaign_id !== null && $campaign === null, 'has_legacy_snapshot' => Models\AttributionSnapshot::where('lead_id', $id)->exists(), 'campaigns' => app(Work::class)->campaigns($u)->whereNull('archived_at')->orderBy('name')->get(['id', 'name'])->toArray(), 'canEdit' => $u->fresh()->can('marketing.attribution.edit') && Gate::forUser($u->fresh())->allows('update', Lead::findOrFail($id))];
+        return ['field_schema' => array_map(fn (array $field) => [...$field, 'label' => (string) __($field['label'])], self::fieldSchema()), 'version' => $r->version ?? 0, 'history' => $r ? Models\History::where('kind', 'attribution')->where('record_id', $r->id)->orderByDesc('id')->get()->map(fn (Models\History $h) => ['id' => $h->id, 'event' => $h->event, 'version' => $h->version, 'changed_fields' => array_values(array_intersect($h->details['changed_fields'] ?? [], [...array_keys(Labels::ATTRIBUTION), 'linked_campaign_id'])), 'actor' => ($actor = User::find($h->actor_id)) ? ['id' => $actor->id, 'name' => $actor->name] : null, 'created_at' => $h->created_at->toIso8601String()])->all() : [], 'fields' => $fields, 'linked_campaign_id' => $campaign?->id, 'linked_campaign' => $campaign?->name, 'has_hidden_campaign' => $r?->linked_campaign_id !== null && $campaign === null, 'has_legacy_snapshot' => Models\AttributionSnapshot::where('lead_id', $id)->exists(), 'campaigns' => app(Work::class)->campaigns($u)->whereNull('archived_at')->orderBy('name')->get(['id', 'name'])->toArray(), 'canEdit' => $u->fresh()->can('marketing.attribution.edit') && Gate::forUser($u->fresh())->allows('update', Lead::findOrFail($id))];
     }
 
     public function update($u, int $id, array $input): Attribution
@@ -50,13 +57,18 @@ class Attributions
             $r = Attribution::where('lead_id', $id)->lockForUpdate()->first();
             validator($input, ['version' => 'required|integer|min:0', 'fields' => 'sometimes|array:'.implode(',', array_keys(Labels::ATTRIBUTION)), 'linked_campaign_id' => 'sometimes|nullable|integer|min:1'])->validate();
             abort_unless((int) $input['version'] === ($r->version ?? 0), 409, __('Attribution changed. Reload before saving.'));
-            $rules = [];
-            foreach (Labels::ATTRIBUTION as $key => $label) {
-                $rules['fields.'.$key] = $key === 'landing_page_url' ? ['nullable', 'url:http,https', 'max:2048'] : ($key === 'platform' ? ['nullable', Rule::in(Labels::CHANNELS)] : ['nullable', 'string', 'max:200']);
-            }$validated = validator($input, $rules)->validate();
+            // Empty/whitespace direct-service input means unknown, never an inferred refusal
+            // or opt-in. HTTP middleware alone is not a validation boundary.
+            if (is_string($input['fields']['marketing_consent'] ?? null) && trim($input['fields']['marketing_consent']) === '') {
+                $input['fields']['marketing_consent'] = null;
+            }
+            $validated = validator($input, LeadFields::rules())->validate();
             $patch = [];
             foreach ($validated['fields'] ?? [] as $key => $value) {
-                $patch[$key] = is_string($value) ? (trim($value) ?: null) : $value;
+                $trimmed = is_string($value) ? trim($value) : $value;
+                $patch[$key] = $key === 'marketing_consent'
+                    ? ($value === null ? null : (bool) $value)
+                    : ($trimmed === '' ? null : $trimmed);
             }
             $link = $r?->linked_campaign_id;
             if (array_key_exists('linked_campaign_id', $input)) {
@@ -81,7 +93,7 @@ class Attributions
                 $r = Attribution::create(['lead_id' => $lead->id, 'payload' => null, 'linked_campaign_id' => $link, 'version' => 1, 'updated_by' => $u->id]);
             }
             if ($patch !== []) {
-                // Merge only validated string/null fields in PostgreSQL: decoding/re-encoding the
+                // Merge only validated typed fields in PostgreSQL: decoding/re-encoding the
                 // existing JSON would round large legacy numeric IDs and change empty objects.
                 DB::update("UPDATE marketing_attributions SET payload = (CASE WHEN jsonb_typeof(payload) = 'object' THEN payload ELSE '{}'::jsonb END) || ?::jsonb WHERE id = ?", [json_encode($patch, JSON_THROW_ON_ERROR), $r->id]);
                 $r->refresh();

@@ -107,6 +107,13 @@ final class BrowserFixtures
             }
             $plan['crm_proposals'] = $proposals->orderBy('id')->pluck('id')->all();
         }
+        if (Schema::hasTable('crm_signed_contracts')) {
+            $contracts = DB::table('crm_signed_contracts')->whereIn('lead_id', $leadIds);
+            if ((clone $contracts)->where(fn ($query) => $query->whereNull('created_by')->orWhereNotIn('created_by', $userIds))->exists()) {
+                throw new RuntimeException('A protected signed contract references a browser fixture. No cleanup is permitted.');
+            }
+            $plan['crm_signed_contracts'] = $contracts->orderBy('id')->pluck('id')->all();
+        }
         $plan['crm_notes'] = DB::table('crm_notes')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();
         $plan['crm_activity'] = DB::table('crm_activity')->whereIn('lead_id', $leadIds)->orderBy('id')->pluck('id')->all();
         $plan['crm_tasks'] = $taskIds;

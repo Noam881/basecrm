@@ -28,8 +28,8 @@ class Spreadsheet
 
     private const COLUMNS = [
         'contacts' => ['name', 'email', 'phone', 'company_id', 'secondary_phone', 'secondary_phone_label', 'preferred_contact_method', 'preferred_contact_times', 'preferred_contact_days', 'address', 'city', 'country', 'source', 'notes'],
-        'companies' => ['name', 'email', 'phone', 'notes'],
-        'leads' => ['title', 'contact_id', 'company_id', 'status_id', 'source', 'priority', 'owner_id', 'needs', 'estimated_value', 'closing_date', 'final_value', 'loss_reason'],
+        'companies' => ['name', 'email', 'phone', 'registration_number', 'notes'],
+        'leads' => ['title', 'contact_id', 'company_id', 'status_id', 'source', 'priority', 'owner_id', 'needs', 'estimated_value', 'closing_date', 'final_value', 'loss_reason', 'business_sector', 'product_sold', 'contract_sent_on', 'invoice_sent_on', 'payment_received_on', 'process_started_on', 'contract_url', 'privacy_policy_accepted'],
     ];
 
     public function authorize($user, string $action, ?string $type = null): void
@@ -142,7 +142,10 @@ class Spreadsheet
                 if ($record instanceof Lead) {
                     $row['contact_name'] = $record->getRelationValue('contact')?->getAttribute('name');
                     $row['company_name'] = $record->getRelationValue('company')?->getAttribute('name');
-                    $row['closing_date'] = $record->getRawOriginal('closing_date');
+                    foreach (['closing_date', 'contract_sent_on', 'invoice_sent_on', 'payment_received_on', 'process_started_on'] as $dateField) {
+                        $row[$dateField] = $record->getRawOriginal($dateField);
+                    }
+                    $row['privacy_policy_accepted'] = $record->privacy_policy_accepted === null ? '' : ($record->privacy_policy_accepted ? '1' : '0');
                 } elseif ($record instanceof Contact && $record->getAttribute('company_id') && ! Access::identities($user, Company::class)->whereKey($record->getAttribute('company_id'))->exists()) {
                     $row['company_id'] = null;
                 }
@@ -226,7 +229,7 @@ class Spreadsheet
         }
         $rules = ['name' => 'required|string|max:120', 'email' => 'nullable|email|max:160', 'phone' => 'nullable|string|max:40'];
         if ($type === 'companies') {
-            return [...$rules, 'notes' => 'nullable|string|max:10000'];
+            return [...$rules, 'registration_number' => 'nullable|string|max:80', 'notes' => 'nullable|string|max:10000'];
         }
 
         return [...$rules, 'company_id' => 'nullable|integer|min:1', 'secondary_phone' => 'nullable|string|max:40', 'secondary_phone_label' => ['nullable', Rule::in(array_keys(ContactDetails::PHONE_LABELS))], 'preferred_contact_method' => ['nullable', Rule::in(array_keys(ContactDetails::METHODS))], 'preferred_contact_times' => 'array|max:4', 'preferred_contact_times.*' => ['required', 'distinct', Rule::in(array_keys(ContactDetails::TIMES))], 'preferred_contact_days' => 'array|max:7', 'preferred_contact_days.*' => ['required', 'distinct', Rule::in(array_keys(ContactDetails::DAYS))], 'address' => 'nullable|string|max:500', 'city' => 'nullable|string|max:120', 'country' => 'nullable|string|max:120', 'source' => ['nullable', Rule::in(array_keys(ContactDetails::SOURCES))], 'notes' => 'nullable|string|max:10000'];

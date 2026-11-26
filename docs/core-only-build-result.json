@@ -16,7 +16,7 @@
   ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",
-  "backend_filter": "(^|[^A-Za-z])(FoundationTest|IdentityPanelTest)::",
+  "backend_filter": "(^|[^A-Za-z])(FoundationTest|IdentityPanelTest|LeadBaselineStorageTest|LeadFieldSchemaTest|SignedContractTest|BrowserFixtureCleanupTest)::",
   "frontend_production_build": "passed",
   "core_version": "1.1.0",
   "mirrored_path_packages": true
