@@ -125,11 +125,18 @@ fi
 
 COMPOSER_MIRROR_PATH_REPOS=1 composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 # Vite/TypeScript are build dependencies even when NODE_ENV is production.
+[[ ! -L node_modules && ( ! -e node_modules || -d node_modules ) ]] || fail 'Build dependencies must be a release-local node_modules directory before cleanup.'
 npm ci --include=dev
 npm run build
 [[ -s public/build/manifest.json ]] || fail 'The frontend build did not produce public/build/manifest.json.'
 # Apache serves these generated assets under a separate user; private paths retain umask 027.
 chmod -R a+rX public/build
+# This deployment serves compiled assets; Node dependencies are only needed to build them.
+[[ -d node_modules && ! -L node_modules ]] || fail 'Build dependencies must be a release-local node_modules directory before cleanup.'
+build_dependencies=$(cd -- node_modules && pwd -P)
+[[ "$build_dependencies" == "$release_root/node_modules" ]] || fail 'Refusing to clean build dependencies outside this release.'
+rm -rf -- "$build_dependencies"
+[[ ! -e node_modules && ! -L node_modules ]] || fail 'Could not remove release-local build dependencies.'
 
 # Check effective Laravel configuration too: server environment variables can override .env.
 php -r "$(cat <<'PHP'
