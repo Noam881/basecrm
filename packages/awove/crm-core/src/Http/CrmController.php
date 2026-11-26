@@ -4,6 +4,7 @@ namespace Awove\Core\Http;
 
 use Awove\Core\Access;
 use Awove\Core\ContactDetails;
+use Awove\Core\IdentityPanels;
 use Awove\Core\Installation;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
@@ -286,6 +287,7 @@ class CrmController
         return Inertia::render('Core/Person', [
             'identity' => $details,
             'identityHistory' => app(IdentityHistory::class)->forIdentity($r->user(), $identity),
+            'identityPanels' => app(IdentityPanels::class)->forIdentity($r->user(), $identity),
             'type' => $type,
             'editable' => Gate::allows('update', $identity),
             'companyOptions' => $companies,

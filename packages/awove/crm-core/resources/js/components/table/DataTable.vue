@@ -30,6 +30,7 @@ const props = withDefaults(
         title: string;
         baseQuery?: Record<string, string>;
         rowLink?: boolean;
+        load?: (query: Record<string, unknown>) => Promise<void>;
     }>(),
     { baseQuery: () => ({}), rowLink: true },
 );
@@ -300,17 +301,32 @@ function cellStyle(column: Column<TableRow>): CSSProperties {
 function query(pageNumber = 1) {
     return { ...props.baseQuery, ...clone(state.value), page: pageNumber };
 }
-function apply(pageNumber = 1) {
+async function apply(pageNumber = 1) {
     if (!state.value.sorts.length)
         state.value.sorts = [
             {
-                id: props.payload.id === "tasks" ? "due_at" : "created_at",
+                id:
+                    props.payload.id === "tasks"
+                        ? "due_at"
+                        : catalog.value.has("created_at")
+                          ? "created_at"
+                          : catalog.value.has("updated_at")
+                            ? "updated_at"
+                            : props.payload.defaultColumns[0],
                 direction: props.payload.id === "tasks" ? "asc" : "desc",
             },
         ];
     requestedState = JSON.stringify(state.value);
     loading.value = true;
     selected.value = {};
+    if (props.load) {
+        try {
+            await props.load(query(pageNumber));
+        } finally {
+            loading.value = false;
+        }
+        return;
+    }
     router.get(props.endpoint, query(pageNumber), {
         preserveState: true,
         queryStringArrayFormat: "indices",

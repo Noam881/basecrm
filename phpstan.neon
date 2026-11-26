@@ -20,6 +20,7 @@ parameters:
         - packages/awove/marketing/src/
         - packages/awove/assets/src/
         - packages/awove/nonprofit/src/
+        - packages/awove/vault/src/
 
     level: 5
     databaseMigrationsPath:
@@ -35,3 +36,4 @@ parameters:
         - packages/awove/marketing/database/migrations
         - packages/awove/assets/database/migrations
         - packages/awove/nonprofit/database/migrations
+        - packages/awove/vault/database/migrations

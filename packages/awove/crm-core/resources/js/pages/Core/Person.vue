@@ -9,8 +9,15 @@ import {
     type Person,
 } from "../../types";
 import ContactFields from "../../components/ContactFields.vue";
+import ExtensionPanel from "../../components/ExtensionPanel.vue";
 const props = defineProps<{
     identity: Person;
+    identityPanels?: {
+        id: string;
+        label: string;
+        component: string;
+        endpoint: string;
+    }[];
     identityHistory: {
         id: number;
         event: string;
@@ -409,6 +416,18 @@ function addNote() {
                     {{ date(entry.created_at, zone) }}</small
                 >
             </article>
+        </section>
+        <section
+            v-for="panel in identityPanels ?? []"
+            :key="panel.id"
+            class="crm-card crm-flow crm-form-span"
+        >
+            <h2>{{ t(panel.label) }}</h2>
+            <ExtensionPanel
+                :component="panel.component"
+                :endpoint="panel.endpoint"
+                :editable="editable"
+            />
         </section>
     </div>
 </template>

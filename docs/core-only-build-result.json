@@ -11,11 +11,12 @@
     "awove/knowledge",
     "awove/marketing",
     "awove/assets",
-    "awove/nonprofit"
+    "awove/nonprofit",
+    "awove/vault"
   ],
   "php_package_discovery": "passed",
   "backend_core_workflow": "passed",
-  "backend_filter": "FoundationTest|CurrencyRegistryTest|WorkCapabilityScopeTest|SharedWorkTest|WorkReferenceContributionTest",
+  "backend_filter": "(^|[^A-Za-z])(FoundationTest|IdentityPanelTest)::",
   "frontend_production_build": "passed",
   "core_version": "1.1.0",
   "mirrored_path_packages": true

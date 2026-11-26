@@ -208,7 +208,7 @@ const form = useForm({
         <template #cell-status="{ row }">
             <StageControl
                 v-if="row.status_id && typeof row.version === 'number'"
-                :lead-id="row.id"
+                :lead-id="Number(row.id)"
                 :record-name="
                     String(
                         row.cells.contact ??

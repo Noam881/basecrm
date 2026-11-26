@@ -8,6 +8,8 @@ The shared host/core and independent installations are retained. Local generic b
 
 [Noam881/basecrm on GitHub](https://github.com/Noam881/basecrm) is the source of truth for this application. All CRM source and CI live in this standalone repository. See [source and release policy](docs/source-of-truth.md). Secrets and live installation data stay outside Git.
 
+The optional [Vault / כספת module](packages/awove/vault/README.md) adds encrypted customer secrets and attachments with separate Vault enrollment, password/email/TOTP authentication and a fixed 300-second server unlock. It is disabled by default and remains for fictional-data review and security assessment; no customer activation or real-secret import is included. The runbook covers permissions, key management, recovery, rotation and the existing dependency advisories that must be addressed before real use.
+
 ## Open the local examples
 
 - Alpha: http://127.0.0.1:8091 — base CRM, charcoal brand, no enabled demonstration module.
