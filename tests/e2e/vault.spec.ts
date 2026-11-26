@@ -1,4 +1,11 @@
-import { expect, test, type Page, type Locator } from "@playwright/test";
+import {
+    expect,
+    test,
+    type Page,
+    type Locator,
+    type Request,
+    type Route,
+} from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { chmod, mkdir, readFile, rm } from "node:fs/promises";
 import { findMailLink, inboxIds, signInVault } from "./vault-login";
@@ -103,6 +110,59 @@ function fieldView(page: Page, label: string) {
         .locator("article")
         .filter({ has: page.getByText(label, { exact: true }) });
 }
+async function holdStatusPoll(page: Page) {
+    let held = false;
+    let responseStatus: {
+        enrolled: boolean;
+        unlocked: boolean;
+        step: string;
+    } | null = null;
+    let heldRequest: Request | null = null;
+    let releaseResponse!: () => void;
+    const release = new Promise<void>((resolve) => {
+        releaseResponse = resolve;
+    });
+    const pattern = "**/vault/api/auth/status";
+    const handler = async (route: Route) => {
+        if (held) return route.continue();
+        held = true;
+        heldRequest = route.request();
+        const response = await route.fetch();
+        expect(response.status()).toBe(200);
+        responseStatus = await response.json();
+        await release;
+        await route.fulfill({ response });
+    };
+    await page.route(pattern, handler);
+    // Exercise the application's real visibility/status refresh, not an API
+    // probe whose response is never adopted by the Vue security singleton.
+    await page.evaluate(() =>
+        document.dispatchEvent(new Event("visibilitychange")),
+    );
+    await expect.poll(() => responseStatus, { timeout: 8000 }).not.toBeNull();
+    return {
+        status: responseStatus!,
+        release: async () => {
+            const finished = page.waitForEvent("requestfinished", {
+                predicate: (request) => request === heldRequest,
+                timeout: 8000,
+            });
+            releaseResponse();
+            await finished;
+            await page.unroute(pattern, handler);
+            // Allow the held JSON response and Vue's resulting DOM update to
+            // finish before checking that the newer authentication survived.
+            await page.evaluate(
+                () =>
+                    new Promise<void>((resolve) =>
+                        requestAnimationFrame(() =>
+                            requestAnimationFrame(() => resolve()),
+                        ),
+                    ),
+            );
+        },
+    };
+}
 async function confirmMail(
     page: Page,
     email: string,
@@ -161,6 +221,9 @@ async function confirmMail(
             })
             .click();
         await page.getByLabel("Authenticator code", { exact: true }).fill(code);
+        const staleFactorPoll = await holdStatusPoll(page);
+        expect(staleFactorPoll.status.unlocked).toBe(false);
+        expect(staleFactorPoll.status.step).toBe("totp");
         const factor = page.waitForResponse(
             (response) =>
                 response.request().method() === "POST" &&
@@ -173,6 +236,21 @@ async function confirmMail(
             })
             .click();
         expect((await factor).status()).toBe(200);
+        await expect(
+            page.getByRole("heading", {
+                name: "New Vault item",
+                exact: true,
+            }),
+        ).toBeVisible();
+        const title = editor(page).getByLabel("Item title", { exact: true });
+        await title.fill("Unsaved item survives the stale locked poll");
+        await staleFactorPoll.release();
+        await expect(title).toHaveValue(
+            "Unsaved item survives the stale locked poll",
+        );
+        await expect(
+            page.getByRole("button", { name: "Lock Vault", exact: true }),
+        ).toBeVisible();
         await page.bringToFront();
         await expect
             .poll(
@@ -294,6 +372,8 @@ test("Vault authentication, encrypted customer items and automatic clearing work
     await page
         .getByLabel("Authenticator code", { exact: true })
         .fill(await otp(setup.secret));
+    const staleEnrollmentPoll = await holdStatusPoll(page);
+    expect(staleEnrollmentPoll.status.enrolled).toBe(false);
     const confirmed = page.waitForResponse(
         (response) =>
             response.request().method() === "POST" &&
@@ -310,16 +390,35 @@ test("Vault authentication, encrypted customer items and automatic clearing work
             exact: true,
         })
         .click();
+    await staleEnrollmentPoll.release();
+    await expect(
+        page.getByLabel("Vault password", { exact: true }),
+    ).toBeVisible();
     const before = await inboxIds(page);
     await page
         .getByLabel("Vault password", { exact: true })
         .fill(fixture.password);
+    const stalePasswordPoll = await holdStatusPoll(page);
+    expect(stalePasswordPoll.status.step).toBe("password");
     await page
         .getByRole("button", {
             name: "Send Vault confirmation email",
             exact: true,
         })
         .click();
+    await expect(
+        page.getByRole("button", {
+            name: "Check email confirmation",
+            exact: true,
+        }),
+    ).toBeVisible();
+    await stalePasswordPoll.release();
+    await expect(
+        page.getByRole("button", {
+            name: "Check email confirmation",
+            exact: true,
+        }),
+    ).toBeVisible();
     await confirmMail(
         page,
         fixture.email,

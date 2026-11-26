@@ -49,5 +49,6 @@ yarn-error.log
 /storage/alpha
 /storage/beta
 /storage/test
+/storage/installations/
 
 /.local-fixtures.json

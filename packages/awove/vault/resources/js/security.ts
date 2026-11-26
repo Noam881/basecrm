@@ -7,6 +7,9 @@ const ready = ref(false);
 const cleaners = new Set<() => void>();
 const controllers = new Set<AbortController>();
 let generation = 0;
+// Poll ordering is independent of sensitive-content lifetime. A routine status
+// refresh must never cancel an in-flight item read or clear an edited form.
+let statusRevision = 0;
 let deadline = 0;
 let blockedExpiry: string | null = null;
 let interval: ReturnType<typeof setInterval> | undefined;
@@ -38,6 +41,7 @@ function clearDom() {
 }
 export function clearSensitive(lock = false) {
     generation++;
+    statusRevision++;
     for (const controller of controllers) controller.abort();
     controllers.clear();
     for (const clear of cleaners) clear();
@@ -72,6 +76,11 @@ function tick() {
     }
 }
 export function adoptStatus(next: AuthStatus, started = performance.now()) {
+    // Explicit authentication results supersede every poll already in flight.
+    statusRevision++;
+    applyStatus(next, started);
+}
+function applyStatus(next: AuthStatus, started: number) {
     const left = Math.max(
         0,
         Date.parse(next.expires_at ?? "") -
@@ -114,6 +123,10 @@ export async function request<T>(
             423,
         );
     const captured = generation;
+    const authMutation = method !== "GET" && url.startsWith("/vault/api/auth/");
+    // Enrollment also returns setup data without calling adoptStatus(). Keep
+    // pre-mutation polls from restoring an earlier authentication step.
+    if (authMutation) statusRevision++;
     const controller = new AbortController();
     if (sensitive) controllers.add(controller);
     try {
@@ -151,16 +164,17 @@ export async function request<T>(
                 t("The Vault is locked. Sensitive content was cleared."),
                 423,
             );
+        if (authMutation) statusRevision++;
         return result as T;
     } finally {
         controllers.delete(controller);
     }
 }
 export async function refreshStatus() {
-    const captured = generation;
+    const captured = ++statusRevision;
     const started = performance.now();
     const result = await request<AuthStatus>("/vault/api/auth/status");
-    if (captured === generation) adoptStatus(result, started);
+    if (captured === statusRevision) applyStatus(result, started);
     return result;
 }
 export async function lockVault() {
