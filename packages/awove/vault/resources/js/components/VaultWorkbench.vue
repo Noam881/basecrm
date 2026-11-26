@@ -547,7 +547,7 @@ watch(security.unlocked, (next, old) => {
     if (!next && old) {
         table.value = null;
         void load();
-    } else if (next && !old && (pendingItem.value || pendingCreate.value)) {
+    } else if (next && !old) {
         void unlocked();
     }
 });
@@ -1185,7 +1185,11 @@ onBeforeUnmount(() => {
             </template>
         </section>
         <section
-            v-if="security.unlocked.value && security.status.value?.can_admin"
+            v-if="
+                security.unlocked.value &&
+                security.status.value?.can_admin &&
+                security.status.value?.auth_mode !== 'email_riddle'
+            "
             class="crm-card crm-flow"
         >
             <details>

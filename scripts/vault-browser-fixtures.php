@@ -6,6 +6,7 @@ use Awove\Core\Models\Contact;
 use Awove\Core\Services\Identities;
 use Awove\Vault\Enrollment;
 use Awove\Vault\Models\Member;
+use Awove\Vault\Riddle;
 use Awove\Vault\VaultModule;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
@@ -18,6 +19,11 @@ require __DIR__.'/../vendor/autoload.php';
 require __DIR__.'/fictional-fixtures.php';
 $mode = $argv[1] ?? '';
 $project = $argv[2] ?? '';
+$authMode = $argv[3] ?? 'password_email_totp';
+if (! in_array($authMode, ['password_email_totp', 'email_riddle'], true)) {
+    throw new RuntimeException('Only recognized fictional Vault authentication profiles are permitted.');
+}
+$riddle = $authMode === 'email_riddle';
 if (! in_array($mode, ['setup', 'cleanup', 'code', 'expire'], true) || ! in_array($project, ['desktop', 'mobile'], true)) {
     throw new RuntimeException('Only known isolated Vault fixture commands and projects are permitted.');
 }
@@ -33,6 +39,7 @@ foreach (['CRM_MANIFEST' => $manifest, 'VAULT_KEY_FILE' => $keyFile] as $name =>
 $app = require __DIR__.'/../bootstrap/app.php';
 $app->loadEnvironmentFrom('.env.alpha');
 $app->make(Kernel::class)->bootstrap();
+config(['vault.auth_mode' => $authMode]);
 FictionalCrmFixtures::assertLocalExample('alpha');
 $connection = DB::connection();
 if (! in_array($connection->getConfig('host'), ['127.0.0.1', 'localhost'], true)
@@ -44,13 +51,15 @@ if ($actual->database_name !== 'base_alpha' || $actual->role_name !== 'base_alph
     || Installation::manifest()['id'] !== 'alpha' || Installation::manifest()['modules'] !== ['vault']) {
     throw new RuntimeException('Vault fixtures require the exact fictional Alpha profile and role.');
 }
-$email = 'vault-'.$project.'@alpha.example.test';
-$contactEmail = 'vault-contact-'.$project.'@alpha.example.test';
+$marker = $riddle ? 'riddle-' : '';
+$email = 'vault-'.$marker.$project.'@alpha.example.test';
+$contactEmail = 'vault-'.$marker.'contact-'.$project.'@alpha.example.test';
 $name = $project === 'desktop' ? 'Tamar Ben Ami' : 'Eitan Barak';
-$privateFile = storage_path('app/private/vault-browser-'.$project.'.json');
+$privateFile = storage_path('app/private/vault-'.$marker.'browser-'.$project.'.json');
+$riddleQuestion = "What is the fictional studio's private review phrase?";
 $user = User::where('email', $email)->first();
-if ($user && ($user->name !== $name || $user->getRoleNames()->diff(['Employee'])->isNotEmpty()
-    || $user->getDirectPermissions()->contains(fn ($permission) => ! str_starts_with($permission->name, 'vault.')))) {
+if ($user && ($user->name !== $name || $user->getRoleNames()->diff([$riddle ? 'Administrator' : 'Employee'])->isNotEmpty()
+    || $user->getDirectPermissions()->contains(fn ($permission) => ! str_starts_with($permission->name, 'vault.') && ! ($riddle && $permission->name === 'identities.manage')))) {
     throw new RuntimeException('The reserved Vault account was changed; no fixture action is permitted.');
 }
 if ($mode === 'code') {
@@ -100,19 +109,25 @@ function vaultFixturePath(string $path): void
         }
     }
 }
-$result = DB::transaction(function () use ($mode, $project, $email, $contactEmail, $name, $privateFile, $user) {
+$result = DB::transaction(function () use ($mode, $project, $email, $contactEmail, $name, $privateFile, $user, $riddle, $riddleQuestion) {
     DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ['basecrm-vault-browser-fixtures']);
     if ($mode === 'setup') {
         Artisan::call('crm:install');
         if (Member::where('installation_id', 'alpha')->exists()) {
             throw new RuntimeException('Clean the known fictional Vault fixtures first. Existing Vault enrollments are preserved.');
         }
+        if ($riddle && DB::table('vault_riddle_settings')->where('installation_id', 'alpha')->exists()) {
+            throw new RuntimeException('An existing Vault riddle policy is protected; fixture setup refused.');
+        }
         $fixture = $user ?? User::factory()->create(['name' => $name, 'email' => $email, 'email_verified_at' => now(), 'active' => true]);
-        $fixture->assignRole('Employee');
+        $fixture->assignRole($riddle ? 'Administrator' : 'Employee');
         $fixture->syncPermissions((new VaultModule)->permissions());
+        if ($riddle) {
+            $fixture->givePermissionTo('identities.manage');
+        }
         // Reset only previous attempts by this exact reserved fictional account.
         // Never clear a shared IP limiter or another account's attempts.
-        foreach (['enrollment', 'enrollment-factor', 'password', 'email-send', 'email-confirm', 'factor'] as $action) {
+        foreach (['enrollment', 'enrollment-factor', 'password', 'email-start', 'email-send', 'email-confirm', 'factor'] as $action) {
             RateLimiter::clear('vault:'.hash('sha256', 'alpha:'.$fixture->id.':'.$action));
         }
         RateLimiter::clear(md5('magic-login-request'.'magic-request:email:alpha:'.hash('sha256', $email)));
@@ -121,8 +136,22 @@ $result = DB::transaction(function () use ($mode, $project, $email, $contactEmai
             throw new RuntimeException('A protected fixture identity already exists.');
         }
         $contact = app(Identities::class)->create($fixture, 'contacts', ['name' => 'Yael Shalev', 'email' => $contactEmail, 'phone' => '+972 50-000-0191', 'country' => 'Israel', 'city' => 'Haifa']);
-        $invitation = app(Enrollment::class)->bootstrap($fixture);
-        $data = ['email' => $email, 'user_id' => $fixture->id, 'contact_id' => $contact->id, 'invitation' => $invitation['invitation'], 'password' => 'Fictional-Vault-'.bin2hex(random_bytes(18))];
+        if ($riddle) {
+            $answer = ' Fictional-Vault-'.bin2hex(random_bytes(18)).' ';
+            $beforeAudit = DB::table('vault_audits')->max('id') ?? 0;
+            Riddle::configure('alpha', $riddleQuestion, $answer, $answer);
+            Riddle::approve('alpha', $fixture);
+            $policy = DB::table('vault_riddle_settings')->where('installation_id', 'alpha')->first();
+            $policyAudits = DB::table('vault_audits')->where('id', '>', $beforeAudit)->where('installation_id', 'alpha')->where('action', 'riddle.configuration_changed')->whereNull('actor_id')->whereNull('target_user_id')->get();
+            if ($policyAudits->count() !== 1) {
+                throw new RuntimeException('Unexpected fictional riddle configuration audit; fixture setup refused.');
+            }
+            $data = ['email' => $email, 'user_id' => $fixture->id, 'contact_id' => $contact->id, 'question' => $riddleQuestion, 'answer' => $answer,
+                'policy_fingerprint' => hash('sha256', json_encode($policy, JSON_THROW_ON_ERROR)), 'policy_audit_ids' => $policyAudits->pluck('id')->all()];
+        } else {
+            $invitation = app(Enrollment::class)->bootstrap($fixture);
+            $data = ['email' => $email, 'user_id' => $fixture->id, 'contact_id' => $contact->id, 'invitation' => $invitation['invitation'], 'password' => 'Fictional-Vault-'.bin2hex(random_bytes(18))];
+        }
         file_put_contents($privateFile, json_encode($data, JSON_THROW_ON_ERROR));
         chmod($privateFile, 0600);
 
@@ -130,6 +159,23 @@ $result = DB::transaction(function () use ($mode, $project, $email, $contactEmai
     }
     if (! $user) {
         return ['cleaned' => 0];
+    }
+    $policy = null;
+    $policyAudits = collect();
+    if ($riddle) {
+        $policy = DB::table('vault_riddle_settings')->where('installation_id', 'alpha')->lockForUpdate()->first();
+        if ($policy) {
+            $saved = is_file($privateFile) ? json_decode(file_get_contents($privateFile), true, 32, JSON_THROW_ON_ERROR) : [];
+            if ($policy->question !== $riddleQuestion || ($saved['email'] ?? '') !== $email
+                || ! hash_equals($saved['policy_fingerprint'] ?? '', hash('sha256', json_encode($policy, JSON_THROW_ON_ERROR)))
+                || Member::where('installation_id', 'alpha')->where('user_id', '!=', $user->id)->exists()) {
+                throw new RuntimeException('A protected riddle policy or member changed; fixture cleanup refused.');
+            }
+            $policyAudits = DB::table('vault_audits')->whereIn('id', $saved['policy_audit_ids'] ?? [])->get();
+            if ($policyAudits->count() !== 1 || $policyAudits->contains(fn ($audit) => $audit->installation_id !== 'alpha' || $audit->action !== 'riddle.configuration_changed' || $audit->actor_id !== null || $audit->target_user_id !== null)) {
+                throw new RuntimeException('A protected riddle configuration audit changed; cleanup refused.');
+            }
+        }
     }
     $contact = Contact::where('email', $contactEmail)->first();
     if ($contact && ($contact->created_by !== $user->id || $contact->name !== 'Yael Shalev')) {
@@ -145,11 +191,11 @@ $result = DB::transaction(function () use ($mode, $project, $email, $contactEmai
         throw new RuntimeException('Protected Vault file references fixture.');
     }
     $members = DB::table('vault_members')->where('user_id', $user->id)->get();
-    if ($members->contains(fn ($member) => $member->installation_id !== 'alpha' || $member->approved_by !== $user->id)) {
+    if ($members->contains(fn ($member) => $member->installation_id !== 'alpha' || ($member->approved_by !== $user->id && ! ($riddle && $member->approved_by === null)))) {
         throw new RuntimeException('Protected Vault enrollment references fixture.');
     }
     $audits = DB::table('vault_audits')->where(fn ($query) => $query->where('actor_id', $user->id)->orWhere('target_user_id', $user->id)->orWhereIn('item_id', $items->pluck('id')))->get();
-    if ($audits->contains(fn ($audit) => $audit->installation_id !== 'alpha' || $audit->actor_id !== $user->id || ($audit->target_user_id !== null && $audit->target_user_id !== $user->id))) {
+    if ($audits->contains(fn ($audit) => $audit->installation_id !== 'alpha' || ($audit->actor_id !== $user->id && ! ($riddle && $audit->actor_id === null && $audit->action === 'riddle.administrator_approved' && $audit->target_user_id === $user->id)) || ($audit->target_user_id !== null && $audit->target_user_id !== $user->id))) {
         throw new RuntimeException('Protected Vault audit actor references fixture.');
     }
     if ($contact) {
@@ -173,7 +219,7 @@ $result = DB::transaction(function () use ($mode, $project, $email, $contactEmai
         'vault_recovery_codes' => DB::table('vault_recovery_codes')->whereIn('member_id', $members->pluck('id'))->get(),
         'vault_challenges' => DB::table('vault_challenges')->where('installation_id', 'alpha')->where('user_id', $user->id)->get(),
         'vault_unlocks' => DB::table('vault_unlocks')->where('installation_id', 'alpha')->where('user_id', $user->id)->get(),
-        'vault_files' => $files, 'vault_items' => $items, 'vault_audits' => $audits, 'vault_members' => $members,
+        'vault_files' => $files, 'vault_items' => $items, 'vault_audits' => $audits->merge($policyAudits), 'vault_members' => $members,
         'crm_contact_notes' => $notes, 'crm_identity_activity' => $history,
     ];
     if ($contact) {
@@ -192,11 +238,14 @@ $result = DB::transaction(function () use ($mode, $project, $email, $contactEmai
             mkdir($directory, 0700, true);
         }
         $copy = $directory.'/'.$project.'-'.gmdate('Ymd-His').'-'.bin2hex(random_bytes(6)).'.json';
-        file_put_contents($copy, json_encode(['fictional_only' => true, 'rows' => array_map(fn ($rows) => $rows->all(), $collections), 'encrypted_files' => $bytes], JSON_THROW_ON_ERROR));
+        file_put_contents($copy, json_encode(['fictional_only' => true, 'rows' => array_map(fn ($rows) => $rows->all(), $collections), 'encrypted_files' => $bytes, 'riddle_policy' => $policy], JSON_THROW_ON_ERROR));
         chmod($copy, 0600);
     }
     foreach ($collections as $table => $rows) {
         DB::table($table)->whereIn('id', $rows->pluck('id'))->delete();
+    }
+    if ($policy) {
+        DB::table('vault_riddle_settings')->where('installation_id', 'alpha')->delete();
     }
     DB::afterCommit(function () use ($files) {
         foreach ($files as $file) {

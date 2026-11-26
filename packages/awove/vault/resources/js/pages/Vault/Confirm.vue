@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { t } from "@/lib/i18n";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import VaultUnlock from "../../components/VaultUnlock.vue";
 import {
     adoptStatus,
@@ -17,9 +17,12 @@ const busy = ref(false);
 const confirmed = ref(false);
 const done = ref(false);
 const error = ref("");
-useVaultSecurity(() => {
+const security = useVaultSecurity(() => {
     token.value = "";
 });
+const emailRiddle = computed(
+    () => security.status.value?.auth_mode === "email_riddle",
+);
 let removeInitialListener: (() => void) | undefined;
 onBeforeUnmount(() => removeInitialListener?.());
 onMounted(() => {
@@ -89,9 +92,13 @@ async function confirm() {
             <p v-if="error" role="alert" class="crm-notice">{{ error }}</p>
             <p v-if="confirmed" role="status" class="crm-notice">
                 {{
-                    t(
-                        "Email confirmed. Complete the authenticator step to unlock the Vault.",
-                    )
+                    emailRiddle
+                        ? t(
+                              "Email confirmed. Enter the Vault passphrase to unlock it.",
+                          )
+                        : t(
+                              "Email confirmed. Complete the authenticator step to unlock the Vault.",
+                          )
                 }}
             </p>
             <div v-if="!confirmed" class="crm-form-action">
