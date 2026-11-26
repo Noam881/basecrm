@@ -36,6 +36,10 @@ bash scripts/deploy-enhance.sh /var/www/4221a676-c7bc-4764-a592-d42e9e05a83c
 
 The optional second argument selects a release directory explicitly. The script validates the release path, required files, production guards and platform before building. It installs locked Composer dependencies without development packages, mirrors local path packages, installs npm build dependencies even under production `NODE_ENV`, and compiles `public/build`. Generated public assets receive read/search permissions for the web server (`chmod -R a+rX public/build`), which may run under a different user from PHP/build. The private environment, storage and caches retain restricted permissions. It then checks effective Laravel configuration, runs migrations and idempotent `crm:install`, caches application configuration/routes/views, and prints non-secret diagnostics. It does not change `current`, create accounts, seed records or regenerate keys.
 
+After a successful build and a nonempty asset manifest, the hook removes only that release's `node_modules`; a symlink or a path resolving outside the release stops deployment before cleanup. The PHP application serves compiled assets with Inertia SSR disabled, so these Node dependencies are not needed at runtime. Failed builds retain their dependencies for inspection, and a retry reinstalls them with `npm ci`. The hook does not prune historical releases, shared runtimes or package caches.
+
+Run `bash tests/scripts/deploy-enhance-footprint.sh` to check the cleanup boundary with temporary fixtures and stubbed build/runtime commands. This test does not connect to a database or hosting account.
+
 Before updating an existing installation, take the database/private-file/configuration backup and coordinate writes and workers as described in [installation and recovery](installations-and-upgrades.md). A failed build leaves the active release unchanged. A later failure can follow an additive migration; never assume switching source undoes database changes or run destructive rollback commands automatically.
 
 ## Activation and account setup

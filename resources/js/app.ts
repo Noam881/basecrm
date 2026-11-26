@@ -4,7 +4,7 @@ import "@fontsource/roboto/700.css";
 import "@fontsource/noto-sans-hebrew/400.css";
 import "@fontsource/noto-sans-hebrew/500.css";
 import "@fontsource/noto-sans-hebrew/700.css";
-import "@fontsource/material-symbols-outlined";
+import "@fontsource/material-symbols-outlined/400.css";
 import { materialStateLayers } from "./lib/material";
 import { configurePresentation, t } from "./lib/i18n";
 import { createInertiaApp, router } from "@inertiajs/vue3";
