@@ -1,6 +1,6 @@
 # Vault / כספת
 
-Optional package `awove/vault`, module `vault`, extension contract 1. This implementation is for code review, hardening and security assessment with fictional data. It has not been deployed or provisioned for a customer installation. CRM email-only sign-in is unchanged.
+Optional package `awove/vault`, module `vault`, extension contract 1. Installed code, enabled module, provisioned keys, granted access and completed enrollment are separate states. Real-secret use requires the hardening, provisioning and security assessment below. CRM email-only sign-in is unchanged. Installation-specific owner decisions are recorded in [Vault activation decisions](../../../docs/vault-activation-decisions.md).
 
 ## Existing-system integration
 
