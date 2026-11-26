@@ -139,8 +139,8 @@ $result = DB::transaction(function () use ($mode, $project, $email, $contactEmai
         if ($riddle) {
             $answer = ' Fictional-Vault-'.bin2hex(random_bytes(18)).' ';
             $beforeAudit = DB::table('vault_audits')->max('id') ?? 0;
-            Riddle::configure('alpha', $riddleQuestion, $answer, $answer);
-            Riddle::approve('alpha', $fixture);
+            app(Riddle::class)->configure('alpha', $riddleQuestion, $answer, $answer);
+            app(Riddle::class)->approve('alpha', $fixture);
             $policy = DB::table('vault_riddle_settings')->where('installation_id', 'alpha')->first();
             $policyAudits = DB::table('vault_audits')->where('id', '>', $beforeAudit)->where('installation_id', 'alpha')->where('action', 'riddle.configuration_changed')->whereNull('actor_id')->whereNull('target_user_id')->get();
             if ($policyAudits->count() !== 1) {
