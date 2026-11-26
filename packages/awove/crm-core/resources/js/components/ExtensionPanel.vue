@@ -4,7 +4,7 @@ import { computed, defineAsyncComponent } from "vue";
 const props = defineProps<{
     component: string;
     endpoint: string;
-    leadId: number;
+    leadId?: number;
     editable: boolean;
 }>();
 const installed = import.meta.glob(
@@ -25,7 +25,11 @@ const resolved = computed(() => {
     <component
         :is="resolved"
         v-if="resolved"
-        :endpoint="endpoint.replace('{lead}', String(leadId))"
+        :endpoint="
+            leadId === undefined
+                ? endpoint
+                : endpoint.replace('{lead}', String(leadId))
+        "
         :editable="editable"
     />
     <p v-else role="alert">

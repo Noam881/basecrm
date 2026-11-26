@@ -32,8 +32,14 @@ class Tables
             return [];
         }
         $c = [];
-        foreach (Labels::ATTRIBUTION as $key => $label) {
-            $c[] = new Column('attribution:'.$key, $label, "(SELECT CASE WHEN jsonb_typeof(ma.payload->'$key')='string' THEN ma.payload->>'$key' ELSE NULL END FROM marketing_attributions ma WHERE ma.lead_id=crm_leads.id)", group: 'Attribution', width: $key === 'landing_page_url' ? 300 : 220);
+        foreach (Attributions::fieldSchema() as $key => $field) {
+            $boolean = $field['type'] === 'boolean';
+            // Retained JSON can contain arbitrary legacy values. Guard the cast so an
+            // unexpected historical type cannot break searching/filtering the lead table.
+            $value = $boolean ? "(ma.payload->>'$key')::boolean" : "ma.payload->>'$key'";
+            $jsonType = $boolean ? 'boolean' : 'string';
+            $expression = "(SELECT CASE WHEN jsonb_typeof(ma.payload->'$key')='$jsonType' THEN $value ELSE NULL END FROM marketing_attributions ma WHERE ma.lead_id=crm_leads.id)";
+            $c[] = new Column('attribution:'.$key, $field['label'], $expression, $boolean ? 'boolean' : 'text', str_starts_with($key, 'qualification_') ? 'Qualification' : 'Attribution', width: in_array($field['type'], ['url', 'textarea'], true) ? 300 : 220);
         }
         $visible = app(Work::class)->campaigns($u)->select('id')->toRawSql();
         $c[] = new Column('module:marketing:campaign', 'Linked campaign', "(SELECT c.name FROM marketing_attributions ma JOIN marketing_campaigns c ON c.id=ma.linked_campaign_id WHERE ma.lead_id=crm_leads.id AND c.id IN ($visible))", group: 'Marketing', width: 240);

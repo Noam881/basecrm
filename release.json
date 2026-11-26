@@ -12,7 +12,8 @@
     "awove/knowledge": "1.0.0",
     "awove/marketing": "1.0.0",
     "awove/assets": "1.0.0",
-    "awove/nonprofit": "1.0.0"
+    "awove/nonprofit": "1.0.0",
+    "awove/vault": "1.0.0"
   },
   "starter_revision": "d282e817c6c2fa1bd475f7c42ea785ccfc67d0ab"
 }

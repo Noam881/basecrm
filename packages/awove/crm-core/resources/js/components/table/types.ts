@@ -40,7 +40,7 @@ export interface Preferences {
     views?: SavedView[];
 }
 export interface TableRow {
-    id: number;
+    id: number | string;
     title?: string;
     name?: string;
     lead_id?: number;

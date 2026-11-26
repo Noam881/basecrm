@@ -4,6 +4,8 @@ import { Head, Link, useForm, usePage, router } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import {
     date,
+    leadLifecycleFormData,
+    type LeadSignedContract,
     type Lead,
     type Person,
     type Stage,
@@ -13,6 +15,8 @@ import {
 import ExtensionPanel from "../../components/ExtensionPanel.vue";
 import StageControl from "../../components/StageControl.vue";
 import LeadProposals from "../../components/LeadProposals.vue";
+import LeadLifecycleFields from "../../components/LeadLifecycleFields.vue";
+import LeadSignedContracts from "../../components/LeadSignedContracts.vue";
 import SalesHistory, {
     type Communication,
     type Quotation,
@@ -34,6 +38,7 @@ const props = defineProps<{
         download_url: string;
     }[];
     sales: { communications: Communication[]; quotations: Quotation[] };
+    signed_contracts: LeadSignedContract[];
     identityPermissions: { contact: boolean; company: boolean };
     panels: {
         id: string;
@@ -63,6 +68,7 @@ function leadDetails(lead: Lead) {
         closing_date: lead.closing_date ?? "",
         final_value: lead.final_value ?? "",
         loss_reason: lead.loss_reason ?? "",
+        ...leadLifecycleFormData(lead),
         custom_fields: JSON.parse(
             JSON.stringify(lead.custom_fields ?? {}),
         ) as Lead["custom_fields"],
@@ -378,6 +384,11 @@ function changeTask(t: Task) {
                             )
                         }}
                     </p>
+                    <LeadLifecycleFields
+                        :form="form"
+                        :errors="form.errors"
+                        :disabled="detailsDisabled"
+                    />
                     <label v-for="(field, key) in fields" :key="key"
                         ><span class="crm-field-label">{{ field.label }}</span
                         ><select
@@ -447,6 +458,12 @@ function changeTask(t: Task) {
                 :lead-id="lead.id"
                 :editable="editable"
                 :proposals="proposals"
+                :timezone="zone"
+            />
+            <LeadSignedContracts
+                :lead-id="lead.id"
+                :editable="editable"
+                :contracts="signed_contracts ?? []"
                 :timezone="zone"
             />
             <SalesHistory
@@ -552,6 +569,17 @@ function changeTask(t: Task) {
                     >
                     <p>{{ item.person?.email ?? t("No email") }}</p>
                     <p>{{ item.person?.phone ?? t("No phone") }}</p>
+                    <p
+                        v-if="
+                            item.type === 'companies' &&
+                            item.person?.registration_number
+                        "
+                    >
+                        {{ t("Company registration number") }} ·
+                        <bdi dir="ltr">{{
+                            item.person.registration_number
+                        }}</bdi>
+                    </p>
                     <div v-if="item.editable" class="crm-form-action">
                         <Link
                             :href="`/people/${item.type}/${item.person?.id}?from_lead=${lead.id}`"

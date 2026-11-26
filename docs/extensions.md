@@ -7,6 +7,7 @@ Trusted deployment-installed PHP packages register through standard Laravel prov
 - `Awove\Core\Contracts\Module`: identifier, package version, core contract version, dependencies, permissions, navigation and profile panels.
 - `Modules::register`, `enabled`, `validate`, `navigation`, `panels`: installed code and enabled functionality are different. Enabled modules must be present, have contract version 1 and have enabled dependencies. Invalid required modules fail application boot before activation.
 - Typed `NavigationItem(label, href, permission, anyPermissions = [])` and `LeadPanel(id, label, component, endpoint, permission, anyPermissions = [])` contributions. Parent policy and module permissions are independent.
+- `IdentityPanelContributor` (also a `Module`) contributes `IdentityPanel` descriptors for authorized existing contacts/companies through `IdentityPanels::forIdentity`. Core authorizes the customer first, validates module-owned descriptor IDs/permissions and safe local component/endpoints, and filters disabled/ungranted contributions. The owning endpoint independently rechecks the customer and action. Descriptors contain metadata only; private content must be loaded explicitly through a protected endpoint.
 - `LeadCreated(leadId, actorId)` and `LeadStatusChanged(leadId, from, to, actorId)` dispatch after successful commits. Each subscriber/queued handler must check module availability at execution time.
 - `Access::leads` and the `Lead` Laravel policy are the parent read/write authority. `Services\Leads` performs core lead transactions; `Services\Tasks` manages task mutations. Consumers still provide validated, documented core fields; these trusted PHP APIs are not a malicious-code sandbox.
 
@@ -47,3 +48,7 @@ Endpoints return 404 while disabled, even if a user has its permissions. Enabled
 ## Additive lead-table fields
 
 Modules may additionally implement `Awove\Core\Contracts\LeadTableContributor` and return trusted `Tables\Column` definitions after checking module permissions. The core calls contributors only while enabled. See [table contracts](advanced-tables.md) for sorting/filtering behavior and permission handling.
+
+## Embedded metadata tables
+
+Shared `DataTable` accepts numeric or string record IDs and an optional asynchronous `load(query)` callback. The default remains Inertia navigation. Embedded profile panels can use the callback for scoped JSON metadata without navigating away or copying the table implementation. Sensitive content must never be included in table rows, personal views or clipboard/export cells.

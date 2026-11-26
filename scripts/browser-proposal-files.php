@@ -11,15 +11,15 @@ final class BrowserProposalFiles
 
     private const MAX_BYTES = 20 * 1024 * 1024;
 
-    public static function pathMatches(string $path, int $leadId): bool
+    public static function pathMatches(string $path, int $leadId, string $directory = 'proposals'): bool
     {
-        return $leadId > 0 && preg_match('/^proposals\/'.preg_quote((string) $leadId, '/').'\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|doc|docx)$/D', $path) === 1;
+        return in_array($directory, ['proposals', 'signed-contracts'], true) && $leadId > 0 && preg_match('/^'.preg_quote($directory, '/').'\/'.preg_quote((string) $leadId, '/').'\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|doc|docx)$/D', $path) === 1;
     }
 
     /** @return array<string,array{content:string,sha256:string,size_bytes:int}> */
-    public static function snapshot(array $rows): array
+    public static function snapshot(array $rows, string $directory = 'proposals'): array
     {
-        self::validateRows($rows);
+        self::validateRows($rows, $directory);
         $files = [];
         $disk = self::disk();
         foreach ($rows as $row) {
@@ -37,9 +37,9 @@ final class BrowserProposalFiles
     }
 
     /** Validate every path and byte before touching any local file. */
-    public static function validate(array $rows, array $files): void
+    public static function validate(array $rows, array $files, string $directory = 'proposals'): void
     {
-        self::validateRows($rows);
+        self::validateRows($rows, $directory);
         $paths = array_column($rows, 'private_path');
         if (count($files) !== count($paths) || array_diff($paths, array_keys($files)) || array_diff(array_keys($files), $paths)) {
             throw new RuntimeException('Proposal recovery files do not match the selected rows.');
@@ -58,9 +58,9 @@ final class BrowserProposalFiles
     }
 
     /** Restore missing files only; preserve matching existing files without overwriting them. */
-    public static function restore(array $rows, array $files): array
+    public static function restore(array $rows, array $files, string $directory = 'proposals'): array
     {
-        self::validate($rows, $files);
+        self::validate($rows, $files, $directory);
         $disk = self::disk();
         foreach ($rows as $row) {
             self::assertContainedPath($disk, $row['private_path']);
@@ -84,7 +84,7 @@ final class BrowserProposalFiles
                 self::verify($disk->get($path), $row);
             }
         } catch (Throwable $error) {
-            self::discardCreated($created, $rows);
+            self::discardCreated($created, $rows, $directory);
             throw $error;
         }
 
@@ -92,12 +92,12 @@ final class BrowserProposalFiles
     }
 
     /** Only discard files created by a failed row restore, and only if their bytes still match. */
-    public static function discardCreated(array $created, array $rows): void
+    public static function discardCreated(array $created, array $rows, string $directory = 'proposals'): void
     {
         foreach ($rows as $row) {
             if (in_array($row['private_path'], $created, true)) {
                 try {
-                    self::remove([$row]);
+                    self::remove([$row], $directory);
                 } catch (Throwable $error) {
                     report($error);
                 }
@@ -106,9 +106,9 @@ final class BrowserProposalFiles
     }
 
     /** Called after row cleanup commits; the caller must reject any remaining database reference. */
-    public static function remove(array $rows): void
+    public static function remove(array $rows, string $directory = 'proposals'): void
     {
-        self::validateRows($rows);
+        self::validateRows($rows, $directory);
         $disk = self::disk();
         foreach ($rows as $row) {
             self::assertContainedPath($disk, $row['private_path']);
@@ -173,12 +173,12 @@ final class BrowserProposalFiles
         }
     }
 
-    private static function validateRows(array $rows): void
+    private static function validateRows(array $rows, string $directory): void
     {
         $paths = [];
         $bytes = 0;
         foreach ($rows as $row) {
-            if (! is_array($row) || ! is_string($row['private_path'] ?? null) || ! self::pathMatches($row['private_path'], (int) ($row['lead_id'] ?? 0))
+            if (! is_array($row) || ! is_string($row['private_path'] ?? null) || ! self::pathMatches($row['private_path'], (int) ($row['lead_id'] ?? 0), $directory)
                 || ! is_string($row['sha256'] ?? null) || preg_match('/^[0-9a-f]{64}$/D', $row['sha256']) !== 1
                 || ! is_numeric($row['size_bytes'] ?? null) || (int) $row['size_bytes'] < 1 || (int) $row['size_bytes'] > 10 * 1024 * 1024
                 || in_array($row['private_path'], $paths, true)) {

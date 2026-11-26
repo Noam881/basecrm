@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { t as tr, translateLabels } from "@/lib/i18n";
-import { ref, onMounted } from "vue";
+import { t as tr } from "@/lib/i18n";
+import { computed, ref, onMounted } from "vue";
 import HistoryList, {
     type HistoryEntry,
 } from "../../../../../crm-core/resources/js/components/HistoryList.vue";
 const p = defineProps<{ endpoint: string; editable: boolean }>();
+interface FieldDefinition {
+    label: string;
+    type: "text" | "url" | "select" | "boolean" | "textarea";
+    max_length: number | null;
+    options: string[];
+}
 interface Data {
+    field_schema: Record<string, FieldDefinition>;
     version: number;
     history: HistoryEntry[];
-    fields: Record<string, string | null>;
+    fields: Record<string, string | boolean | null>;
     linked_campaign_id: number | null;
     linked_campaign: string | null;
     has_hidden_campaign: boolean;
@@ -17,23 +24,41 @@ interface Data {
     canEdit: boolean;
 }
 const data = ref<Data | null>(null);
-let originalFields: Record<string, string | null> = {};
+let originalFields: Record<string, string | boolean | null> = {};
 const error = ref("");
 const saved = ref(false);
 const busy = ref(false);
-const labels: Record<string, string> = {
-    platform: "Media / platform",
-    landing_page_url: "Website / landing page",
-    campaign_id: "Campaign ID",
-    campaign_name: "Campaign name",
-    ad_id: "Ad ID",
-    ad_name: "Ad name",
-    referrer_name: "Referred by",
-    utm_source: "UTM source",
-    utm_medium: "UTM medium",
-    utm_campaign: "UTM campaign",
-    utm_content: "UTM content",
-};
+const labels = computed(() =>
+    Object.fromEntries(
+        Object.entries(data.value?.field_schema ?? {}).map(([key, field]) => [
+            key,
+            field.label,
+        ]),
+    ),
+);
+function textValue(key: string): string {
+    const value = data.value?.fields[key];
+    return typeof value === "string" ? value : "";
+}
+function setTextValue(key: string, event: Event) {
+    if (data.value) {
+        data.value.fields[key] = (
+            event.target as HTMLInputElement | HTMLTextAreaElement
+        ).value;
+    }
+}
+function adopt(result: Data) {
+    // Null is a presentation placeholder only. Saves still send changed fields,
+    // preserving unregistered or malformed historical JSON values verbatim.
+    result.fields = Object.fromEntries(
+        Object.keys(result.field_schema).map((key) => [
+            key,
+            result.fields[key] ?? null,
+        ]),
+    );
+    data.value = result;
+    originalFields = { ...result.fields };
+}
 onMounted(async () => {
     try {
         const r = await fetch(p.endpoint, {
@@ -41,8 +66,7 @@ onMounted(async () => {
         });
         if (!r.ok)
             throw new Error(tr("Marketing attribution could not be loaded."));
-        data.value = await r.json();
-        originalFields = { ...data.value!.fields };
+        adopt(await r.json());
     } catch (e) {
         error.value = String(e);
     }
@@ -85,8 +109,7 @@ async function save() {
             throw new Error(
                 result.message ?? tr("Unable to save attribution."),
             );
-        data.value = result;
-        originalFields = { ...result.fields };
+        adopt(result);
         saved.value = true;
     } catch (e) {
         error.value = String(e);
@@ -142,37 +165,38 @@ async function save() {
                         </option>
                     </select></label
                 ><label
-                    v-for="(label, key) in labels"
+                    v-for="(field, key) in data.field_schema"
                     :key="key"
                     class="crm-field"
-                    ><span class="crm-field-label">{{ tr(label) }}</span
+                    ><span class="crm-field-label">{{ field.label }}</span
                     ><select
-                        v-if="key === 'platform'"
+                        v-if="field.type === 'boolean'"
+                        v-model="data.fields[key]"
+                    >
+                        <option :value="null">{{ tr("Not recorded") }}</option>
+                        <option :value="true">{{ tr("Yes") }}</option>
+                        <option :value="false">{{ tr("No") }}</option></select
+                    ><textarea
+                        v-else-if="field.type === 'textarea'"
+                        :value="textValue(key)"
+                        @input="setTextValue(key, $event)"
+                        :maxlength="field.max_length ?? undefined"
+                        rows="3"
+                    ></textarea
+                    ><select
+                        v-else-if="field.type === 'select'"
                         v-model="data.fields[key]"
                     >
                         <option :value="null">{{ tr("Not specified") }}</option>
-                        <option
-                            v-for="c in [
-                                'website',
-                                'facebook',
-                                'instagram',
-                                'linkedin',
-                                'google',
-                                'referral',
-                                'email',
-                                'direct',
-                                'other',
-                            ]"
-                            :key="c"
-                            :value="c"
-                        >
+                        <option v-for="c in field.options" :key="c" :value="c">
                             {{ tr(c) }}
                         </option></select
                     ><input
                         v-else
-                        v-model="data.fields[key]"
-                        :type="key === 'landing_page_url' ? 'url' : 'text'"
-                        :maxlength="key === 'landing_page_url' ? 2048 : 200"
+                        :value="textValue(key)"
+                        @input="setTextValue(key, $event)"
+                        :type="field.type === 'url' ? 'url' : 'text'"
+                        :maxlength="field.max_length ?? undefined"
                 /></label>
             </fieldset>
             <p v-if="saved" class="crm-notice" role="status">
@@ -189,12 +213,10 @@ async function save() {
             v-if="data"
             :history="data.history"
             :title="tr('Attribution history')"
-            :field-labels="
-                translateLabels({
-                    ...labels,
-                    linked_campaign_id: 'Linked CRM campaign',
-                })
-            "
+            :field-labels="{
+                ...labels,
+                linked_campaign_id: tr('Linked CRM campaign'),
+            }"
         />
     </div>
 </template>

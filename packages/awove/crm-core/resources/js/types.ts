@@ -5,6 +5,7 @@ export interface Person {
     name: string;
     email?: string | null;
     phone?: string | null;
+    registration_number?: string | null;
     company_id?: number | null;
     company?: Person | null;
     secondary_phone?: string | null;
@@ -107,6 +108,14 @@ export interface Lead {
     closing_date?: string | null;
     final_value?: string | null;
     loss_reason?: string | null;
+    business_sector?: string | null;
+    product_sold?: string | null;
+    contract_sent_on?: string | null;
+    invoice_sent_on?: string | null;
+    payment_received_on?: string | null;
+    process_started_on?: string | null;
+    contract_url?: string | null;
+    privacy_policy_accepted?: boolean | null;
     next_action_at?: string;
     notes?: { id: number; body: string; author: Person; created_at: string }[];
     tasks?: Task[];
@@ -117,6 +126,34 @@ export interface Lead {
         actor: Person;
         created_at: string;
     }[];
+}
+export interface LeadLifecycleFormData {
+    business_sector: string;
+    product_sold: string;
+    contract_sent_on: string;
+    invoice_sent_on: string;
+    payment_received_on: string;
+    process_started_on: string;
+    contract_url: string;
+    privacy_policy_accepted: boolean | null;
+}
+export const leadLifecycleFormData = (lead?: Lead): LeadLifecycleFormData => ({
+    business_sector: lead?.business_sector ?? "",
+    product_sold: lead?.product_sold ?? "",
+    contract_sent_on: lead?.contract_sent_on?.slice(0, 10) ?? "",
+    invoice_sent_on: lead?.invoice_sent_on?.slice(0, 10) ?? "",
+    payment_received_on: lead?.payment_received_on?.slice(0, 10) ?? "",
+    process_started_on: lead?.process_started_on?.slice(0, 10) ?? "",
+    contract_url: lead?.contract_url ?? "",
+    privacy_policy_accepted: lead?.privacy_policy_accepted ?? null,
+});
+export interface LeadSignedContract {
+    id: number;
+    original_name: string;
+    version: number;
+    created_at: string;
+    created_by: { id: number; name: string } | null;
+    download_url: string;
 }
 export interface Page<T> {
     data: T[];

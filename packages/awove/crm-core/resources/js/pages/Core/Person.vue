@@ -9,8 +9,15 @@ import {
     type Person,
 } from "../../types";
 import ContactFields from "../../components/ContactFields.vue";
+import ExtensionPanel from "../../components/ExtensionPanel.vue";
 const props = defineProps<{
     identity: Person;
+    identityPanels?: {
+        id: string;
+        label: string;
+        component: string;
+        endpoint: string;
+    }[];
     identityHistory: {
         id: number;
         event: string;
@@ -34,6 +41,7 @@ const editing = ref(
 );
 const form = useForm({
     ...contactFormData(props.identity),
+    registration_number: props.identity.registration_number ?? "",
     accept_duplicate: false,
 });
 const note = useForm({ body: "" });
@@ -62,22 +70,25 @@ const contactDays = computed(
             .join(", ") || t("Any day"),
 );
 function save() {
-    form.transform((data) =>
-        props.type === "contacts"
-            ? data
+    form.transform((data) => {
+        const { registration_number, ...contact } = data;
+        return props.type === "contacts"
+            ? contact
             : {
                   name: data.name,
                   email: data.email,
                   phone: data.phone,
+                  registration_number,
                   accept_duplicate: data.accept_duplicate,
-              },
-    ).patch(props.saveUrl, {
+              };
+    }).patch(props.saveUrl, {
         onSuccess: (savedPage) => {
             const savedIdentity = savedPage.props.identity as
                 Person | undefined;
             if (!savedIdentity) return;
             form.defaults({
                 ...contactFormData(savedIdentity),
+                registration_number: savedIdentity.registration_number ?? "",
                 accept_duplicate: false,
             });
             form.reset();
@@ -158,6 +169,15 @@ function addNote() {
                                 :href="`tel:${identity.phone}`"
                                 >{{ identity.phone }}</a
                             ><template v-else>{{ t("Not provided") }}</template>
+                        </dd>
+                    </div>
+                    <div v-if="type === 'companies'" class="crm-detail-item">
+                        <dt>{{ t("Company registration number") }}</dt>
+                        <dd>
+                            <bdi dir="ltr">{{
+                                identity.registration_number ||
+                                t("Not provided")
+                            }}</bdi>
                         </dd>
                     </div>
                     <template v-if="type === 'contacts'">
@@ -284,6 +304,23 @@ function addNote() {
                             >{{ form.errors.phone }}</small
                         ></label
                     >
+                    <label class="crm-field">
+                        <span class="crm-field-label">{{
+                            t("Company registration number")
+                        }}</span>
+                        <input
+                            v-model="form.registration_number"
+                            maxlength="80"
+                            dir="ltr"
+                            :aria-invalid="!!form.errors.registration_number"
+                        />
+                        <small
+                            v-if="form.errors.registration_number"
+                            data-slot="input-error"
+                            role="alert"
+                            >{{ form.errors.registration_number }}</small
+                        >
+                    </label>
                 </template>
                 <label class="crm-checkbox crm-form-span"
                     ><input v-model="form.accept_duplicate" type="checkbox" />{{
@@ -409,6 +446,18 @@ function addNote() {
                     {{ date(entry.created_at, zone) }}</small
                 >
             </article>
+        </section>
+        <section
+            v-for="panel in identityPanels ?? []"
+            :key="panel.id"
+            class="crm-card crm-flow crm-form-span"
+        >
+            <h2>{{ t(panel.label) }}</h2>
+            <ExtensionPanel
+                :component="panel.component"
+                :endpoint="panel.endpoint"
+                :editable="editable"
+            />
         </section>
     </div>
 </template>

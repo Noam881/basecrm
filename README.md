@@ -8,6 +8,10 @@ The shared host/core and independent installations are retained. Local generic b
 
 [Noam881/basecrm on GitHub](https://github.com/Noam881/basecrm) is the source of truth for this application. All CRM source and CI live in this standalone repository. See [source and release policy](docs/source-of-truth.md). Secrets and live installation data stay outside Git.
 
+The optional [Vault / כספת module](packages/awove/vault/README.md) adds encrypted customer secrets and attachments with separate Vault enrollment, password/email/TOTP authentication and a fixed 300-second server unlock. It is disabled by default and remains for fictional-data review and security assessment; no customer activation or real-secret import is included. The runbook covers permissions, key management, recovery, rotation and the existing dependency advisories that must be addressed before real use.
+
+The canonical [lead field schema](docs/lead-field-schema.json) maps the 42 supplied workbook headers to 41 distinct field meanings. It reuses existing contact, company, lead, follow-up, quotation and proposal storage; adds nullable lifecycle/consent fields and private signed-contract versions; and keeps attribution/qualification keys in the optional Marketing module. Existing fields, stage keys and saved table layouts are retained. This schema update does not import customer rows or activate integrations.
+
 ## Open the local examples
 
 - Alpha: http://127.0.0.1:8091 — base CRM, charcoal brand, no enabled demonstration module.
@@ -15,6 +19,8 @@ The shared host/core and independent installations are retained. Local generic b
 - Development mail: http://127.0.0.1:8028 — Mailpit only; no real messages are sent.
 
 Run `php scripts/seed-local.php` and `php scripts/seed-local.php beta` for fictional review records. The shared catalog uses Jewish/Hebrew names written in English, including Noa Levi and Daniel Cohen, with companies such as Rimon Studio, Carmel Supply and Shaked & Co, emails on `example.test`, and fictional `+1 202-555-01xx` phone numbers. Run `php scripts/localize-fixtures.php alpha` and `php scripts/localize-fixtures.php beta` to update existing synthetic examples in place without replacing login credentials, relationships or history. Private, randomly generated review credentials are saved in `.local-fixtures.json` (ignored, mode 0600). These are employee accounts, not an administrative bypass. Do not use synthetic fixtures in production.
+
+To preview the separate 20-lead Israeli-style demonstration catalog, run `php scripts/seed-israeli-demo.php alpha`; add `--apply` to insert it into the existing local Alpha review account. It uses English-spelled Israeli names, invented businesses and addresses in Israeli cities, synthetic `+972` phone patterns, `demo.example.test` emails, varied stages/notes and dated follow-ups. The records carry stable `demo:israel:v1:*` references and an explicit fictional-data note. Repeating the command preserves existing records and does not duplicate leads. The command refuses production databases and never runs during deployment. Use `beta` only to explicitly seed that separate local example.
 
 ## Selected stack
 

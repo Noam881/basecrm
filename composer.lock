@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b457ade3fcb186e4420e426af5599b27",
+    "content-hash": "f2ec33bcbeddec241397e9b11dceb4f4",
     "packages": [
         {
             "name": "awove/assets",
@@ -336,6 +336,38 @@
             "autoload": {
                 "psr-4": {
                     "Awove\\Operations\\": "src/"
+                }
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "awove/vault",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/awove/vault",
+                "reference": "986e0f4636e32d5c4cf2dc027416056b6658ec55"
+            },
+            "require": {
+                "awove/crm-core": "^1.1",
+                "ext-sodium": "*",
+                "illuminate/support": "^13.0",
+                "php": "^8.5",
+                "pragmarx/google2fa": "^9.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Awove\\Vault\\VaultProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Awove\\Vault\\": "src/"
                 }
             },
             "transport-options": {

@@ -78,6 +78,7 @@ class Catalog
                 }
             }
             $contactColumns($t, 'contact_', true);
+            $add('company_registration_number', 'Company registration number', "(SELECT registration_number FROM crm_companies WHERE crm_companies.id=$t.company_id)", 'text', 'Customer', width: 220);
             $add('owner', 'Owner', $person("$t.owner_id"), 'text', 'Ownership');
             $add('owner_id', 'Owner ID', "$t.owner_id", 'number', 'Ownership');
             $add('created_by', 'Created by', $person("$t.created_by"), 'text', 'Ownership');
@@ -86,12 +87,23 @@ class Catalog
             $add('priority', 'Priority', "$t.priority", 'select', 'Pipeline', $priorities, 140);
             $add('source', 'Source', "$t.source", group: 'Pipeline');
             $add('needs', 'Needs', "$t.needs", group: 'Sales', width: 280);
+            $add('business_sector', 'Business sector', "$t.business_sector", group: 'Sales', width: 220);
+            $add('product_sold', 'Product sold', "$t.product_sold", group: 'Sales', width: 260);
+            foreach (['contract_sent_on' => 'Contract sent date', 'invoice_sent_on' => 'Invoice sent date', 'payment_received_on' => 'Payment received date', 'process_started_on' => 'Process start date'] as $field => $label) {
+                $add($field, $label, "$t.$field", 'date', 'Sales', width: 200);
+            }
+            $add('contract_url', 'Contract link', "$t.contract_url", group: 'Contracts', width: 280);
+            $add('privacy_policy_accepted', 'Privacy policy accepted', "$t.privacy_policy_accepted", 'boolean', 'Consent', [['value' => 'true', 'label' => __('Yes')], ['value' => 'false', 'label' => __('No')]], 220);
             $add('estimated_value', 'Estimated value', "$t.estimated_value", 'number', 'Sales');
             $add('closing_date', 'Closing date', "$t.closing_date", 'date', 'Sales');
             $add('final_value', 'Final deal value', "$t.final_value", 'number', 'Sales');
             $add('loss_reason', 'Loss reason', "$t.loss_reason", group: 'Sales', width: 280);
             $add('proposal', 'Proposal file', "(SELECT original_name FROM crm_proposals WHERE lead_id=$t.id ORDER BY version DESC LIMIT 1)", group: 'Proposals', width: 260);
             $add('proposal_count', 'Proposal versions', "(SELECT COUNT(*) FROM crm_proposals WHERE lead_id=$t.id)", 'number', 'Proposals');
+            $add('proposal_link', 'Proposal link', "(SELECT document_url FROM sales_quotations WHERE lead_id=$t.id ORDER BY id DESC LIMIT 1)", group: 'Proposals', width: 280);
+            $add('proposal_sent_date', 'Proposal sent date', "(SELECT sent_date FROM sales_quotations WHERE lead_id=$t.id ORDER BY id DESC LIMIT 1)", 'date', 'Proposals', width: 200);
+            $add('signed_contract', 'Signed contract file', "(SELECT original_name FROM crm_signed_contracts WHERE lead_id=$t.id ORDER BY version DESC LIMIT 1)", group: 'Contracts', width: 260);
+            $add('signed_contract_count', 'Signed contract versions', "(SELECT COUNT(*) FROM crm_signed_contracts WHERE lead_id=$t.id)", 'number', 'Contracts');
             $add('next_action_at', 'Next follow-up', "(SELECT MIN(due_at) FROM crm_tasks WHERE lead_id=$t.id AND status='open')", 'datetime', 'Follow-ups', width: 220);
             $add('open_tasks', 'Open follow-ups', "(SELECT COUNT(*) FROM crm_tasks WHERE lead_id=$t.id AND status='open')", 'number', 'Follow-ups');
             $add('overdue_tasks', 'Overdue follow-ups', "(SELECT COUNT(*) FROM crm_tasks WHERE lead_id=$t.id AND status='open' AND due_at<CURRENT_TIMESTAMP)", 'number', 'Follow-ups');
@@ -126,6 +138,9 @@ class Catalog
             $add('email', 'Email', "$t.email", width: 240);
             $add('phone', 'Phone', "$t.phone");
             $add('created_by', 'Created by', $person("$t.created_by"), 'text', 'Ownership');
+            if ($table === 'companies') {
+                $add('registration_number', 'Company registration number', "$t.registration_number", 'text', 'Customer', width: 220);
+            }
             if ($table === 'contacts') {
                 $add('company', 'Company', "(SELECT name FROM crm_companies WHERE id=$t.company_id)", 'text', 'Customer', width: 220);
                 $contactColumns($t);

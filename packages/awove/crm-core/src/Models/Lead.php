@@ -17,7 +17,16 @@ class Lead extends Model
 
     protected function casts(): array
     {
-        return ['custom_fields' => 'array', 'attribution' => 'array', 'archived_at' => 'datetime', 'estimated_value' => 'decimal:2', 'final_value' => 'decimal:2', 'closing_date' => 'immutable_date:Y-m-d'];
+        return [
+            'custom_fields' => 'array', 'attribution' => 'array', 'archived_at' => 'datetime',
+            'estimated_value' => 'decimal:2', 'final_value' => 'decimal:2',
+            'closing_date' => 'immutable_date:Y-m-d',
+            'contract_sent_on' => 'immutable_date:Y-m-d',
+            'invoice_sent_on' => 'immutable_date:Y-m-d',
+            'payment_received_on' => 'immutable_date:Y-m-d',
+            'process_started_on' => 'immutable_date:Y-m-d',
+            'privacy_policy_accepted' => 'boolean',
+        ];
     }
 
     public function contact(): BelongsTo

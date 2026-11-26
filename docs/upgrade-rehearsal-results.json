@@ -15,6 +15,8 @@
       "2026_10_24_000620_create_identity_relationships",
       "2026_10_24_000650_create_shared_work",
       "2026_10_24_000800_create_employee_references",
+      "2026_11_26_001400_add_lead_baseline_fields",
+      "2026_11_26_001410_create_signed_contracts",
       "2026_10_24_000600_create_customer_service",
       "2026_10_24_000700_create_executive",
       "2026_10_24_000900_create_finance_ledger",
@@ -26,12 +28,14 @@
       "2026_10_31_001300_create_nonprofit_programs",
       "2026_10_31_001310_create_nonprofit_fundraising",
       "2026_10_31_001320_create_nonprofit_projects",
-      "2026_10_24_000750_create_operations"
+      "2026_10_24_000750_create_operations",
+      "2026_11_26_001600_create_vault_data",
+      "2026_11_26_001610_create_vault_auth"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "23255a57e33b7ae1120fcc7d586060d39b0a1083eb3d60de1cba01d3b907c6d2"
+    "fingerprint": "1cc99ab0b408211caca6afb74b9e5ce14fab8296997c0795e4440d7066309f22"
   },
   {
     "installation": "beta",
@@ -49,6 +53,8 @@
       "2026_10_24_000620_create_identity_relationships",
       "2026_10_24_000650_create_shared_work",
       "2026_10_24_000800_create_employee_references",
+      "2026_11_26_001400_add_lead_baseline_fields",
+      "2026_11_26_001410_create_signed_contracts",
       "2026_10_24_000600_create_customer_service",
       "2026_10_24_000700_create_executive",
       "2026_10_24_000900_create_finance_ledger",
@@ -60,11 +66,13 @@
       "2026_10_31_001300_create_nonprofit_programs",
       "2026_10_31_001310_create_nonprofit_fundraising",
       "2026_10_31_001320_create_nonprofit_projects",
-      "2026_10_24_000750_create_operations"
+      "2026_10_24_000750_create_operations",
+      "2026_11_26_001600_create_vault_data",
+      "2026_11_26_001610_create_vault_auth"
     ],
     "data_retained": true,
     "backup_restore_matches": true,
     "private_file_restore_matches": true,
-    "fingerprint": "ff434f10453bafe751f0261620c4adca2eb834d337f83f5291816d95c28b253b"
+    "fingerprint": "79f69dd79bf1e3ad5f622c88743df32d0edd45686d9ec619f53bd069d3441f69"
   }
 ]
