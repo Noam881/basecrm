@@ -38,6 +38,18 @@ export interface IdentityDocument {
     created_at: string;
     uploaded_by: { id: number; name: string } | null;
     download_url: string;
+    source?: {
+        author: { name: string | null };
+        source_created_at: string | null;
+        source_updated_at: string | null;
+        kind: "file-column" | "item-assets-all" | "update" | "reply";
+        context: {
+            kind: "update" | "reply";
+            lead_id: number;
+            activity_id: number;
+            url: string;
+        } | null;
+    } | null;
 }
 export interface ContactOption {
     value: string;

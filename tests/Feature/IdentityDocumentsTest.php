@@ -241,9 +241,13 @@ it('adds document storage around existing identities without altering their data
     $lead = app(Leads::class)->create($owner, ['contact_id' => $contact->id, 'company_id' => $company->id, 'owner_id' => $owner->id, 'status_id' => 'new']);
     $before = [$contact->fresh()->getAttributes(), $company->fresh()->getAttributes(), $lead->fresh()->getAttributes()];
     // Recreate only this empty new table inside the isolated base_test transaction.
+    expect(DB::table('crm_import_document_transfers')->count())->toBe(0);
+    Schema::drop('crm_import_document_transfers');
     Schema::drop('crm_documents');
     $migration = require base_path('packages/awove/crm-core/database/migrations/2026_11_27_001700_create_identity_documents.php');
     $migration->up();
+    $transferMigration = require base_path('packages/awove/crm-core/database/migrations/2026_11_27_001780_create_import_document_transfers.php');
+    $transferMigration->up();
     expect([$contact->fresh()->getAttributes(), $company->fresh()->getAttributes(), $lead->fresh()->getAttributes()])->toBe($before)
         ->and(Document::count())->toBe(0);
     expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'Restore a tested backup');

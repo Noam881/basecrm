@@ -33,6 +33,35 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const form = useForm<{ file: File | null }>({ file: null });
 let loadController: AbortController | undefined;
 
+function validSource(source: IdentityDocument["source"]): boolean {
+    if (source == null) return true;
+    if (
+        typeof source !== "object" ||
+        !["file-column", "item-assets-all", "update", "reply"].includes(
+            source.kind,
+        ) ||
+        !source.author ||
+        (source.author.name !== null &&
+            typeof source.author.name !== "string") ||
+        (source.source_created_at !== null &&
+            typeof source.source_created_at !== "string") ||
+        (source.source_updated_at !== null &&
+            typeof source.source_updated_at !== "string")
+    )
+        return false;
+    const context = source.context;
+    return (
+        context === null ||
+        (typeof context === "object" &&
+            ["update", "reply"].includes(context.kind) &&
+            Number.isSafeInteger(context.lead_id) &&
+            context.lead_id > 0 &&
+            Number.isSafeInteger(context.activity_id) &&
+            context.activity_id > 0 &&
+            context.url === `/leads/${context.lead_id}`)
+    );
+}
+
 async function loadDocuments() {
     loadController?.abort();
     const controller = new AbortController();
@@ -57,6 +86,12 @@ async function loadDocuments() {
         };
         if (
             !Array.isArray(result.documents) ||
+            !result.documents.every(
+                (document) =>
+                    document &&
+                    typeof document === "object" &&
+                    validSource(document.source),
+            ) ||
             typeof result.can_upload !== "boolean"
         ) {
             throw new Error("Invalid document response");
@@ -263,6 +298,52 @@ function fileSize(bytes: number) {
                         document.uploaded_by?.name ?? t("Former user")
                     }}</bdi></small
                 >
+                <small v-if="document.source" class="crm-muted">
+                    <template v-if="document.source.author.name">
+                        {{ t("Original author") }}:
+                        <bdi>{{ document.source.author.name }}</bdi>
+                    </template>
+                    <template v-else>{{
+                        t("Original author unavailable")
+                    }}</template>
+                    ·
+                    <bdi v-if="document.source.source_created_at">
+                        <time
+                            :datetime="document.source.source_created_at"
+                            :title="document.source.source_created_at"
+                            >{{
+                                date(
+                                    document.source.source_created_at,
+                                    timezone,
+                                )
+                            }}</time
+                        >
+                    </bdi>
+                    <template v-else>{{
+                        t("Original time unavailable")
+                    }}</template>
+                </small>
+                <small
+                    v-if="document.source?.source_updated_at"
+                    class="crm-muted"
+                >
+                    {{ t("Source updated") }} ·
+                    <bdi>{{
+                        date(document.source.source_updated_at, timezone)
+                    }}</bdi>
+                </small>
+                <small v-if="document.source?.context">
+                    <a
+                        :href="`/leads/${document.source.context.lead_id}#activity-${document.source.context.activity_id}`"
+                        >{{
+                            t(
+                                document.source.context.kind === "reply"
+                                    ? "Legacy reply"
+                                    : "Legacy update",
+                            )
+                        }}</a
+                    >
+                </small>
             </div>
             <div class="crm-form-action">
                 <a

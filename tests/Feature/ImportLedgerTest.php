@@ -348,6 +348,8 @@ it('adds metadata tables without rewriting native client data and refuses destru
         expect(DB::table($table)->count())->toBe(0);
         Schema::drop($table);
     }
+    expect(DB::table('crm_import_document_transfers')->count())->toBe(0);
+    Schema::drop('crm_import_document_transfers');
     expect(DB::table('crm_import_automation_holds')->count())->toBe(0);
     Schema::drop('crm_import_automation_holds');
     Schema::drop('crm_import_operations');
@@ -357,6 +359,8 @@ it('adds metadata tables without rewriting native client data and refuses destru
     $migration->up();
     $holdMigration = require base_path('packages/awove/crm-core/database/migrations/2026_11_27_001720_create_import_automation_holds.php');
     $holdMigration->up();
+    $documentTransferMigration = require base_path('packages/awove/crm-core/database/migrations/2026_11_27_001780_create_import_document_transfers.php');
+    $documentTransferMigration->up();
     $historyMigration = require base_path('packages/awove/finance/database/migrations/2026_11_27_001800_create_finance_source_history.php');
     $historyMigration->up();
     expect($contact->fresh()->getAttributes())->toBe($before)->and(Batch::count())->toBe(0);
