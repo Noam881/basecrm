@@ -13,10 +13,13 @@ final readonly class DocumentSource
     public static function from(array $input): self
     {
         $reference = ($input['kind'] ?? null) === 'generated-reference';
+        $generatedHistory = ($input['kind'] ?? null) === 'generated-history';
+        $keys = $reference ? [...self::KEYS, 'parent_item_id', 'reference_revision', 'review_flags', 'reference_columns', 'reference_digest']
+            : ($generatedHistory ? [...self::KEYS, 'reply_to_document_mapping_id'] : self::KEYS);
         if ($reference) {
             $input += ['reference_digest' => null];
         }
-        Metadata::exact($input, $reference ? [...self::KEYS, 'parent_item_id', 'reference_revision', 'review_flags', 'reference_columns', 'reference_digest'] : self::KEYS);
+        Metadata::exact($input, $keys);
         if ($reference) {
             abort_unless($input['entity_type'] === 'item' && $input['source_id'] === $input['source_parent_id']
                 && is_int($input['reference_revision']) && $input['reference_revision'] >= 1 && $input['reference_revision'] <= 1000000
@@ -35,8 +38,8 @@ final readonly class DocumentSource
             abort_unless(count(array_unique($input['review_flags'])) === count($input['review_flags']), 422, 'Invalid generated reference.');
         }
         $input['role'] = Metadata::token($input['role']);
-        abort_unless(in_array($input['entity_type'], $reference ? ['item'] : ['asset', 'workdoc'], true)
-            && in_array($input['kind'], ['file-column', 'item-assets-all', 'update', 'reply', 'generated-reference'], true), 422, 'Invalid document source context.');
+        abort_unless(in_array($input['entity_type'], $reference ? ['item'] : ($generatedHistory ? ['update', 'reply'] : ['asset', 'workdoc']), true)
+            && in_array($input['kind'], ['file-column', 'item-assets-all', 'update', 'reply', 'generated-reference', 'generated-history'], true), 422, 'Invalid document source context.');
         foreach (['source_id', 'source_parent_id'] as $key) {
             $input[$key] = Metadata::opaque($input[$key]);
         }
@@ -49,10 +52,18 @@ final readonly class DocumentSource
             && ($input['history_mapping_id'] === null || is_int($input['history_mapping_id']) && $input['history_mapping_id'] > 0)
             && ($input['source_index'] === null || is_int($input['source_index']) && $input['source_index'] >= 0 && $input['source_index'] <= 1000000), 422, 'Invalid document source context.');
         $history = in_array($input['kind'], ['update', 'reply'], true);
-        abort_unless($history === ($input['history_mapping_id'] !== null) && $history === ($input['update_id'] !== null)
-            && ($input['kind'] === 'reply') === ($input['reply_id'] !== null)
-            && ($input['kind'] === 'file-column') === ($input['column_id'] !== null)
-            && ($reference ? $input['source_index'] === null : ($history || $input['source_index'] !== null)), 422, 'Invalid document source association.');
+        if ($generatedHistory) {
+            $reply = $input['entity_type'] === 'reply';
+            abort_unless($input['history_mapping_id'] === null && $input['column_id'] === null && $input['source_index'] === null
+                && $input['update_id'] !== null && $reply === ($input['reply_id'] !== null)
+                && $input['source_id'] === ($reply ? $input['reply_id'] : $input['update_id'])
+                && ($reply ? is_int($input['reply_to_document_mapping_id']) && $input['reply_to_document_mapping_id'] > 0 : $input['reply_to_document_mapping_id'] === null), 422, 'Invalid generated history association.');
+        } else {
+            abort_unless($history === ($input['history_mapping_id'] !== null) && $history === ($input['update_id'] !== null)
+                && ($input['kind'] === 'reply') === ($input['reply_id'] !== null)
+                && ($input['kind'] === 'file-column') === ($input['column_id'] !== null)
+                && ($reference ? $input['source_index'] === null : ($history || $input['source_index'] !== null)), 422, 'Invalid document source association.');
+        }
         $attribution = LegacyPayload::validate('source-created', ['body_html' => null, ...array_intersect_key($input,
             array_flip(['author', 'source_created_at', 'source_updated_at']))]);
         foreach (['author', 'source_created_at', 'source_updated_at'] as $key) {
@@ -60,7 +71,7 @@ final readonly class DocumentSource
         }
 
         $ordered = [];
-        foreach ($reference ? [...self::KEYS, 'parent_item_id', 'reference_revision', 'review_flags', 'reference_columns', 'reference_digest'] : self::KEYS as $key) {
+        foreach ($keys as $key) {
             $ordered[$key] = $input[$key];
         }
 

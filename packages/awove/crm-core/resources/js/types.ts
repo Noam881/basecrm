@@ -47,10 +47,13 @@ export interface IdentityDocument {
             | "item-assets-all"
             | "update"
             | "reply"
-            | "generated-reference";
+            | "generated-reference"
+            | "generated-history";
         item_id?: string;
         parent_item_id?: string | null;
         reference_revision?: number;
+        update_id?: string;
+        reply_id?: string | null;
         review_flags?: string[];
         context: {
             kind: "update" | "reply";

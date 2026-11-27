@@ -786,5 +786,8 @@
     "Import connection is not configured yet.": "החיבור לייבוא עדיין אינו מוגדר.",
     "Original source export part": "חלק מייצוא המקור",
     "Original title": "כותרת מקורית",
-    "Imported secure record": "רשומה מאובטחת מיובאת"
+    "Imported secure record": "רשומה מאובטחת מיובאת",
+    "Generated source history reference": "מסמך תיעוד מקור שנוצר במערכת",
+    "Source update": "עדכון מקור",
+    "Source reply": "תגובת מקור"
 }

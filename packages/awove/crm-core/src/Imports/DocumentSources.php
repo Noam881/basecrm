@@ -31,4 +31,11 @@ final class DocumentSources
         abort_unless($source->data['kind'] === 'generated-reference' && $policy instanceof ReferenceSourcePolicy, 403, 'Original column ownership is not registered.');
         $policy->authorizeFields($actor, $batch, $identity, $sourceItem, $source, $columns);
     }
+
+    public function authorizeGeneratedHistory($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void
+    {
+        $this->authorize($actor, $batch, $identity, $sourceItem, $source);
+        $policy = $this->policies[$batch->provider.':'.$source->data['role']] ?? null;
+        abort_unless($source->data['kind'] === 'generated-history' && $policy instanceof GeneratedHistorySourcePolicy, 403, 'Generated history ownership is not registered.');
+    }
 }

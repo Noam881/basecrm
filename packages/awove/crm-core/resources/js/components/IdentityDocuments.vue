@@ -66,6 +66,7 @@ function validSource(source: IdentityDocument["source"]): boolean {
             "update",
             "reply",
             "generated-reference",
+            "generated-history",
         ].includes(source.kind) ||
         !source.author ||
         (source.author.name !== null &&
@@ -336,6 +337,18 @@ function fileSize(bytes: number) {
                         :key="flag"
                     >
                         · {{ reviewLabel(flag) }}</span
+                    >
+                </small>
+                <small
+                    v-if="document.source?.kind === 'generated-history'"
+                    class="crm-muted"
+                >
+                    {{ t("Generated source history reference") }} ·
+                    {{ t("Source update") }}
+                    <bdi>{{ document.source.update_id }}</bdi>
+                    <template v-if="document.source.reply_id">
+                        · {{ t("Source reply") }}
+                        <bdi>{{ document.source.reply_id }}</bdi></template
                     >
                 </small>
                 <small v-if="document.source" class="crm-muted">
