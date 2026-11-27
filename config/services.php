@@ -5,6 +5,7 @@ return [
     'monday' => [
         'token' => env('MONDAY_API_TOKEN'),
         'api_version' => env('MONDAY_API_VERSION', '2026-10'),
+        'asset_hosts' => array_map('trim', explode(',', (string) env('MONDAY_ASSET_HOSTS', 'files.monday.com'))),
     ],
 
     /*
