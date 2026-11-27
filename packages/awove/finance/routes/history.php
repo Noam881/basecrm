@@ -10,4 +10,6 @@ Route::middleware(['web', 'auth', 'verified', EnsureFinanceAccess::class.':histo
     Route::get('/{id}', [Controller::class, 'show'])->whereNumber('id');
     Route::get('/{id}/entries', [Controller::class, 'entries'])->whereNumber('id');
     Route::get('/{id}/entries/{entry}', [Controller::class, 'entry'])->whereNumber(['id', 'entry']);
+    Route::get('/{id}/files', [Awove\Finance\History\Files\Controller::class, 'index'])->whereNumber('id');
+    Route::get('/{id}/files/{attachment}/download', [Awove\Finance\History\Files\Controller::class, 'download'])->whereNumber('id')->whereUuid('attachment');
 });

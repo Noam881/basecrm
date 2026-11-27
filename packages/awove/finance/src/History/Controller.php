@@ -22,7 +22,8 @@ class Controller
 
     public function show(Request $request, int $id, Records $records)
     {
-        return Inertia::render('Finance/HistoryRecord', ['record' => $records->describe($request->user(), $id), ...$records->page($request->user(), $id), 'sections' => app(FinanceModule::class)->sections($request->user())]);
+        return Inertia::render('Finance/HistoryRecord', ['record' => $records->describe($request->user(), $id), ...$records->page($request->user(), $id),
+            'files' => app(Files\Files::class)->forRecord($request->user(), $id), 'sections' => app(FinanceModule::class)->sections($request->user())]);
     }
 
     public function entries(Request $request, int $id, Records $records)
@@ -48,6 +49,8 @@ class Controller
         $more = $rows->count() > 10;
         $rows = $rows->take(10);
 
-        return response()->json(['records' => $rows->map(fn ($row) => ['id' => $row->id, 'label' => $records->label($row), 'kind' => $row->kind, 'record_url' => '/finance/history/'.$row->id])->values(), 'next_cursor' => $more ? $rows->last()->id : null])->header('Cache-Control', 'private, no-store');
+        return response()->json(['records' => $rows->map(fn ($row) => ['id' => $row->id, 'label' => $records->label($row), 'kind' => $row->kind,
+            'record_url' => '/finance/history/'.$row->id, 'files' => app(Files\Files::class)->forRecord($request->user(), $row->id)])->values(),
+            'next_cursor' => $more ? $rows->last()->id : null])->header('Cache-Control', 'private, no-store');
     }
 }

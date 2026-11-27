@@ -12,6 +12,27 @@ export type HistoryRecord = {
     }[];
     created_at: string;
 };
+export type HistoryFile = {
+    id: string;
+    entry_id: number;
+    name: string;
+    mime_type: string;
+    size_bytes: number;
+    imported_at: string;
+    download_url: string;
+    source: {
+        kind: "file-column" | "item-assets-all" | "update" | "reply";
+        item_id: string;
+        asset_id: string;
+        update_id: string | null;
+        reply_id: string | null;
+        author: { name: string | null };
+        created_at: string | null;
+        created_precision: "date" | "timestamp" | null;
+        updated_at: string | null;
+        updated_precision: "date" | "timestamp" | null;
+    };
+};
 export type HistoryEntry = {
     id: number;
     entry_kind: "facts" | "update" | "reply";

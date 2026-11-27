@@ -344,7 +344,7 @@ it('adds metadata tables without rewriting native client data and refuses destru
     $contact = Contact::create(['name' => 'Noa Cohen', 'created_by' => $user->id, 'search_key' => 'noacohen']);
     $before = $contact->fresh()->getAttributes();
     // Rebuild this empty metadata dependency graph only inside the isolated base_test transaction.
-    foreach (['finance_history_entries', 'finance_history_identities', 'finance_history_records'] as $table) {
+    foreach (['finance_history_attachments', 'finance_history_entries', 'finance_history_identities', 'finance_history_records'] as $table) {
         expect(DB::table($table)->count())->toBe(0);
         Schema::drop($table);
     }
@@ -363,6 +363,8 @@ it('adds metadata tables without rewriting native client data and refuses destru
     $documentTransferMigration->up();
     $historyMigration = require base_path('packages/awove/finance/database/migrations/2026_11_27_001800_create_finance_source_history.php');
     $historyMigration->up();
+    $financeAttachmentMigration = require base_path('packages/awove/finance/database/migrations/2026_11_27_001850_create_finance_history_attachments.php');
+    $financeAttachmentMigration->up();
     expect($contact->fresh()->getAttributes())->toBe($before)->and(Batch::count())->toBe(0);
     expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'Restore a tested backup');
 });

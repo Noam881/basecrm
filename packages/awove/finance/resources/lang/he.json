@@ -181,5 +181,11 @@
     "Recorded in CRM": "תועד במערכת",
     "Reply to financial entry {id}": "תגובה לרשומה כספית {id}",
     "The source entry included embedded media.": "ברשומה המקורית נכללה מדיה מוטמעת.",
-    "Unavailable in source": "לא זמין במקור"
+    "Unavailable in source": "לא זמין במקור",
+    "Financial files": "קבצים כספיים",
+    "No financial files are available for this record.": "אין קבצים כספיים זמינים לרשומה זו.",
+    "Original file date": "תאריך הקובץ במקור",
+    "Original file time": "זמן הקובץ במקור",
+    "Download financial file": "הורדת הקובץ הכספי",
+    "KB": "ק״ב"
 }
