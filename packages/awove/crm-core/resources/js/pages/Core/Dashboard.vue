@@ -100,7 +100,7 @@ function apply() {
         <p class="crm-muted">
             {{
                 t(
-                    "Pipeline and follow-ups use opportunity creation dates. Won deals use the recorded closing date. Only records you can access are included.",
+                    "Pipeline and follow-ups use the lead entry date, falling back to the record creation date. Won deals use the recorded closing date. Only records you can access are included.",
                 )
             }}
         </p>

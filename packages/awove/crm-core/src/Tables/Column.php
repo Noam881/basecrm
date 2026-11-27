@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 
 final readonly class Column
 {
-    public function __construct(public string $id, public string $label, public string $expression, public string $type = 'text', public string $group = 'Record', public array $options = [], public int $width = 180) {}
+    public function __construct(public string $id, public string $label, public string $expression, public string $type = 'text', public string $group = 'Record', public array $options = [], public int $width = 180, public ?string $calendarExpression = null) {}
 
     public function metadata(): array
     {

@@ -7,6 +7,7 @@ use Awove\Core\ContactDetails;
 use Awove\Core\IdentityPanels;
 use Awove\Core\Imports\AutomationHolds;
 use Awove\Core\Installation;
+use Awove\Core\LeadDates;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
@@ -54,14 +55,15 @@ class CrmController
         $won = (clone $q)->whereHas('status', fn ($q) => $q->where('kind', 'won'));
         // Undated won records cannot be assigned to a closing period; report their presence independently.
         $wonMissingClosingDate = (clone $won)->whereNull('closing_date')->count();
-        // Pipeline dates describe opportunity creation; won dates describe the actual closing date.
+        // Prefer the business entry day; retain exact creation-time fallback and separate closing periods.
         $zone = Installation::display($r->user())['timezone'];
+        $entered = LeadDates::calendarExpression($zone);
         if ($r->filled('from')) {
-            $q->where('created_at', '>=', CarbonImmutable::parse($r->input('from'), $zone)->startOfDay()->utc());
+            $q->whereRaw("($entered) >= ?::date", [$r->input('from')]);
             $won->where('closing_date', '>=', $r->input('from'));
         }
         if ($r->filled('to')) {
-            $q->where('created_at', '<=', CarbonImmutable::parse($r->input('to'), $zone)->endOfDay()->utc());
+            $q->whereRaw("($entered) <= ?::date", [$r->input('to')]);
             $won->where('closing_date', '<=', $r->input('to'));
         }
         $tasks = Access::tasks($r->user())->where('status', 'open')->whereIn('lead_id', (clone $q)->select('id'));
@@ -120,7 +122,7 @@ class CrmController
 
     private function leadData(Request $r, bool $update = false): array
     {
-        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited', 'attribution' => 'missing', ...Sales::opportunityRules()]);
+        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited', 'attribution' => 'missing', 'entered_on' => 'missing', ...Sales::opportunityRules()]);
         foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $key => $model) {
             if (! empty($data[$key])) {
                 abort_unless(Access::identities($r->user(), $model)->whereKey($data[$key])->exists(), 403);

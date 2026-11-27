@@ -1,4 +1,9 @@
 import { localeTag } from "@/lib/i18n";
+import {
+    formatCalendarDate,
+    formatTimestamp,
+    formatLeadCreated,
+} from "./dates";
 
 export interface Person {
     id: number;
@@ -110,6 +115,7 @@ export interface Lead {
     source: string;
     version: number;
     archived_at: string | null;
+    entered_on: string | null;
     created_at: string;
     custom_fields: Record<string, string | number | boolean | null>;
     needs?: string | null;
@@ -178,8 +184,10 @@ export interface Field {
     options?: string[];
 }
 export const date = (value: string, zone?: string) =>
-    new Intl.DateTimeFormat(localeTag(), {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: zone,
-    }).format(new Date(value));
+    formatTimestamp(value, localeTag(), zone);
+export const dateOnly = (value: string) =>
+    formatCalendarDate(value, localeTag());
+export const leadCreated = (
+    lead: { entered_on?: string | null; created_at: string },
+    zone?: string,
+) => formatLeadCreated(lead, localeTag(), zone);

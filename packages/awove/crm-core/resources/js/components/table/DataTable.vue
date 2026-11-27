@@ -18,10 +18,10 @@ import type {
     Sort,
     QueryState,
     SavedView,
-    Value,
 } from "./types";
 import { clipboardCell } from "./clipboard";
 import { exactDecimal } from "./decimal";
+import { date, dateOnly, leadCreated } from "../../types";
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 const props = withDefaults(
     defineProps<{
@@ -215,20 +215,21 @@ const opNames: Record<string, string> = {
     between: "is between",
     in: "is one of",
 };
-function format(value: Value | undefined, c: TableColumn) {
+function format(row: TableRow, c: TableColumn) {
+    const value = row.cells[c.id];
     if (value === null || value === undefined || value === "") return "—";
     if (c.type === "boolean")
         return ["true", "1"].includes(String(value)) ? t("Yes") : t("No");
     if (c.type === "number") return exactDecimal(value);
+    if (props.payload.id === "leads" && c.id === "created_at")
+        return leadCreated(
+            { entered_on: row.entered_on, created_at: String(value) },
+            zone,
+        );
     if (["date", "datetime"].includes(c.type)) {
-        const d = new Date(String(value));
-        if (Number.isNaN(d.valueOf())) return String(value);
-        return new Intl.DateTimeFormat(
-            localeTag(),
-            c.type === "date"
-                ? { dateStyle: "medium", timeZone: "UTC" }
-                : { dateStyle: "medium", timeStyle: "short", timeZone: zone },
-        ).format(d);
+        return c.type === "date"
+            ? dateOnly(String(value))
+            : date(String(value), zone);
     }
     // These columns are composed exclusively from controlled contact availability labels.
     // Localize display only; retained English filter/query values stay stable.
@@ -530,10 +531,7 @@ async function copyRows() {
             columns
                 .map((c) =>
                     clipboardCell(
-                        format(
-                            row.original.cells[c.id],
-                            catalog.value.get(c.id)!,
-                        ),
+                        format(row.original, catalog.value.get(c.id)!),
                     ),
                 )
                 .join("\t"),
@@ -999,13 +997,13 @@ onBeforeUnmount(() => {
                                     dir="auto"
                                     :title="
                                         format(
-                                            row.original.cells[column.id],
+                                            row.original,
                                             catalog.get(column.id)!,
                                         )
                                     "
                                     ><bdi :dir="cellDirection(column.id)">{{
                                         format(
-                                            row.original.cells[column.id],
+                                            row.original,
                                             catalog.get(column.id)!,
                                         )
                                     }}</bdi></Link
@@ -1013,7 +1011,7 @@ onBeforeUnmount(() => {
                                     v-else
                                     :title="
                                         format(
-                                            row.original.cells[column.id],
+                                            row.original,
                                             catalog.get(column.id)!,
                                         )
                                     "
@@ -1026,7 +1024,7 @@ onBeforeUnmount(() => {
                                     }"
                                     ><bdi :dir="cellDirection(column.id)">{{
                                         format(
-                                            row.original.cells[column.id],
+                                            row.original,
                                             catalog.get(column.id)!,
                                         )
                                     }}</bdi></span
