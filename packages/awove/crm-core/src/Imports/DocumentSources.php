@@ -23,4 +23,12 @@ final class DocumentSources
         abort_unless($policy !== null, 403, 'This source is not authorized for ordinary document storage.');
         $policy->authorize($actor, $batch, $identity, $sourceItem, $source);
     }
+
+    public function authorizeFields($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source, array $columns): void
+    {
+        $this->authorize($actor, $batch, $identity, $sourceItem, $source);
+        $policy = $this->policies[$batch->provider.':'.$source->data['role']] ?? null;
+        abort_unless($source->data['kind'] === 'generated-reference' && $policy instanceof ReferenceSourcePolicy, 403, 'Original column ownership is not registered.');
+        $policy->authorizeFields($actor, $batch, $identity, $sourceItem, $source, $columns);
+    }
 }

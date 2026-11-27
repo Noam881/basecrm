@@ -42,7 +42,16 @@ export interface IdentityDocument {
         author: { name: string | null };
         source_created_at: string | null;
         source_updated_at: string | null;
-        kind: "file-column" | "item-assets-all" | "update" | "reply";
+        kind:
+            | "file-column"
+            | "item-assets-all"
+            | "update"
+            | "reply"
+            | "generated-reference";
+        item_id?: string;
+        parent_item_id?: string | null;
+        reference_revision?: number;
+        review_flags?: string[];
         context: {
             kind: "update" | "reply";
             lead_id: number;

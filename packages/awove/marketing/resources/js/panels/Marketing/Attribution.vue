@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Originals from "./Originals.vue";
 import { t as tr } from "@/lib/i18n";
 import { computed, ref, onMounted } from "vue";
 import HistoryList, {
@@ -209,6 +210,9 @@ async function save() {
             </div>
         </form>
         <p v-else-if="!error">{{ tr("Loading attribution…") }}</p>
+        <Originals
+            :endpoint="p.endpoint.replace(/\/attribution$/, '/originals')"
+        />
         <HistoryList
             v-if="data"
             :history="data.history"

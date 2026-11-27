@@ -33,13 +33,40 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const form = useForm<{ file: File | null }>({ file: null });
 let loadController: AbortController | undefined;
 
+function reviewLabel(flag: string): string {
+    const labels: Record<string, string> = {
+        "source-party-review": "Separate source identities require review",
+        approved_separate_party_requires_review:
+            "Separate source identities require review",
+        noncanonical_phone_original_retained:
+            "Original phone retained for review",
+        phone_over_native_limit_native_null:
+            "Original phone exceeds the native field limit",
+        source_unselected_unknown_original_retained:
+            "Original source not selected",
+        unrecognized_privacy_consent_native_null:
+            "Original privacy consent needs review",
+        multiple_contact_methods_without_primary:
+            "Multiple source contact methods",
+        invalid_link_native_null_original_retained:
+            "Original document link needs review",
+        "unassigned-registration": "Registration has no associated company",
+        "unsupported-phone": "Original phone retained for review",
+    };
+    return t(labels[flag] ?? "Recorded source review note");
+}
+
 function validSource(source: IdentityDocument["source"]): boolean {
     if (source == null) return true;
     if (
         typeof source !== "object" ||
-        !["file-column", "item-assets-all", "update", "reply"].includes(
-            source.kind,
-        ) ||
+        ![
+            "file-column",
+            "item-assets-all",
+            "update",
+            "reply",
+            "generated-reference",
+        ].includes(source.kind) ||
         !source.author ||
         (source.author.name !== null &&
             typeof source.author.name !== "string") ||
@@ -298,6 +325,19 @@ function fileSize(bytes: number) {
                         document.uploaded_by?.name ?? t("Former user")
                     }}</bdi></small
                 >
+                <small
+                    v-if="document.source?.kind === 'generated-reference'"
+                    class="crm-muted"
+                >
+                    {{ t("Generated source reference") }} ·
+                    <bdi>{{ document.source.item_id }}</bdi>
+                    <span
+                        v-for="flag in document.source.review_flags ?? []"
+                        :key="flag"
+                    >
+                        · {{ reviewLabel(flag) }}</span
+                    >
+                </small>
                 <small v-if="document.source" class="crm-muted">
                     <template v-if="document.source.author.name">
                         {{ t("Original author") }}:
