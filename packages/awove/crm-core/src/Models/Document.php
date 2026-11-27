@@ -28,6 +28,7 @@ class Document extends Model
         return $this->belongsTo(config('auth.providers.users.model'), 'uploaded_by');
     }
 
+    /** @return HasOne<DocumentTransfer, $this> */
     public function importTransfer(): HasOne
     {
         return $this->hasOne(DocumentTransfer::class, 'document_id')->where('state', 'committed');

@@ -48,6 +48,19 @@ class Attributions
         return ['field_schema' => array_map(fn (array $field) => [...$field, 'label' => (string) __($field['label'])], self::fieldSchema()), 'version' => $r->version ?? 0, 'history' => $r ? Models\History::where('kind', 'attribution')->where('record_id', $r->id)->orderByDesc('id')->get()->map(fn (Models\History $h) => ['id' => $h->id, 'event' => $h->event, 'version' => $h->version, 'changed_fields' => array_values(array_intersect($h->details['changed_fields'] ?? [], [...array_keys(Labels::ATTRIBUTION), 'linked_campaign_id'])), 'actor' => ($actor = User::find($h->actor_id)) ? ['id' => $actor->id, 'name' => $actor->name] : null, 'created_at' => $h->created_at->toIso8601String()])->all() : [], 'fields' => $fields, 'linked_campaign_id' => $campaign?->id, 'linked_campaign' => $campaign?->name, 'has_hidden_campaign' => $r?->linked_campaign_id !== null && $campaign === null, 'has_legacy_snapshot' => Models\AttributionSnapshot::where('lead_id', $id)->exists(), 'campaigns' => app(Work::class)->campaigns($u)->whereNull('archived_at')->orderBy('name')->get(['id', 'name'])->toArray(), 'canEdit' => $u->fresh()->can('marketing.attribution.edit') && Gate::forUser($u->fresh())->allows('update', Lead::findOrFail($id))];
     }
 
+    /** Same validated representation for interactive edits and reviewed import deltas. */
+    public static function canonicalPatch(array $fields): array
+    {
+        validator(['fields' => $fields], ['fields' => 'array:'.implode(',', array_keys(LeadFields::schema())), ...LeadFields::rules()])->validate();
+        $patch = [];
+        foreach ($fields as $key => $value) {
+            $trimmed = is_string($value) ? trim($value) : $value;
+            $patch[$key] = $key === 'marketing_consent' ? ($value === null ? null : (bool) $value) : ($trimmed === '' ? null : $trimmed);
+        }
+
+        return $patch;
+    }
+
     public function update($u, int $id, array $input): Attribution
     {
         return DB::transaction(function () use ($u, $id, $input) {
@@ -63,13 +76,7 @@ class Attributions
                 $input['fields']['marketing_consent'] = null;
             }
             $validated = validator($input, LeadFields::rules())->validate();
-            $patch = [];
-            foreach ($validated['fields'] ?? [] as $key => $value) {
-                $trimmed = is_string($value) ? trim($value) : $value;
-                $patch[$key] = $key === 'marketing_consent'
-                    ? ($value === null ? null : (bool) $value)
-                    : ($trimmed === '' ? null : $trimmed);
-            }
+            $patch = self::canonicalPatch($validated['fields'] ?? []);
             $link = $r?->linked_campaign_id;
             if (array_key_exists('linked_campaign_id', $input)) {
                 $requested = $input['linked_campaign_id'] === null ? null : (int) $input['linked_campaign_id'];

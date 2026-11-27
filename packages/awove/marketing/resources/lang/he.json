@@ -158,5 +158,21 @@
     "Referrer URL": "כתובת האתר המפנה",
     "Type of help requested": "סוג העזרה המבוקשת",
     "UTM term": "מונח UTM",
-    "Who handles this today": "מי מטפל כיום"
+    "Who handles this today": "מי מטפל כיום",
+    "Generated source reference": "מסמך מקור שנוצר במערכת",
+    "source-party-review": "פרטי זהות לבחינה בהמשך",
+    "unassigned-registration": "מספר רישום ללא חברה משויכת",
+    "unsupported-phone": "מספר טלפון מקורי לבחינה",
+    "Original marketing data": "נתוני השיווק המקוריים",
+    "Original marketing data could not be loaded.": "לא ניתן לטעון את נתוני השיווק המקוריים.",
+    "Loading original data…": "טוען נתונים מקוריים…",
+    "No original marketing data yet.": "אין עדיין נתוני שיווק מקוריים.",
+    "View original fields": "הצגת שדות המקור",
+    "Load earlier originals": "טעינת רשומות מקור קודמות",
+    "Source value unavailable": "ערך המקור אינו זמין",
+    "Observed null value": "ערך המקור ריק במפורש",
+    "Original author unavailable": "פרטי הכותב המקורי אינם זמינים",
+    "Original time unavailable": "המועד המקורי אינו זמין",
+    "Source item": "פריט מקור",
+    "Source board": "לוח מקור"
 }

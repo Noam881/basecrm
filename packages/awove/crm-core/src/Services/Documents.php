@@ -49,6 +49,7 @@ class Documents
         $key = $identity instanceof Contact ? 'contact_id' : 'company_id';
         $documents = Document::where($key, $identity->id)->with(['uploader:id,name', 'importTransfer'])
             ->orderByDesc('created_at')->orderByDesc('id')->get()
+            ->filter(fn (Document $document) => app(DocumentImporter::class)->canRead($user, $document))->values()
             ->map(fn (Document $document) => $this->metadata($user, $document, $type, $identity->id))->all();
 
         return ['documents' => $documents, 'can_upload' => Gate::forUser($user)->allows('update', $identity)];
@@ -179,6 +180,7 @@ class Documents
         $identity = $this->identity($type, $id);
         Gate::forUser($this->actor($user))->authorize('view', $identity);
         abort_unless($identity instanceof Contact ? $document->contact_id === $identity->id : $document->company_id === $identity->id, 404);
+        app(DocumentImporter::class)->authorizeRead($user, $document);
         $disk = Storage::disk('local');
         abort_unless($disk->exists($document->private_path), 404, __('This document file is unavailable.'));
         $stream = $disk->readStream($document->private_path);

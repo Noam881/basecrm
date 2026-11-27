@@ -8,6 +8,11 @@ use Illuminate\Support\ServiceProvider;
 
 class MarketingProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->singleton(Imports\Sources::class);
+    }
+
     public function boot(Modules $modules): void
     {
         $modules->register(new MarketingModule);

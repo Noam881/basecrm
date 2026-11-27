@@ -3,6 +3,8 @@
 namespace Awove\Marketing;
 
 use Awove\Core\Contracts\DashboardContributor;
+use Awove\Core\Contracts\IdentityPanel;
+use Awove\Core\Contracts\IdentityPanelContributor;
 use Awove\Core\Contracts\LeadPanel;
 use Awove\Core\Contracts\LeadTableContributor;
 use Awove\Core\Contracts\Module;
@@ -10,9 +12,11 @@ use Awove\Core\Contracts\NavigationItem;
 use Awove\Core\Contracts\RecordTableContributor;
 use Awove\Core\Contracts\ReminderContributor;
 use Awove\Core\Installation;
+use Awove\Core\Models\Company;
+use Awove\Core\Models\Contact;
 use Awove\Core\Modules;
 
-class MarketingModule implements DashboardContributor, LeadTableContributor, Module, RecordTableContributor, ReminderContributor
+class MarketingModule implements DashboardContributor, IdentityPanelContributor, LeadTableContributor, Module, RecordTableContributor, ReminderContributor
 {
     public function id(): string
     {
@@ -54,6 +58,17 @@ class MarketingModule implements DashboardContributor, LeadTableContributor, Mod
     public function panels(): array
     {
         return app(Modules::class)->enabled('sales') ? [new LeadPanel('marketing.attribution', __('Marketing attribution'), 'Marketing/Attribution', '/marketing/leads/{lead}/attribution', 'marketing.attribution.view', ['marketing.attribution.edit'])] : [];
+    }
+
+    public function identityPanels($user, Contact|Company $identity): array
+    {
+        if (! $identity instanceof Company || ! $user->can('marketing.attribution.view')
+            || ! Models\History::where('kind', 'source-company')->where('record_id', $identity->id)->exists()) {
+            return [];
+        }
+
+        return [new IdentityPanel('marketing.originals', __('Original marketing data'), 'Marketing/Originals',
+            '/marketing/companies/'.$identity->id.'/originals', 'marketing.attribution.view')];
     }
 
     public function tableIds(): array

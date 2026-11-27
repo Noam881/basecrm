@@ -11,7 +11,9 @@ use Awove\Core\Imports\Ledger;
 use Awove\Core\Imports\LegacyHistory;
 use Awove\Core\Imports\Mapping;
 use Awove\Core\Imports\Operation;
+use Awove\Core\Imports\ReferenceSourcePolicy;
 use Awove\Core\Models\Document;
+use Awove\Core\Models\Lead;
 use Awove\Core\Services\Documents;
 use Awove\Core\Services\Identities;
 use Awove\Core\Services\Leads;
@@ -438,4 +440,104 @@ it('binds update attachments to verified retained history and exposes only autho
     $source['update_id'] = 'another-source-update';
     expect(fn () => importDurableDocument($f, ['source' => $source, 'key' => (string) Str::uuid()]))->toThrow(HttpException::class);
     expect(Document::count())->toBe(1)->and(DocumentTransfer::sole()->document_id)->toBe($imported['document_id']);
+});
+
+function generatedReferenceFixture(): array
+{
+    $f = durableDocumentFixture();
+    app(DocumentSources::class)->register('fixture-documents', 'ordinary-reference', new class implements ReferenceSourcePolicy
+    {
+        public function authorize($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void
+        {
+            abort_unless($source->data['role'] === 'ordinary-reference', 403);
+        }
+
+        public function authorizeFields($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source, array $columnIds): void
+        {
+            abort_unless($columnIds === ['amount'], 403);
+        }
+    });
+    $f['source'] = [...$f['source'], 'role' => 'ordinary-reference', 'entity_type' => 'item', 'source_id' => 'source-item', 'kind' => 'generated-reference', 'column_id' => null, 'source_index' => null,
+        'parent_item_id' => null, 'reference_revision' => 1, 'review_flags' => ['approved_separate_party_requires_review'], 'reference_columns' => ['amount']];
+    $f['payload'] = ['cells' => [['id' => 'amount', 'label' => 'מחיר מקור', 'type' => 'numbers', 'representation' => 'json-string', 'available' => true, 'value' => '123456789012345678901234567890.123400']]];
+
+    return $f;
+}
+function importGeneratedReference(array $f): array
+{
+    return app(DocumentImporter::class)->importReference($f['user'], $f['boundary'], $f['batch']['id'], $f['parent']['mapping_id'], $f['key'], $f['source'], $f['payload']);
+}
+it('stores truthful generated references with exact original JSON strings and immutable revision replay', function () {
+    $f = generatedReferenceFixture();
+    $r = importGeneratedReference($f);
+    $doc = Document::sole();
+    $bytes = Storage::disk('local')->get($doc->private_path);
+    expect($bytes)->toContain('Generated source reference', '123456789012345678901234567890.123400', 'מחיר מקור')->and($doc->mime_type)->toBe('text/plain')->and($doc->original_name)->toContain('review notes');
+    expect(importGeneratedReference($f)['document_id'])->toBe($r['document_id']);
+    $this->actingAs($f['user'])->getJson('/people/contacts/'.$f['identity']->id.'/documents')->assertOk()->assertJsonPath('documents.0.source.kind', 'generated-reference')->assertJsonPath('documents.0.source.item_id', 'source-item')->assertJsonPath('documents.0.source.review_flags.0', 'approved_separate_party_requires_review');
+    $f['source']['reference_revision'] = 2;
+    $f['key'] = (string) Str::uuid();
+    expect(fn () => importGeneratedReference($f))->toThrow(HttpException::class, 'Unchanged original');
+    expect(Document::count())->toBe(1);
+    $f['payload']['cells'][0]['value'] = '0.000100';
+    $next = importGeneratedReference($f);
+    expect($next['document_id'])->not->toBe($r['document_id'])->and(Document::count())->toBe(2);
+});
+it('refuses disguised uploads and cross-owner cells for generated references', function () {
+    $f = generatedReferenceFixture();
+    expect(fn () => importDurableDocument($f))->toThrow(HttpException::class, 'generated reference writer');
+    $f['payload']['cells'][0]['id'] = 'marketing-consent';
+    $f['source']['reference_columns'] = ['marketing-consent'];
+    expect(fn () => importGeneratedReference($f))->toThrow(HttpException::class)->and(Document::count())->toBe(0)->and(DocumentTransfer::count())->toBe(0);
+});
+it('requires source Lead access for generated reference listing download and source metadata on a shared profile', function () {
+    $f = generatedReferenceFixture();
+    $reader = User::factory()->create(['name' => 'Tamar Levi', 'active' => true]);
+    $reader->assignRole('Employee');
+    $reader->givePermissionTo(['leads.view.own', 'leads.edit.own']);
+    $lead = app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $f['user']->id, 'status_id' => 'new', 'source' => 'Website']);
+    app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $reader->id, 'status_id' => 'new', 'source' => 'Website']);
+    $key = (string) Str::uuid();
+    $map = $f['ledger']->claim($f['user'], $f['boundary'], $f['batch']['id'], ['board_id' => 'ordinary-board', 'entity_type' => 'item', 'entity_id' => 'source-item', 'target_role' => 'lead', 'relation_key' => 'primary'], ['request_key' => $key, 'revision' => 1, 'source_fingerprint' => str_repeat('a', 64), 'target_fingerprint' => null, 'previous_receipt_id' => null]);
+    $f['ledger']->finish($f['user'], $f['boundary'], $map['id'], $key, ['state' => 'verified', 'target_type' => 'core.lead', 'target_id' => (string) $lead->id, 'result_fingerprint' => str_repeat('b', 64)]);
+    $f['source']['source_item_mapping_id'] = $map['mapping_id'];
+    $r = importGeneratedReference($f);
+    $this->actingAs($reader)->getJson('/people/contacts/'.$f['identity']->id.'/documents')->assertOk()->assertJsonCount(0, 'documents');
+    $this->get('/people/contacts/'.$f['identity']->id.'/documents/'.$r['document_id'].'/download')->assertForbidden();
+    expect(fn () => app(DocumentImporter::class)->sourceMetadata($reader, Document::find($r['document_id'])))->toThrow(AuthorizationException::class);
+});
+
+it('retains child source lineage through an explicit parent Lead context without creating another Lead', function () {
+    $f = generatedReferenceFixture();
+    $lead = app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $f['user']->id, 'status_id' => 'new']);
+    $map = function (string $role) use ($f, $lead): int {
+        $key = (string) Str::uuid();
+        $receipt = $f['ledger']->claim($f['user'], $f['boundary'], $f['batch']['id'], ['board_id' => 'ordinary-child-board', 'entity_type' => 'item', 'entity_id' => 'source-child', 'target_role' => $role, 'relation_key' => 'parent-context'], ['request_key' => $key, 'revision' => 1, 'source_fingerprint' => str_repeat('a', 64), 'target_fingerprint' => null, 'previous_receipt_id' => null]);
+        $f['ledger']->finish($f['user'], $f['boundary'], $receipt['id'], $key, ['state' => 'verified', 'target_type' => 'core.lead', 'target_id' => (string) $lead->id, 'result_fingerprint' => str_repeat('b', 64)]);
+
+        return $receipt['mapping_id'];
+    };
+    $f['source'] = [...$f['source'], 'source_id' => 'source-child', 'source_parent_id' => 'source-child', 'parent_item_id' => 'source-item', 'source_item_mapping_id' => $map('primary-lead')];
+    expect(fn () => importGeneratedReference($f))->toThrow(HttpException::class, 'lineage changed');
+    $f['source']['source_item_mapping_id'] = $map('subitem-context');
+    $result = importGeneratedReference($f);
+    $source = app(DocumentImporter::class)->sourceMetadata($f['user'], Document::findOrFail($result['document_id']));
+    expect($source['item_id'])->toBe('source-child')->and($source['parent_item_id'])->toBe('source-item')->and(Lead::count())->toBe(1);
+    expect(DocumentTransfer::sole()->sourceContext()->data['source_id'])->toBe('source-child');
+});
+
+it('fails closed when a generated reference journal is disguised or missing', function () {
+    $f = generatedReferenceFixture();
+    $result = importGeneratedReference($f);
+    $transfer = DocumentTransfer::sole();
+    $source = $f['source'];
+    foreach (['parent_item_id', 'reference_revision', 'review_flags', 'reference_columns'] as $key) {
+        unset($source[$key]);
+    }
+    $source = [...$source, 'entity_type' => 'asset', 'kind' => 'file-column', 'source_id' => 'source-file', 'column_id' => 'files', 'source_index' => 0];
+    DB::table('crm_import_document_transfers')->where('id', $transfer->id)->update(['source_metadata' => json_encode($source)]);
+    $url = '/people/contacts/'.$f['identity']->id.'/documents/'.$result['document_id'].'/download';
+    $this->actingAs($f['user'])->get($url)->assertStatus(409);
+    DB::table('crm_import_document_transfers')->where('id', $transfer->id)->delete();
+    $this->get($url)->assertStatus(409);
 });

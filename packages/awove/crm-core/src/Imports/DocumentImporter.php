@@ -34,6 +34,47 @@ class DocumentImporter
     /** No target ID, path, checksum, fingerprint or successful outcome is accepted from a caller. */
     public function import($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, array $source, UploadedFile $file): array
     {
+        abort_if(($source['kind'] ?? null) === 'generated-reference', 422, 'Use the generated reference writer.');
+
+        return $this->importFile($actor, $boundary, $batchId, $identityMappingId, $requestKey, $source, $file);
+    }
+
+    public function importReference($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, array $source, array $payload): array
+    {
+        $this->outsideTransaction();
+        $source = DocumentSource::from($source);
+        abort_unless($source->data['kind'] === 'generated-reference', 422, 'A generated reference is required.');
+        $payload = OriginalFields::validate($payload);
+        abort_unless($source->data['reference_columns'] === array_column($payload['cells'], 'id'), 422, 'Original column selection changed.');
+        $data = $source->data;
+        $data['reference_digest'] = $this->digest('reference-content', [array_diff_key($data, ['reference_revision' => true, 'reference_digest' => true]), $payload]);
+        $source = DocumentSource::from($data);
+        $context = DB::transaction(function () use ($actor, $boundary, $batchId, $identityMappingId, $source, $payload): array {
+            $context = $this->context($actor, $boundary, $batchId, $identityMappingId, $source);
+            $this->sources->authorizeFields($context['actor'], $context['batch'], $context['identity_mapping'], $context['source_item'], $source, array_column($payload['cells'], 'id'));
+
+            return $context;
+        });
+        $bytes = "Generated source reference — created by Base CRM, not an original uploaded file.\n\n".json_encode([
+            'provider' => $context['batch']->provider, 'account_id' => $context['batch']->source_account,
+            'board_id' => $context['source_item']->board_id, 'item_id' => $source->data['source_id'],
+            ...array_intersect_key($source->data, array_flip(['parent_item_id', 'reference_revision', 'review_flags', 'author', 'source_created_at', 'source_updated_at'])), ...$payload,
+        ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n";
+        $stream = tmpfile();
+        abort_unless(is_resource($stream), 503, 'A private reference could not be prepared.');
+        try {
+            $path = stream_get_meta_data($stream)['uri'];
+            abort_unless(chmod($path, 0600) && fwrite($stream, $bytes) === strlen($bytes) && fflush($stream), 503, 'A private reference could not be prepared.');
+
+            return $this->importFile($actor, $boundary, $batchId, $identityMappingId, $requestKey, $source->data,
+                new UploadedFile($path, 'Source reference'.($source->data['review_flags'] !== [] ? ' - review notes' : '').' - r'.$source->data['reference_revision'].'.txt', null, null, true));
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    private function importFile($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, array $source, UploadedFile $file): array
+    {
         $this->outsideTransaction();
         $source = DocumentSource::from($source);
         $requestKey = Metadata::uuid($requestKey);
@@ -155,8 +196,56 @@ class DocumentImporter
     }
 
     /** Existing profile Gate remains authoritative; hidden journal metadata is never returned wholesale. */
+    public function canRead($actor, Document $document): bool
+    {
+        try {
+            $this->authorizeRead($actor, $document);
+
+            return true;
+        } catch (AuthorizationException $error) {
+            return false;
+        } catch (HttpExceptionInterface $error) {
+            if (in_array($error->getStatusCode(), [403, 404], true)) {
+                return false;
+            } throw $error;
+        }
+    }
+
+    public function authorizeRead($actor, Document $document): void
+    {
+        $transfer = $document->importTransfer()->first();
+        if (! $transfer) {
+            abort_if(str_starts_with($document->private_path, 'documents/imports/'), 409, 'Document source evidence requires reconciliation.');
+
+            return;
+        }
+        $this->verifyReceipt($transfer, $document);
+        if ($transfer->sourceContext()->data['kind'] !== 'generated-reference') {
+            return;
+        }
+        $identity = $document->contact_id !== null ? Contact::findOrFail($document->contact_id) : Company::findOrFail($document->company_id);
+        Gate::forUser($this->actor($actor, false))->authorize('view', $identity);
+        $mapping = Mapping::findOrFail($transfer->source_item_mapping_id);
+        $operation = Operation::findOrFail($transfer->operation_id);
+        $this->mapping($mapping, Batch::findOrFail($operation->batch_id));
+        $source = $transfer->sourceContext()->data;
+        $documentMapping = Mapping::findOrFail($operation->mapping_id);
+        abort_unless($mapping->entity_type === 'item' && $mapping->entity_id === $source['source_parent_id']
+            && $documentMapping->board_id === $mapping->board_id && $documentMapping->entity_type === 'item'
+            && $documentMapping->entity_id === $source['source_id'], 409, 'Document source context changed.');
+        if ($mapping->target_type === 'core.lead') {
+            $lead = Lead::findOrFail($this->targetId($mapping));
+            Gate::forUser($this->actor($actor, false))->authorize('view', $lead);
+            abort_unless($document->contact_id !== null ? $lead->contact_id === $document->contact_id : $lead->company_id === $document->company_id, 409, 'Document identity association changed.');
+        } else {
+            abort_unless($mapping->target_type === 'core.company' && (string) $document->company_id === $mapping->target_id
+                || $mapping->target_type === 'core.contact' && (string) $document->contact_id === $mapping->target_id, 409, 'Document source context changed.');
+        }
+    }
+
     public function sourceMetadata($actor, Document $document): ?array
     {
+        $this->authorizeRead($actor, $document);
         $transfer = $document->relationLoaded('importTransfer') ? $document->getRelation('importTransfer') : $document->importTransfer()->first();
         if (! $transfer) {
             return null;
@@ -193,7 +282,7 @@ class DocumentImporter
         Gate::forUser($this->actor($actor, false))->authorize('view', $identity->fresh());
 
         return ['author' => ['name' => $source['author']['name']], 'source_created_at' => $source['source_created_at'], 'source_updated_at' => $source['source_updated_at'],
-            'kind' => $source['kind'], 'context' => $context];
+            'kind' => $source['kind'], 'context' => $context, ...($source['kind'] === 'generated-reference' ? ['item_id' => $source['source_id'], 'parent_item_id' => $source['parent_item_id'], 'reference_revision' => $source['reference_revision'], 'review_flags' => $source['review_flags']] : [])];
     }
 
     private function locked($actor, string $id, bool $write): DocumentTransfer
@@ -273,6 +362,21 @@ class DocumentImporter
             $historyFingerprint = Operation::findOrFail($activity->details['operation_id'])->result_fingerprint;
         }
         $this->sources->authorize($user, $batch, $identityMapping, $item, $source);
+        if ($source->data['kind'] === 'generated-reference') {
+            $this->sources->authorizeFields($user, $batch, $identityMapping, $item, $source, $source->data['reference_columns']);
+            abort_unless($source->data['parent_item_id'] === null || $item->target_role === 'subitem-context', 409, 'Generated reference lineage changed.');
+            $prior = DocumentTransfer::where('source_item_mapping_id', $item->id)->where('source_metadata->kind', 'generated-reference')
+                ->where('source_metadata->role', $source->data['role'])->where('state', '<>', 'cleaned')->get();
+            $revision = $source->data['reference_revision'];
+            $earlier = $prior->filter(fn ($t) => ($t->sourceContext()->data['reference_revision'] ?? 0) < $revision);
+            if ($revision > 1) {
+                $previous = $earlier->filter(fn ($t) => ($t->sourceContext()->data['reference_revision'] ?? null) === $revision - 1);
+                abort_unless($previous->count() === 1 && $previous->first()->state === 'committed', 409, 'Generated reference predecessor is unavailable.');
+                $this->verifyCommitted($user, $previous->first());
+                abort_unless($source->data['reference_digest'] === null || ! hash_equals($previous->first()->sourceContext()->data['reference_digest'], $source->data['reference_digest']), 409, 'Unchanged original fields must reuse their reference revision.');
+            }
+            abort_unless($prior->every(fn ($t) => ($t->sourceContext()->data['reference_revision'] ?? 0) <= $revision), 409, 'Generated reference revision is stale.');
+        }
         $user = $this->actor($user);
         $identity = $identity->fresh();
         abort_unless($identity !== null && $batch->fresh()?->state === 'open', 409, 'Import context changed.');
@@ -345,7 +449,7 @@ class DocumentImporter
 
         return ['board_id' => $context['source_item']->board_id, 'entity_type' => $data['entity_type'], 'entity_id' => $data['source_id'], 'target_role' => 'identity-document',
             'relation_key' => $this->digest('occurrence', [$context['identity_mapping']->id, $context['source_item']->only(self::MAPPING_FIELDS),
-                array_intersect_key($data, array_flip(['role', 'kind', 'column_id', 'source_index', 'update_id', 'reply_id', 'history_mapping_id']))])];
+                array_intersect_key($data, array_flip(['role', 'kind', 'column_id', 'source_index', 'update_id', 'reply_id', 'history_mapping_id', 'parent_item_id', 'reference_revision']))])];
     }
 
     private function sourceFingerprint(array $context, DocumentSource $source, array $info): string

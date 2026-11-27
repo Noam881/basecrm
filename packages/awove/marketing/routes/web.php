@@ -2,10 +2,13 @@
 
 use Awove\Marketing\Controller;
 use Awove\Marketing\EnsureMarketing;
+use Awove\Marketing\OriginalsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth', 'verified', EnsureMarketing::class])->prefix('marketing')->group(function () {
     Route::get('/', [Controller::class, 'overview']);
+    Route::get('/{type}/{id}/originals', [OriginalsController::class, 'index'])->whereIn('type', ['leads', 'companies'])->whereNumber('id');
+    Route::get('/{type}/{id}/originals/{entry}', [OriginalsController::class, 'show'])->whereIn('type', ['leads', 'companies'])->whereNumber(['id', 'entry']);
     Route::get('/reports', [Controller::class, 'reports']);
     Route::get('/reports/export', [Controller::class, 'export'])->defaults('kind', 'reports');
     Route::get('/leads/{lead}/attribution', [Controller::class, 'attribution'])->whereNumber('lead');
