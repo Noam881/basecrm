@@ -5,6 +5,7 @@ namespace Awove\Core\Http;
 use Awove\Core\Access;
 use Awove\Core\ContactDetails;
 use Awove\Core\IdentityPanels;
+use Awove\Core\Imports\AutomationHolds;
 use Awove\Core\Installation;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
@@ -328,7 +329,7 @@ class CrmController
 
     private function reminderQuery($u)
     {
-        return Reminder::where('user_id', $u->id)->whereHas('task', fn ($q) => $q->whereColumn('version', 'crm_reminders.task_version')->where('status', 'open')->whereIn('lead_id', Access::leads($u)->whereNull('archived_at')->select('id')));
+        return Reminder::where('user_id', $u->id)->whereHas('task', fn ($q) => app(AutomationHolds::class)->eligibleTasks($q)->whereColumn('version', 'crm_reminders.task_version')->where('status', 'open')->whereIn('lead_id', Access::leads($u)->whereNull('archived_at')->select('id')));
     }
 
     public function reminders(Request $r)

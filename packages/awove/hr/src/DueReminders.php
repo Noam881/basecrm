@@ -2,11 +2,11 @@
 
 namespace Awove\Hr;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\Core\Modules;
 
-class DueReminders implements ReminderSource
+class DueReminders implements ImportHoldSource
 {
     public function __construct(private string $section) {}
 
@@ -26,6 +26,12 @@ class DueReminders implements ReminderSource
         $q = $model::whereNull('archived_at');
 
         return $this->section === 'cases' ? $q->whereNull('completed_on')->where('due_on', '<=', now(Installation::settings()['timezone'])->toDateString()) : $q->whereNotIn('stage', ['hired', 'rejected'])->whereNotNull('next_action_on')->where('next_action_on', '<=', now(Installation::settings()['timezone'])->toDateString());
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = Access::query($actor, $this->section)->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record);
     }
 
     public function due(): iterable

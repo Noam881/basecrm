@@ -2,12 +2,12 @@
 
 namespace Awove\CustomerService;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\CustomerService\Models\Feedback;
 use Awove\CustomerService\Models\ServiceRequest;
 
-class ActionReminders implements ReminderSource
+class ActionReminders implements ImportHoldSource
 {
     public function __construct(private string $source) {}
 
@@ -19,6 +19,13 @@ class ActionReminders implements ReminderSource
     public function key(): string
     {
         return $this->source;
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $model = $this->source === 'requests' ? ServiceRequest::class : Feedback::class;
+        $record = $model::lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record);
     }
 
     public function due(): iterable

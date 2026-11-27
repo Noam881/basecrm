@@ -2,12 +2,12 @@
 
 namespace Awove\Executive;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\Core\Modules;
 use Awove\Executive\Models\Goal;
 
-class GoalReminders implements ReminderSource
+class GoalReminders implements ImportHoldSource
 {
     public function module(): string
     {
@@ -17,6 +17,12 @@ class GoalReminders implements ReminderSource
     public function key(): string
     {
         return 'goals';
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = Access::goals($actor)->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record);
     }
 
     public function due(): iterable

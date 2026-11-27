@@ -3,6 +3,7 @@
 namespace Awove\Core\Services;
 
 use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Imports\AutomationHolds;
 use Awove\Core\Jobs\DeliverWorkReminder;
 use Awove\Core\Models\WorkReminder;
 use Awove\Core\Modules;
@@ -30,7 +31,7 @@ class WorkReminders
                 continue;
             }
             foreach ($source->due() as $work) {
-                if (! WorkReminder::where(['module' => $source->module(), 'source' => $source->key(), 'record_id' => $work['record_id'], 'record_version' => $work['version'], 'user_id' => $work['user_id']])->exists()) {
+                if (! app(AutomationHolds::class)->blocked($source->module(), $source->key(), $work['record_id']) && ! WorkReminder::where(['module' => $source->module(), 'source' => $source->key(), 'record_id' => $work['record_id'], 'record_version' => $work['version'], 'user_id' => $work['user_id']])->exists()) {
                     DeliverWorkReminder::dispatch($source->module(), $source->key(), $work['record_id'], $work['version'], $work['user_id']);
                 }
             }
@@ -55,6 +56,9 @@ class WorkReminders
 
     public function preview(WorkReminder $notice): ?array
     {
+        if (app(AutomationHolds::class)->blocked($notice->module, $notice->source, $notice->record_id)) {
+            return null;
+        }
         $current = $this->source($notice->module, $notice->source)?->current($notice->record_id, $notice->user_id);
 
         return $current && $current['version'] === $notice->record_version ? $current : null;

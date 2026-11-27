@@ -16,6 +16,7 @@ class Reminder extends Model
         return ['read_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Task, $this> */
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);

@@ -2,6 +2,7 @@
 
 namespace Awove\Core\Console;
 
+use Awove\Core\Imports\AutomationHolds;
 use Awove\Core\Jobs\DeliverReminder;
 use Awove\Core\Models\Task;
 use Awove\Core\Modules;
@@ -17,7 +18,7 @@ class Remind extends Command
     public function handle(): int
     {
         if (app(Modules::class)->enabled('sales')) {
-            Task::where('status', 'open')->where('remind_at', '<=', now())->whereNotExists(fn ($q) => $q->selectRaw('1')->from('crm_reminders')->whereColumn('task_id', 'crm_tasks.id')->whereColumn('task_version', 'crm_tasks.version'))->chunkById(200, function ($tasks) {
+            app(AutomationHolds::class)->eligibleTasks(Task::where('status', 'open')->where('remind_at', '<=', now()))->whereNotExists(fn ($q) => $q->selectRaw('1')->from('crm_reminders')->whereColumn('task_id', 'crm_tasks.id')->whereColumn('task_version', 'crm_tasks.version'))->chunkById(200, function ($tasks) {
                 foreach ($tasks as $t) {
                     DeliverReminder::dispatch($t->id, $t->version);
                 }

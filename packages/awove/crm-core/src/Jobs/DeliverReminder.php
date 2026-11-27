@@ -3,11 +3,11 @@
 namespace Awove\Core\Jobs;
 
 use Awove\Core\Access;
+use Awove\Core\Imports\AutomationHolds;
 use Awove\Core\Models\Reminder;
 use Awove\Core\Models\Task;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\DB;
 
 class DeliverReminder implements ShouldQueue
 {
@@ -24,9 +24,8 @@ class DeliverReminder implements ShouldQueue
 
     public function handle(): void
     {
-        DB::transaction(function () {
-            $t = Task::with('assignee', 'lead')->lockForUpdate()->find($this->taskId);
-            if (! $t || $t->version !== $this->version || $t->remind_at->isFuture() || ! Access::canReceive($t)) {
+        app(AutomationHolds::class)->deliverTask($this->taskId, function (Task $t) {
+            if ($t->version !== $this->version || $t->remind_at->isFuture() || ! Access::canReceive($t)) {
                 return;
             }Reminder::firstOrCreate(['task_id' => $t->id, 'task_version' => $t->version], ['user_id' => $t->assignee_id]);
         });

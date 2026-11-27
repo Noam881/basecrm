@@ -1,12 +1,16 @@
 <?php
 
 use App\Models\User;
+use Awove\Core\Imports\AutomationHold;
+use Awove\Core\Imports\AutomationHolds;
+use Awove\Core\Imports\Ledger;
 use Awove\Core\Installation;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\WorkReminder;
 use Awove\Core\Modules;
 use Awove\Core\Services\WorkReminders;
 use Awove\Nonprofit\NonprofitModule;
+use Awove\Nonprofit\Programs\Access;
 use Awove\Nonprofit\Programs\Capability;
 use Awove\Nonprofit\Programs\FollowUpReminders;
 use Awove\Nonprofit\Programs\Models\Attendance;
@@ -18,6 +22,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -76,6 +81,31 @@ function npSettings($test): void
 {
     file_put_contents($test->programsManifest, json_encode($test->programsSettings));
 }
+
+it('requires current parent Program ownership and archive permission for feedback import hold placement and release', function (string $change) {
+    $owner = npStaff();
+    $other = npStaff();
+    $owner->givePermissionTo(['imports.manage', 'nonprofit.programs.view.all']);
+    $program = npCreate($owner);
+    $feedback = npFeedback($owner, $program);
+    $ledger = app(Ledger::class);
+    $boundary = $ledger->boundary($owner);
+    $batch = $ledger->start($owner, $boundary, ['batch_key' => (string) Str::uuid(), 'provider' => 'sample', 'source_account' => '001',
+        'mapping_revision' => str_repeat('a', 64), 'code_revision' => str_repeat('b', 40), 'plan_revision' => str_repeat('c', 64)]);
+    $holds = app(AutomationHolds::class);
+    $hold = $holds->placeReminder($owner, $boundary, $batch['id'], 'nonprofit', 'program-follow-ups', $feedback->id);
+    if ($change === 'owner') {
+        app(Records::class)->save($owner, 'programs', ['version' => $program->fresh()->version, 'owner_id' => $other->id], $program->id);
+    } else {
+        app(Records::class)->archive($owner, 'programs', $program->id, ['version' => $program->fresh()->version]);
+    }
+    // View-all deliberately keeps the feedback visible: editing still depends on its current parent.
+    expect(Access::query($owner, 'feedback')->whereKey($feedback->id)->exists())->toBeTrue();
+    expect(fn () => $holds->release($owner, $boundary, $hold['id'], 'reviewed_activation'))->toThrow(HttpException::class);
+    expect(fn () => $holds->placeReminder($owner, $boundary, $batch['id'], 'nonprofit', 'program-follow-ups', $feedback->id))->toThrow(HttpException::class);
+    expect(AutomationHold::sole()->state)->toBe('held')->and($feedback->fresh()->getAttribute('program_id'))->toBe($program->id);
+})->with(['owner', 'archive']);
+
 it('persists Programs with locations groups participants and dated sessions independently of every other optional module', function () {
     $u = npStaff();
     $location = npCreate($u, 'locations');
