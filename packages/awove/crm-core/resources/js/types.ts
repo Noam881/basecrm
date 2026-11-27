@@ -25,6 +25,15 @@ export interface ContactNote {
     author: { id: number; name: string } | null;
     created_at: string;
 }
+export interface IdentityDocument {
+    id: number;
+    original_name: string;
+    mime_type: string;
+    size_bytes: number;
+    created_at: string;
+    uploaded_by: { id: number; name: string } | null;
+    download_url: string;
+}
 export interface ContactOption {
     value: string;
     label: string;

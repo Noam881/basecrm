@@ -10,6 +10,7 @@ import {
 } from "../../types";
 import ContactFields from "../../components/ContactFields.vue";
 import ExtensionPanel from "../../components/ExtensionPanel.vue";
+import IdentityDocuments from "../../components/IdentityDocuments.vue";
 const props = defineProps<{
     identity: Person;
     identityPanels?: {
@@ -407,6 +408,13 @@ function addNote() {
             </div>
             <p v-else class="crm-muted">{{ t("No notes yet.") }}</p>
         </section>
+        <IdentityDocuments
+            class="crm-form-span"
+            :type="type"
+            :identity-id="identity.id"
+            :editable="editable"
+            :timezone="zone"
+        />
         <section
             class="crm-card crm-flow crm-form-span"
             aria-labelledby="identity-history-title"

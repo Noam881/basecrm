@@ -110,6 +110,8 @@ Lead stages can be changed directly from the table or profile bubble, with permi
 
 ## Browser fixture cleanup
 
+Contact and company profiles also provide shared **Documents** storage, using the profile’s existing view/edit permissions. Files retain their original filenames and are downloaded privately as attachments; uploads are immutable, validated up to 100 MB and verified with SHA-256. This is separate from proposals, signed contracts and encrypted Vault files. Configure PHP/web-server upload and request limits for the allowed size; storage paths and checksums are never included in the profile API. See [profile documents](docs/profile-documents.md).
+
 Browser tests clean their dedicated project accounts before and after each workflow/contact test, including failed tests. A later run also clears leftovers from an interrupted process. Names stay natural; only fictional email addresses carry unique run markers. See the [clean review demo](docs/screenshots/clean-review-demo.png).
 
 `php scripts/clean-browser-fixtures.php alpha --legacy` previews recognized leftovers from older browser runs. Add `--apply` to remove only those synthetic rows and their dependent test records. The command checks the local database/role, refuses shared references, saves a private recovery copy before deleting, and verifies retained records are unchanged. Beta uses the same command with `beta`. Recovery copies are ignored under `storage/app/private/browser-fixture-recovery`; restore one with `php scripts/clean-browser-fixtures.php alpha --restore=/absolute/path/to/copy.json --apply`. Restore refuses to overwrite existing records.
