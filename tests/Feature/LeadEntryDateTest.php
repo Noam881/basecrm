@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Awove\Core\LeadDates;
+use Awove\Core\Models\Activity;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Lead;
 use Awove\Core\Models\Task;
@@ -149,7 +150,7 @@ it('uses the effective entry day for scoped pipeline and follow-ups but retains 
         ->and($response->inertiaProps('salesOverview.won_value'))->toBe('23.45');
 });
 
-it('rejects historical dates through ordinary create and edit services and HTTP requests including null', function (string $field, mixed $value) {
+it('rejects historical dates through ordinary create and edit services including null', function (string $field, mixed $value) {
     $user = entryDateOwner();
     $lead = entryDateLead($user, '2020-02-29', '2020-02-29T23:41:52.123456+00:00');
     $snapshot = $lead->getRawOriginal();
@@ -157,13 +158,45 @@ it('rejects historical dates through ordinary create and edit services and HTTP 
     $update = ['version' => $lead->version, $field => $value];
     expect(fn () => app(Leads::class)->create($user, $create))->toThrow(ValidationException::class);
     expect(fn () => app(Leads::class)->update($user, $lead->id, $update))->toThrow(ValidationException::class);
-    $this->actingAs($user)->postJson('/leads', $create)->assertUnprocessable()->assertJsonValidationErrors($field);
-    $this->patchJson('/leads/'.$lead->id, $update)->assertUnprocessable()->assertJsonValidationErrors($field);
     expect($lead->fresh()->getRawOriginal())->toBe($snapshot)->and(Lead::count())->toBe(1);
 })->with([
     ['entered_on', '2020-01-01'], ['entered_on', null],
     ['created_at', '2020-01-01T00:00:00Z'], ['updated_at', '2020-01-01T00:00:00Z'],
 ]);
+
+it('rejects the new entry date in ordinary HTTP requests instead of setting or clearing it', function (mixed $value) {
+    $user = entryDateOwner();
+    $lead = entryDateLead($user, '2020-02-29', '2020-02-29T23:41:52+00:00');
+    $snapshot = $lead->getRawOriginal();
+    $this->actingAs($user)->postJson('/leads', ['contact_id' => $lead->contact_id, 'owner_id' => $user->id, 'status_id' => 'new', 'entered_on' => $value])->assertUnprocessable()->assertJsonValidationErrors('entered_on');
+    $this->patchJson('/leads/'.$lead->id, ['version' => 1, 'business_sector' => 'Must not partially save', 'entered_on' => $value])->assertUnprocessable()->assertJsonValidationErrors('entered_on');
+    expect($lead->fresh()->getRawOriginal())->toBe($snapshot)->and(Lead::count())->toBe(1);
+})->with(['2020-01-01', null]);
+
+it('preserves HTTP timestamp-ignore compatibility while saving valid fields and retaining correct versions and audit actors', function () {
+    $user = entryDateOwner();
+    $lead = entryDateLead($user, '2020-02-29', '2020-02-29T23:41:52+00:00');
+    $created = $lead->getRawOriginal('created_at');
+    $this->travelTo(CarbonImmutable::parse('2026-11-27T12:34:56Z'));
+    $readonly = ['created_at' => '1990-01-01T00:00:00Z', 'updated_at' => '1990-01-01T00:00:00Z'];
+    $this->actingAs($user)->patchJson('/leads/'.$lead->id, ['version' => 1, 'business_sector' => 'Consulting', ...$readonly])->assertRedirect();
+    $lead->refresh();
+    expect($lead->business_sector)->toBe('Consulting')->and($lead->version)->toBe(2)
+        ->and($lead->getRawOriginal('created_at'))->toBe($created)
+        ->and($lead->entered_on->format('Y-m-d'))->toBe('2020-02-29')
+        ->and($lead->updated_at->toISOString())->toBe('2026-11-27T12:34:56.000000Z');
+    $audit = Activity::where('lead_id', $lead->id)->where('event', 'lead.sales_details_updated')->sole();
+    expect($audit->actor_id)->toBe($user->id)->and($audit->details)->toBe(['fields' => ['business_sector']]);
+    $this->postJson('/leads', ['contact_id' => $lead->contact_id, 'owner_id' => $user->id, 'status_id' => 'new', 'business_sector' => 'Legal', ...$readonly])->assertRedirect();
+    $new = Lead::whereKeyNot($lead->id)->sole();
+    expect($new->business_sector)->toBe('Legal')->and($new->version)->toBe(1)->and($new->entered_on)->toBeNull()
+        ->and($new->created_by)->toBe($user->id)
+        ->and($new->created_at->toISOString())->toBe('2026-11-27T12:34:56.000000Z')
+        ->and($new->updated_at->toISOString())->toBe('2026-11-27T12:34:56.000000Z');
+    $audit = Activity::where('lead_id', $new->id)->where('event', 'lead.created')->sole();
+    expect($audit->actor_id)->toBe($user->id)->and($audit->details)->toBe([])
+        ->and($audit->created_at->year)->not->toBe(1990);
+});
 
 it('rejects unrecognized timezone SQL input instead of interpolating it', function () {
     expect(fn () => LeadDates::calendarExpression("UTC'; SELECT 1; --"))->toThrow(InvalidArgumentException::class);
