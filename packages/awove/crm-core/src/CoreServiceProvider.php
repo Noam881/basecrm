@@ -18,6 +18,7 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(Modules::class);
         $this->app->singleton(Currency::class);
         $this->app->singleton(Services\WorkTypes::class);
+        $this->app->singleton(Imports\DocumentSources::class);
         $this->mergeConfigFrom(__DIR__.'/../config/core.php', 'core');
     }
 

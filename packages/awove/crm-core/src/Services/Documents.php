@@ -2,6 +2,9 @@
 
 namespace Awove\Core\Services;
 
+use Awove\Core\Imports\DocumentImporter;
+use Awove\Core\Imports\DocumentTransfer;
+use Awove\Core\Imports\DocumentTransferStorage;
 use Awove\Core\Models\Company;
 use Awove\Core\Models\Contact;
 use Awove\Core\Models\Document;
@@ -44,9 +47,9 @@ class Documents
         $identity = $this->identity($type, $id);
         Gate::forUser($user)->authorize('view', $identity);
         $key = $identity instanceof Contact ? 'contact_id' : 'company_id';
-        $documents = Document::where($key, $identity->id)->with('uploader:id,name')
+        $documents = Document::where($key, $identity->id)->with(['uploader:id,name', 'importTransfer'])
             ->orderByDesc('created_at')->orderByDesc('id')->get()
-            ->map(fn (Document $document) => $this->metadata($document, $type, $identity->id))->all();
+            ->map(fn (Document $document) => $this->metadata($user, $document, $type, $identity->id))->all();
 
         return ['documents' => $documents, 'can_upload' => Gate::forUser($user)->allows('update', $identity)];
     }
@@ -58,14 +61,8 @@ class Documents
         $data = validator($input, ['file' => ['required', 'file', 'max:'.self::MAX_KILOBYTES]])->validate();
         /** @var UploadedFile $file */
         $file = $data['file'];
-        $name = $this->filename($file->getClientOriginalName());
-        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-        $mime = $file->getMimeType();
-        $size = $file->getSize();
-        if (! isset(self::MIME_TYPES[$extension]) || ! in_array($mime, self::MIME_TYPES[$extension], true) || $size === false || $size < 1) {
-            $this->invalidFile();
-        }
-        $path = 'documents/'.$type.'/'.$id.'/'.Str::uuid().'.'.$extension;
+        $info = $this->fileInfo($file);
+        $path = 'documents/'.$type.'/'.$id.'/'.Str::uuid().'.'.$info['extension'];
         $disk = Storage::disk('local');
         try {
             $sourceChecksum = hash_file('sha256', $file->getRealPath());
@@ -73,38 +70,7 @@ class Documents
                 throw new \RuntimeException;
             }
 
-            return DB::transaction(function () use ($user, $type, $id, $file, $name, $mime, $size, $path, $disk, $sourceChecksum) {
-                // Follow the existing identity writer's parent lock and check current access again.
-                $identity = $this->identity($type, $id, true);
-                $actor = $this->actor($user);
-                Gate::forUser($actor)->authorize('update', $identity);
-                if ($disk->putFileAs(dirname($path), $file, basename($path), ['visibility' => 'private']) !== $path) {
-                    throw new \RuntimeException;
-                }
-                $stream = $disk->readStream($path);
-                if (! is_resource($stream)) {
-                    throw new \RuntimeException;
-                }
-                try {
-                    $hash = hash_init('sha256');
-                    $storedSize = hash_update_stream($hash, $stream, $size + 1);
-                    $storedChecksum = hash_final($hash);
-                } finally {
-                    fclose($stream);
-                }
-                if ($storedSize !== $size || ! hash_equals($sourceChecksum, $storedChecksum)) {
-                    throw new \RuntimeException;
-                }
-                Gate::forUser($this->actor($actor))->authorize('update', $identity);
-
-                return Document::create([
-                    'contact_id' => $identity instanceof Contact ? $identity->id : null,
-                    'company_id' => $identity instanceof Company ? $identity->id : null,
-                    'original_name' => $name, 'private_path' => $path, 'mime_type' => $mime,
-                    'size_bytes' => $size, 'sha256' => $storedChecksum,
-                    'uploaded_by' => $actor->id, 'created_at' => now(),
-                ]);
-            });
+            return DB::transaction(fn () => $this->persist($user, $type, $id, $file, $info, $path, $sourceChecksum));
         } catch (\Throwable $error) {
             // This random path belongs only to this attempt, never to a retained document.
             try {
@@ -119,6 +85,92 @@ class Documents
             }
             // Backend storage/database exceptions may contain private URLs or payloads.
             throw new \RuntimeException((string) __('The document could not be stored. Please try again.'));
+        }
+    }
+
+    /** @internal Reuses the ordinary file policy before a durable import reservation, without storing bytes. */
+    public function inspectFile(UploadedFile $file): array
+    {
+        validator(['file' => $file], ['file' => ['required', 'file', 'max:'.self::MAX_KILOBYTES]])->validate();
+        $info = $this->fileInfo($file);
+        try {
+            $checksum = hash_file('sha256', $file->getRealPath());
+            if (! is_string($checksum)) {
+                throw new \RuntimeException;
+            }
+        } catch (\Throwable) {
+            throw new \RuntimeException('The document bytes could not be validated.');
+        }
+
+        return [...$info, 'sha256' => $checksum];
+    }
+
+    /** @internal Only the coordinator's fresh locked journal can choose a reserved path; errors never delete it. */
+    public function uploadReserved($user, DocumentTransfer $transfer, UploadedFile $file): Document
+    {
+        abort_unless(DB::transactionLevel() > 0, 409, 'A document import transaction is required.');
+        $transfer = app(DocumentImporter::class)->writable($user, $transfer);
+        $info = $this->inspectFile($file);
+        abort_unless($info['name'] === $transfer->original_name && $info['mime'] === $transfer->mime_type
+            && $info['size'] === $transfer->size_bytes && hash_equals($transfer->sha256, $info['sha256']), 409, 'Document source bytes changed.');
+        $type = $transfer->contact_id !== null ? 'contacts' : 'companies';
+        $id = $transfer->contact_id ?? $transfer->company_id;
+
+        return $this->persist($user, $type, $id, $file, $info, $transfer->private_path, $info['sha256'], $transfer);
+    }
+
+    /** @internal Readback proof for a journal-bound replay; it does not fetch or replace bytes. */
+    public function verifyStored(Document $document): void
+    {
+        $this->verifyBytes($document->private_path, $document->size_bytes, $document->sha256);
+    }
+
+    private function fileInfo(UploadedFile $file): array
+    {
+        $name = $this->filename($file->getClientOriginalName());
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        $mime = $file->getMimeType();
+        $size = $file->getSize();
+        if (! isset(self::MIME_TYPES[$extension]) || ! in_array($mime, self::MIME_TYPES[$extension], true) || $size === false || $size < 1) {
+            $this->invalidFile();
+        }
+
+        return ['name' => $name, 'extension' => $extension, 'mime' => $mime, 'size' => $size];
+    }
+
+    private function persist($user, string $type, int $id, UploadedFile $file, array $info, string $path, string $checksum, ?DocumentTransfer $transfer = null): Document
+    {
+        $identity = $this->identity($type, $id, true);
+        $actor = $this->actor($user);
+        Gate::forUser($actor)->authorize('update', $identity);
+        if ($transfer !== null) {
+            app(DocumentTransferStorage::class)->copyExclusive($transfer, $file);
+        } elseif (Storage::disk('local')->putFileAs(dirname($path), $file, basename($path), ['visibility' => 'private']) !== $path) {
+            throw new \RuntimeException;
+        }
+        $this->verifyBytes($path, $info['size'], $checksum);
+        Gate::forUser($this->actor($actor))->authorize('update', $identity);
+
+        return Document::create(['contact_id' => $identity instanceof Contact ? $identity->id : null, 'company_id' => $identity instanceof Company ? $identity->id : null,
+            'original_name' => $info['name'], 'private_path' => $path, 'mime_type' => $info['mime'], 'size_bytes' => $info['size'], 'sha256' => $checksum,
+            'uploaded_by' => $actor->id, 'created_at' => now()]);
+    }
+
+    private function verifyBytes(string $path, int $size, string $checksum): void
+    {
+        $stream = Storage::disk('local')->readStream($path);
+        if (! is_resource($stream)) {
+            throw new \RuntimeException('Document byte readback failed.');
+        }
+        try {
+            $hash = hash_init('sha256');
+            $storedSize = hash_update_stream($hash, $stream, $size + 1);
+            $storedChecksum = hash_final($hash);
+        } finally {
+            fclose($stream);
+        }
+        if ($storedSize !== $size || ! hash_equals($checksum, $storedChecksum)) {
+            throw new \RuntimeException('Document byte readback failed.');
         }
     }
 
@@ -146,13 +198,14 @@ class Documents
         ]);
     }
 
-    private function metadata(Document $document, string $type, int $id): array
+    private function metadata($actor, Document $document, string $type, int $id): array
     {
         return ['id' => $document->id, 'original_name' => $document->original_name,
             'mime_type' => $document->mime_type, 'size_bytes' => $document->size_bytes,
             'created_at' => CarbonImmutable::parse($document->created_at)->toISOString(),
             'uploaded_by' => $document->uploader?->only(['id', 'name']),
-            'download_url' => '/people/'.$type.'/'.$id.'/documents/'.$document->id.'/download'];
+            'download_url' => '/people/'.$type.'/'.$id.'/documents/'.$document->id.'/download',
+            'source' => app(DocumentImporter::class)->sourceMetadata($actor, $document)];
     }
 
     private function identity(string $type, int $id, bool $lock = false): Contact|Company

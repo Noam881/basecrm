@@ -2,8 +2,10 @@
 
 namespace Awove\Core\Models;
 
+use Awove\Core\Imports\DocumentTransfer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** Stored documents are retained; corrections are new uploads rather than replacements. */
 class Document extends Model
@@ -12,7 +14,7 @@ class Document extends Model
 
     protected $guarded = [];
 
-    protected $hidden = ['private_path', 'sha256'];
+    protected $hidden = ['private_path', 'sha256', 'importTransfer', 'import_transfer'];
 
     public $timestamps = false;
 
@@ -24,6 +26,11 @@ class Document extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(config('auth.providers.users.model'), 'uploaded_by');
+    }
+
+    public function importTransfer(): HasOne
+    {
+        return $this->hasOne(DocumentTransfer::class, 'document_id')->where('state', 'committed');
     }
 
     protected static function booted(): void

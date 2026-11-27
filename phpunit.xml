@@ -11,6 +11,7 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
             <directory>packages/awove/example-service-details/tests</directory>
+            <directory>tests/ImportDurability</directory>
         </testsuite>
     </testsuites>
     <source>
