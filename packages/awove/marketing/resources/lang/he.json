@@ -171,8 +171,8 @@
     "Load earlier originals": "טעינת רשומות מקור קודמות",
     "Source value unavailable": "ערך המקור אינו זמין",
     "Observed null value": "ערך המקור ריק במפורש",
-    "Original author unavailable": "מחבר המקור אינו זמין",
-    "Original time unavailable": "מועד המקור אינו זמין",
+    "Original author unavailable": "פרטי הכותב המקורי אינם זמינים",
+    "Original time unavailable": "המועד המקורי אינו זמין",
     "Source item": "פריט מקור",
     "Source board": "לוח מקור"
 }
