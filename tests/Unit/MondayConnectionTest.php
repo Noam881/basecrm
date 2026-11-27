@@ -28,7 +28,7 @@ class MondayConnectionTest extends TestCase
         Http::fake(function ($request, $options) {
             $this->assertSame('https://api.monday.com/v2', $request->url());
             $this->assertSame('POST', $request->method());
-            $this->assertSame(['query' => Connection::QUERY], $request->data());
+            $this->assertSame(['query' => Connection::QUERY, 'operationName' => 'BaseCrmConnectionCheck'], $request->data());
             $this->assertSame(['fictional-monday-token'], $request->header('Authorization'));
             $this->assertSame(['2026-10'], $request->header('API-Version'));
             $this->assertTrue($options['verify']);
