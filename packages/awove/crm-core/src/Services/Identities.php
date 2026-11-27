@@ -88,7 +88,8 @@ class Identities
         });
     }
 
-    private function data($user, string $type, array $input, Contact|Company|null $identity = null): array
+    /** Native validation/normalization shared with the guarded historical writer; performs no write. */
+    public function data($user, string $type, array $input, Contact|Company|null $identity = null): array
     {
         if ($type === 'companies' && array_key_exists('notes', $input) && blank($input['notes'])) {
             // Preserve legacy company payloads that send empty contact-only fields.
