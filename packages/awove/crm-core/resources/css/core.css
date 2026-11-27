@@ -445,6 +445,10 @@
 .crm-activity strong {
     font-weight: 500;
 }
+.crm-preserved-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
 .crm-back {
     display: inline-flex;
     align-items: center;

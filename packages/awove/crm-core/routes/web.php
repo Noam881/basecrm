@@ -1,6 +1,7 @@
 <?php
 
 use Awove\Core\Http\CrmController;
+use Awove\Core\Http\LegacyHistoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth', 'verified'])->group(function () {
@@ -8,6 +9,8 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::get('/leads', [CrmController::class, 'index'])->middleware('crm.module:sales')->name('crm.leads.index');
     Route::post('/leads', [CrmController::class, 'store'])->middleware('crm.module:sales')->name('crm.leads.store');
     Route::get('/leads/{lead}', [CrmController::class, 'show'])->middleware('crm.module:sales')->name('crm.leads.show');
+    Route::get('/leads/{lead}/legacy-history', [LegacyHistoryController::class, 'index'])->middleware('crm.module:sales')->name('crm.legacy-history.index');
+    Route::get('/leads/{lead}/legacy-history/{activity}', [LegacyHistoryController::class, 'show'])->whereNumber('activity')->middleware('crm.module:sales')->name('crm.legacy-history.show');
     Route::patch('/leads/{lead}', [CrmController::class, 'update'])->middleware('crm.module:sales')->name('crm.leads.update');
     Route::post('/leads/{lead}/archive', [CrmController::class, 'archive'])->middleware('crm.module:sales')->name('crm.leads.archive');
     Route::post('/leads/{lead}/notes', [CrmController::class, 'note'])->middleware('crm.module:sales')->name('crm.notes.store');

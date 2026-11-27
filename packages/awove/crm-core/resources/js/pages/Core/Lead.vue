@@ -18,6 +18,7 @@ import StageControl from "../../components/StageControl.vue";
 import LeadProposals from "../../components/LeadProposals.vue";
 import LeadLifecycleFields from "../../components/LeadLifecycleFields.vue";
 import LeadSignedContracts from "../../components/LeadSignedContracts.vue";
+import LegacyLeadHistory from "../../components/LegacyLeadHistory.vue";
 import SalesHistory, {
     type Communication,
     type Quotation,
@@ -546,6 +547,7 @@ function changeTask(t: Task) {
                     </div>
                 </article>
             </section>
+            <LegacyLeadHistory :lead-id="lead.id" :zone="zone" />
         </div>
         <aside class="crm-stack">
             <section class="crm-card">
