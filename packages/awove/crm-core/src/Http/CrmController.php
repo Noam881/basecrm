@@ -123,24 +123,7 @@ class CrmController
 
     private function leadData(Request $r, bool $update = false): array
     {
-        $data = $r->validate(['title' => 'sometimes|nullable|string|max:160', 'contact_id' => 'nullable|integer', 'company_id' => 'nullable|integer', 'owner_id' => 'nullable|integer', 'status_id' => ($update ? 'sometimes' : 'required').'|exists:crm_statuses,id', 'source' => 'sometimes|required|string|max:100', 'priority' => ['sometimes', Rule::in(['low', 'normal', 'high'])], 'custom_fields' => 'sometimes|array', 'version' => $update ? 'required|integer' : 'prohibited', 'attribution' => 'missing', 'entered_on' => 'missing', ...Sales::opportunityRules()]);
-        foreach (['contact_id' => Contact::class, 'company_id' => Company::class] as $key => $model) {
-            if (! empty($data[$key])) {
-                abort_unless(Access::identities($r->user(), $model)->whereKey($data[$key])->exists(), 403);
-            }
-        }
-        if (! $update && ! $r->user()->can('leads.assign')) {
-            $data['owner_id'] = $r->user()->id;
-        }
-        if (isset($data['owner_id'])) {
-            abort_unless($data['owner_id'] == $r->user()->id || $r->user()->can('leads.assign'), 403);
-            abort_unless(config('auth.providers.users.model')::where('active', true)->whereKey($data['owner_id'])->exists(), 422);
-        }
-        if (! $update) {
-            abort_unless(! empty($data['contact_id']) || ! empty($data['company_id']), 422, __('Choose a contact or company.'));
-        }
-
-        return $data;
+        return app(Leads::class)->input($r->user(), $r->all(), $update);
     }
 
     public function store(Request $r, Leads $service)
