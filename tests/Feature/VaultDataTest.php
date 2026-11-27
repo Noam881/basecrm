@@ -33,11 +33,26 @@ beforeEach(function () {
         'vault.keys' => ['test-v1' => base64_encode(random_bytes(32))]]);
     $this->artisan('crm:install')->assertSuccessful();
     Storage::fake('local');
+    $GLOBALS['vault_data_test_files'] = [];
 });
 
 afterEach(function () {
     @unlink($this->vaultDataManifest);
+    foreach ($GLOBALS['vault_data_test_files'] ?? [] as $path) {
+        if (is_file($path)) {
+            unlink($path);
+        }
+    }
 });
+
+function vdContentFile(string $name, string $bytes): UploadedFile
+{
+    $path = tempnam(sys_get_temp_dir(), 'basecrm-vault-file-test-');
+    file_put_contents($path, $bytes);
+    $GLOBALS['vault_data_test_files'][] = $path;
+
+    return new UploadedFile($path, $name, null, null, true);
+}
 
 function vdUser(bool $all = true): User
 {
@@ -219,6 +234,44 @@ it('stores documents and original filenames encrypted and requires fresh permiss
     $this->postJson('/vault/api/auth/lock')->assertOk();
     $this->postJson('/vault/api/files/'.$file->id.'/download')->assertStatus(423);
 });
+
+it('keeps HTML names and exact bytes encrypted and returns only a fresh authorized download', function () {
+    $user = vdUser();
+    $customer = vdCustomer($user);
+    vdGrant($this, $user);
+    $item = vdCreate($this, $customer);
+    $name = 'מסמך מקורי.html';
+    $bytes = '<!doctype html><html><body><script>window.FICTIONAL_ONLY = true;</script><p>מידע פיקטיבי</p></body></html>';
+    $upload = vdContentFile($name, $bytes);
+    expect($upload->getMimeType())->toBe('text/html');
+    $this->post('/vault/api/items/'.$item->id.'/files', ['file' => $upload, 'version' => 1], ['Accept' => 'application/json'])->assertOk();
+    $file = Attachment::sole();
+    expect($file->encrypted_name)->not->toContain($name)
+        ->and(Storage::disk('local')->get($file->private_path))->not->toContain($bytes, 'FICTIONAL_ONLY', 'מידע פיקטיבי');
+    $download = $this->postJson('/vault/api/files/'.$file->id.'/download')->assertOk()->assertDownload()
+        ->assertHeader('Content-Type', 'application/octet-stream')->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeader('Referrer-Policy', 'no-referrer');
+    expect($download->headers->get('Content-Disposition'))->toContain("filename*=utf-8''".rawurlencode($name))
+        ->and($download->headers->get('Cache-Control'))->toContain('no-store')->and($download->streamedContent())->toBe($bytes);
+    $this->get('/storage/'.$file->private_path)->assertForbidden();
+    $this->postJson('/vault/api/auth/lock')->assertOk();
+    $this->postJson('/vault/api/files/'.$file->id.'/download')->assertStatus(423);
+    expect(Attachment::count())->toBe(1)->and($item->fresh()->version)->toBe(2);
+});
+
+it('rejects mismatched HTML formats without retaining an attachment or changing the Vault item', function (string $name, string $bytes) {
+    $user = vdUser();
+    $customer = vdCustomer($user);
+    vdGrant($this, $user);
+    $item = vdCreate($this, $customer);
+    $this->post('/vault/api/items/'.$item->id.'/files', ['file' => vdContentFile($name, $bytes), 'version' => 1], ['Accept' => 'application/json'])
+        ->assertUnprocessable()->assertJsonValidationErrors('file');
+    expect(Attachment::count())->toBe(0)->and(Storage::disk('local')->allFiles())->toBe([])->and($item->fresh()->version)->toBe(1);
+})->with([
+    ['Disguised.pdf', '<!doctype html><html><body>Fictional</body></html>'],
+    ['Disguised.html', "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF"],
+    ['Disguised.html', '<?php echo "Fictional";'],
+]);
 
 it('authenticates item installation and attachment context, then rotates and restores ciphertext with dedicated versioned keys', function () {
     $user = vdUser();

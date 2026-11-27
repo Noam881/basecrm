@@ -1114,7 +1114,7 @@ onBeforeUnmount(() => {
                                 :aria-label="t('Add encrypted attachment')"
                                 type="file"
                                 data-vault-sensitive
-                                accept=".pdf,.txt,.png,.jpg,.jpeg,.doc,.docx"
+                                accept=".pdf,.txt,.png,.jpg,.jpeg,.doc,.docx,.html"
                                 required
                                 :disabled="busy"
                                 @change="

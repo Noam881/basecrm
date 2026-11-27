@@ -23,6 +23,7 @@
     "Checking Vault access…": "בדיקת הגישה לכספת…",
     "Choose a customer.": "יש לבחור לקוח.",
     "Choose a non-empty supported document.": "יש לבחור מסמך נתמך שאינו ריק.",
+    "Choose a supported file whose extension matches its content.": "יש לבחור קובץ נתמך שהסיומת שלו תואמת לתוכן שלו.",
     "Close": "סגירה",
     "Close item": "סגירת הפריט",
     "Company": "חברה",

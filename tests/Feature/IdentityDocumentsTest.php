@@ -202,6 +202,25 @@ it('cleans only the new random private path after a database failure and retains
         ->and(Storage::disk('local')->allFiles())->toBe([$saved->private_path]);
 });
 
+it('retains detected MP4 bytes as private attachments and rejects a video extension on other content', function () {
+    $owner = documentOwner();
+    $identity = documentIdentity($owner);
+    $url = '/people/contacts/'.$identity->id.'/documents';
+    // ISO base media file signature, sufficient for real fileinfo classification; no MIME override.
+    $bytes = pack('N', 32).'ftypisom'.pack('N', 512).'isomiso2avc1mp41';
+    $file = documentFile('פגישה מקורית.mp4', $bytes);
+    expect($file->getMimeType())->toBe('video/mp4');
+    $this->actingAs($owner)->post($url, ['file' => $file])->assertRedirect()->assertSessionHasNoErrors();
+    $document = Document::sole();
+    expect($document->mime_type)->toBe('video/mp4')->and($document->sha256)->toBe(hash('sha256', $bytes));
+    $download = $this->get($url.'/'.$document->id.'/download')->assertOk()->assertDownload()
+        ->assertHeader('Content-Type', 'application/octet-stream')->assertHeader('X-Content-Type-Options', 'nosniff');
+    expect($download->streamedContent())->toBe($bytes)->and($download->headers->get('Cache-Control'))->toContain('no-store');
+    $this->post($url, ['file' => documentFile('Disguised.mp4', '<html><body>Fictional</body></html>')])->assertSessionHasErrors('file', null, 'identity_documents');
+    $this->post($url, ['file' => documentFile('Disguised.txt', $bytes)])->assertSessionHasErrors('file', null, 'identity_documents');
+    expect(Document::count())->toBe(1)->and(Storage::disk('local')->allFiles())->toBe([$document->private_path]);
+});
+
 it('requires exactly one valid parent and retains the existing identity data', function () {
     $owner = documentOwner();
     $contact = documentIdentity($owner);
