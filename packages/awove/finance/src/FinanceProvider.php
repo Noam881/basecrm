@@ -15,5 +15,6 @@ class FinanceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/payroll.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/history.php');
     }
 }

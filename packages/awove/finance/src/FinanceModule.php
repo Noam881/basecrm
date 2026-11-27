@@ -4,14 +4,18 @@ namespace Awove\Finance;
 
 use Awove\Core\Contracts\CapabilityProvider;
 use Awove\Core\Contracts\DashboardContributor;
+use Awove\Core\Contracts\IdentityPanel;
+use Awove\Core\Contracts\IdentityPanelContributor;
 use Awove\Core\Contracts\Module;
 use Awove\Core\Contracts\NavigationItem;
 use Awove\Core\Contracts\RecordTableContributor;
 use Awove\Core\Contracts\ReminderContributor;
 use Awove\Core\Installation;
+use Awove\Core\Models\Company;
+use Awove\Core\Models\Contact;
 use Awove\Core\Modules;
 
-class FinanceModule implements CapabilityProvider, DashboardContributor, Module, RecordTableContributor, ReminderContributor
+class FinanceModule implements CapabilityProvider, DashboardContributor, IdentityPanelContributor, Module, RecordTableContributor, ReminderContributor
 {
     public function id(): string
     {
@@ -35,12 +39,12 @@ class FinanceModule implements CapabilityProvider, DashboardContributor, Module,
 
     public function capabilities(): array
     {
-        return ['collections', 'expenses', 'payroll'];
+        return ['collections', 'expenses', 'payroll', 'history'];
     }
 
     private function parts(): array
     {
-        return [new LedgerCapability('collections'), new LedgerCapability('expenses'), new Payroll\PayrollCapability];
+        return [new LedgerCapability('collections'), new LedgerCapability('expenses'), new Payroll\PayrollCapability, new History\HistoryCapability];
     }
 
     private function enabledParts(): array
@@ -83,6 +87,16 @@ class FinanceModule implements CapabilityProvider, DashboardContributor, Module,
     public function panels(): array
     {
         return [];
+    }
+
+    public function identityPanels($user, Contact|Company $identity): array
+    {
+        if (! Access::available($user, 'history')) {
+            return [];
+        }
+        $type = $identity instanceof Contact ? 'contacts' : 'companies';
+
+        return [new IdentityPanel('finance.history', __('Financial history'), 'Finance/History', '/finance/history/identities/'.$type.'/'.$identity->id, 'finance.history.view.own', ['finance.history.view.all'])];
     }
 
     public function tableIds(): array
