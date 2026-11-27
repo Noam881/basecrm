@@ -139,6 +139,13 @@ final class BrowserFixtures
             }
             $plan['crm_company_notes'] = $notes->orderBy('id')->pluck('id')->all();
         }
+        if (Schema::hasTable('crm_documents')) {
+            $documents = DB::table('crm_documents')->where($related);
+            if ((clone $documents)->where(fn ($query) => $query->whereNull('uploaded_by')->orWhereNotIn('uploaded_by', $userIds))->exists()) {
+                throw new RuntimeException('A protected client document references a browser fixture. No cleanup is permitted.');
+            }
+            $plan['crm_documents'] = $documents->orderBy('id')->pluck('id')->all();
+        }
         $plan['crm_contacts'] = $identityIds['contacts'];
         $plan['crm_companies'] = $identityIds['companies'];
 

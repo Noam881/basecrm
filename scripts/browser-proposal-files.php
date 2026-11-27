@@ -4,7 +4,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 
-/** Exact private-file handling for guarded local browser-fixture recovery only. */
+/** Exact private-attachment handling for guarded local browser-fixture recovery only. */
 final class BrowserProposalFiles
 {
     private const MAX_FILES = 20;
@@ -13,6 +13,10 @@ final class BrowserProposalFiles
 
     public static function pathMatches(string $path, int $leadId, string $directory = 'proposals'): bool
     {
+        if (in_array($directory, ['documents/contacts', 'documents/companies'], true)) {
+            return $leadId > 0 && preg_match('/^'.preg_quote($directory, '/').'\/'.preg_quote((string) $leadId, '/').'\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|doc|docx|xls|xlsx|csv|txt|jpg|jpeg|png|gif|webp|zip)$/D', $path) === 1;
+        }
+
         return in_array($directory, ['proposals', 'signed-contracts'], true) && $leadId > 0 && preg_match('/^'.preg_quote($directory, '/').'\/'.preg_quote((string) $leadId, '/').'\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|doc|docx)$/D', $path) === 1;
     }
 
@@ -178,7 +182,17 @@ final class BrowserProposalFiles
         $paths = [];
         $bytes = 0;
         foreach ($rows as $row) {
-            if (! is_array($row) || ! is_string($row['private_path'] ?? null) || ! self::pathMatches($row['private_path'], (int) ($row['lead_id'] ?? 0), $directory)
+            $parentId = (int) ($row['lead_id'] ?? 0);
+            $pathDirectory = $directory;
+            if ($directory === 'documents') {
+                if (! is_array($row) || (($row['contact_id'] ?? null) !== null) === (($row['company_id'] ?? null) !== null)) {
+                    throw new RuntimeException('A selected client document must have exactly one fixture identity.');
+                }
+                $contact = ($row['contact_id'] ?? null) !== null;
+                $parentId = (int) $row[$contact ? 'contact_id' : 'company_id'];
+                $pathDirectory = 'documents/'.($contact ? 'contacts' : 'companies');
+            }
+            if (! is_array($row) || ! is_string($row['private_path'] ?? null) || ! self::pathMatches($row['private_path'], $parentId, $pathDirectory)
                 || ! is_string($row['sha256'] ?? null) || preg_match('/^[0-9a-f]{64}$/D', $row['sha256']) !== 1
                 || ! is_numeric($row['size_bytes'] ?? null) || (int) $row['size_bytes'] < 1 || (int) $row['size_bytes'] > 10 * 1024 * 1024
                 || in_array($row['private_path'], $paths, true)) {

@@ -28,7 +28,7 @@ class CoreServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/proposals.php');
-        foreach (['sales', 'signed-contracts', 'spreadsheets', 'work-reminders', 'employees'] as $routes) {
+        foreach (['sales', 'signed-contracts', 'spreadsheets', 'work-reminders', 'employees', 'documents'] as $routes) {
             if (is_file(__DIR__.'/../routes/'.$routes.'.php')) {
                 $this->loadRoutesFrom(__DIR__.'/../routes/'.$routes.'.php');
             }

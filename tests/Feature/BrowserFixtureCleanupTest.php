@@ -84,6 +84,36 @@ function browserProposalRow(int $leadId, string $uuid, string $content): array
     return ['lead_id' => $leadId, 'private_path' => 'proposals/'.$leadId.'/'.$uuid.'.pdf', 'sha256' => hash('sha256', $content), 'size_bytes' => strlen($content)];
 }
 
+it('recovers only the exact selected contact and company document paths and bytes', function () {
+    $content = '%PDF-1.4 Fictional profile document';
+    $rows = [];
+    foreach (['contacts', 'companies'] as $kind) {
+        $row = ['contact_id' => $kind === 'contacts' ? 7 : null, 'company_id' => $kind === 'companies' ? 7 : null,
+            'private_path' => 'documents/'.$kind.'/7/7e3ee91c-00f9-407a-9722-27f86752c15b.pdf', 'sha256' => hash('sha256', $content), 'size_bytes' => strlen($content)];
+        Storage::disk('local')->put($row['private_path'], $content, 'private');
+        $rows[] = $row;
+    }
+    Storage::disk('local')->put('documents/contacts/8/7e3ee91c-00f9-407a-9722-27f86752c15b.pdf', 'Preserved unrelated document.', 'private');
+    $files = BrowserProposalFiles::snapshot($rows, 'documents');
+    BrowserProposalFiles::remove($rows, 'documents');
+    foreach ($rows as $row) {
+        Storage::disk('local')->assertMissing($row['private_path']);
+    }
+    expect(BrowserProposalFiles::restore($rows, $files, 'documents'))->toBe(array_column($rows, 'private_path'));
+    foreach ($rows as $row) {
+        expect(Storage::disk('local')->get($row['private_path']))->toBe($content);
+    }
+    expect(Storage::disk('local')->get('documents/contacts/8/7e3ee91c-00f9-407a-9722-27f86752c15b.pdf'))->toBe('Preserved unrelated document.');
+    foreach ([
+        [...$rows[0], 'company_id' => 7], [...$rows[0], 'contact_id' => null],
+        [...$rows[0], 'private_path' => $rows[1]['private_path']],
+        [...$rows[0], 'private_path' => 'documents/contacts/8/7e3ee91c-00f9-407a-9722-27f86752c15b.pdf'],
+        [...$rows[0], 'private_path' => 'documents/contacts/7/../../outside.pdf'],
+    ] as $invalid) {
+        expect(fn () => BrowserProposalFiles::snapshot([$invalid], 'documents'))->toThrow(RuntimeException::class);
+    }
+});
+
 it('backs up restores and removes only the exact selected private proposal bytes', function () {
     $content = '%PDF-1.4 Fictional proposal';
     $row = browserProposalRow(7, '7e3ee91c-00f9-407a-9722-27f86752c15b', $content);
