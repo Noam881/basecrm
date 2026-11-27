@@ -92,6 +92,9 @@ class Query
             $query->where(function ($q) use ($columns, $term) {
                 foreach ($columns as $c) {
                     $q->orWhereRaw("CAST(({$c->expression}) AS TEXT) ILIKE ?", [$term]);
+                    if ($c->calendarExpression !== null) {
+                        $q->orWhereRaw("CAST(({$c->calendarExpression}) AS TEXT) ILIKE ?", [$term]);
+                    }
                 }
             });
         }
@@ -106,6 +109,10 @@ class Query
         }
         foreach ($state['sorts'] as $sort) {
             $c = $columns[$sort['id']];
+            if ($c->calendarExpression !== null) {
+                // Dates have no invented clock; exact creation instants break same-day ties.
+                $query->orderByRaw("({$c->calendarExpression}) {$sort['direction']} NULLS LAST");
+            }
             $sql = $c->id === 'priority' ? "CASE ({$c->expression}) WHEN 'low' THEN 1 WHEN 'normal' THEN 2 WHEN 'high' THEN 3 END" : $c->expression;
             if ($c->type === 'text' || $c->type === 'select' && $c->id !== 'priority') {
                 $sql = "LOWER(CAST(($sql) AS TEXT))";
@@ -154,7 +161,7 @@ class Query
     {
         $sql = "({$c->expression})";
         if ($c->type === 'datetime') {
-            $sql = "(($sql) AT TIME ZONE '".str_replace("'", "''", $zone)."')::date";
+            $sql = $c->calendarExpression ?? "(($sql) AT TIME ZONE '".str_replace("'", "''", $zone)."')::date";
         }
         $op = $f['op'];
         $v = $f['value'] ?? null;

@@ -4,6 +4,7 @@ import { Head, Link, useForm, usePage, router } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import {
     date,
+    leadCreated,
     leadLifecycleFormData,
     type LeadSignedContract,
     type Lead,
@@ -268,6 +269,12 @@ function changeTask(t: Task) {
                 </p>
                 <p class="crm-muted">
                     {{ t("Created") }}
+                    <time :datetime="lead.entered_on ?? lead.created_at">{{
+                        leadCreated(lead, zone)
+                    }}</time>
+                </p>
+                <p v-if="lead.entered_on" class="crm-muted">
+                    {{ t("Record creation timestamp") }}
                     <time :datetime="lead.created_at">{{
                         date(lead.created_at, zone)
                     }}</time>

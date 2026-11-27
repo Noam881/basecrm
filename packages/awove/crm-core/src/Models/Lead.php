@@ -20,6 +20,7 @@ class Lead extends Model
         return [
             'custom_fields' => 'array', 'attribution' => 'array', 'archived_at' => 'datetime',
             'estimated_value' => 'decimal:2', 'final_value' => 'decimal:2',
+            'entered_on' => 'immutable_date:Y-m-d',
             'closing_date' => 'immutable_date:Y-m-d',
             'contract_sent_on' => 'immutable_date:Y-m-d',
             'invoice_sent_on' => 'immutable_date:Y-m-d',
@@ -27,6 +28,13 @@ class Lead extends Model
             'process_started_on' => 'immutable_date:Y-m-d',
             'privacy_policy_accepted' => 'boolean',
         ];
+    }
+
+    /** A trusted historical writer must supply a date, never silently truncate a timestamp. */
+    public function setEnteredOnAttribute(mixed $value): void
+    {
+        validator(['entered_on' => $value], ['entered_on' => ['nullable', 'string', 'date_format:Y-m-d']])->validate();
+        $this->attributes['entered_on'] = $value;
     }
 
     public function contact(): BelongsTo

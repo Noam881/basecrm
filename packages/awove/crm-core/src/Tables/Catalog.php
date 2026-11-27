@@ -6,6 +6,7 @@ use Awove\Core\ContactDetails;
 use Awove\Core\Contracts\LeadTableContributor;
 use Awove\Core\Contracts\RecordTableContributor;
 use Awove\Core\Installation;
+use Awove\Core\LeadDates;
 use Awove\Core\Models\Status;
 use Awove\Core\Modules;
 use Awove\Core\StatusDisplay;
@@ -39,8 +40,8 @@ class Catalog
             return $catalog;
         }
         $c = [];
-        $add = function (string $id, string $label, string $sql, string $type = 'text', string $group = 'Record', array $options = [], int $width = 180) use (&$c) {
-            $c[$id] = new Column($id, $label, $sql, $type, $group, $options, $width);
+        $add = function (string $id, string $label, string $sql, string $type = 'text', string $group = 'Record', array $options = [], int $width = 180, ?string $calendarExpression = null) use (&$c) {
+            $c[$id] = new Column($id, $label, $sql, $type, $group, $options, $width, $calendarExpression);
         };
         $person = fn (string $fk) => "(SELECT name FROM users WHERE users.id = $fk)";
         $priorities = [['value' => 'low', 'label' => __('Low')], ['value' => 'normal', 'label' => __('Normal')], ['value' => 'high', 'label' => __('High')]];
@@ -158,7 +159,9 @@ class Catalog
             $add('version', 'Record version', "$t.version", 'number', 'Activity');
         }
         foreach (['created_at' => 'Created', 'updated_at' => 'Last updated'] as $id => $label) {
-            $add($id, $label, "$t.$id", 'datetime', 'Activity', width: 220);
+            $businessDate = $table === 'leads' && $id === 'created_at';
+            $calendar = $businessDate ? LeadDates::calendarExpression(Installation::display($user)['timezone']) : null;
+            $add($id, $label, "$t.$id", 'datetime', 'Activity', width: 220, calendarExpression: $calendar);
         }
         if ($table === 'leads') {
             $add('archived_at', 'Archived', "$t.archived_at", 'datetime', 'Activity', width: 220);

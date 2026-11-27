@@ -163,7 +163,7 @@
       "type": "text"
     },
     {
-      "key": "created_at",
+      "key": "entered_on",
       "source_columns": [
         "J"
       ],
@@ -173,10 +173,10 @@
       "module": "sales",
       "storage": {
         "table": "crm_leads",
-        "column": "created_at"
+        "column": "entered_on"
       },
       "table_column_id": "created_at",
-      "type": "datetime",
+      "type": "date",
       "read_only": true
     },
     {

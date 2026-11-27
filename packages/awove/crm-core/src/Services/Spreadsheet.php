@@ -134,7 +134,7 @@ class Spreadsheet
             : Access::identities($user, $type === 'contacts' ? Contact::class : Company::class);
         abort_if((clone $query)->count() > self::MAX_EXPORT_ROWS, 422, __('This export exceeds the 10,000-record limit.'));
         $columns = $type === 'leads'
-            ? ['id', ...self::COLUMNS[$type], 'contact_name', 'company_name', 'created_at']
+            ? ['id', ...self::COLUMNS[$type], 'contact_name', 'company_name', 'created_at', 'entered_on']
             : ['id', ...array_diff(self::COLUMNS[$type], ['notes']), 'created_at'];
         $rows = (function () use ($query, $columns, $user) {
             foreach ($query->orderBy('id')->lazyById(200) as $record) {
@@ -142,7 +142,7 @@ class Spreadsheet
                 if ($record instanceof Lead) {
                     $row['contact_name'] = $record->getRelationValue('contact')?->getAttribute('name');
                     $row['company_name'] = $record->getRelationValue('company')?->getAttribute('name');
-                    foreach (['closing_date', 'contract_sent_on', 'invoice_sent_on', 'payment_received_on', 'process_started_on'] as $dateField) {
+                    foreach (['entered_on', 'closing_date', 'contract_sent_on', 'invoice_sent_on', 'payment_received_on', 'process_started_on'] as $dateField) {
                         $row[$dateField] = $record->getRawOriginal($dateField);
                     }
                     $row['privacy_policy_accepted'] = $record->privacy_policy_accepted === null ? '' : ($record->privacy_policy_accepted ? '1' : '0');
