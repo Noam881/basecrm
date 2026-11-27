@@ -197,6 +197,15 @@ export async function downloadFile(
         valid,
     );
 }
+export async function downloadWorkdoc(
+    id: string,
+    valid: () => boolean = () => true,
+): Promise<void> {
+    return downloadEndpoint(
+        `/vault/api/imports/monday/workdocs/${encodeURIComponent(id)}/source`,
+        valid,
+    );
+}
 export async function downloadSource(
     id: string,
     valid: () => boolean = () => true,

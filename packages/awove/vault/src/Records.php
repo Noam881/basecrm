@@ -197,7 +197,8 @@ final class Records
         AuditLog::record($user, 'item.read', $item->id);
 
         return ['item' => $this->metadata($item, $user, 'read'), 'payload' => $payload, 'files' => $files,
-            'source_export' => Models\ImportEntry::where('installation_id', Installation::manifest()['id'])->where('item_id', $item->id)->where('state', 'committed')->exists()];
+            'source_export' => Models\ImportEntry::where('installation_id', Installation::manifest()['id'])->where('item_id', $item->id)->where('state', 'committed')->exists(),
+            'workdoc_export' => Models\ImportWorkdoc::where('installation_id', Installation::manifest()['id'])->where('item_id', $item->id)->where('state', 'committed')->exists()];
     }
 
     public function decrypt(Item $item): array

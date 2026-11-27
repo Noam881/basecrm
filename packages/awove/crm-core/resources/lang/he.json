@@ -789,5 +789,14 @@
     "Imported secure record": "רשומה מאובטחת מיובאת",
     "Generated source history reference": "מסמך תיעוד מקור שנוצר במערכת",
     "Source update": "עדכון מקור",
-    "Source reply": "תגובת מקור"
+    "Source reply": "תגובת מקור",
+    "Original workdoc export part": "חלק מייצוא מסמך המקור",
+    "Imported protected workdoc": "מסמך מוגן שיובא",
+    "Download original workdoc export": "הורדת ייצוא מסמך המקור",
+    "Protected workdocs": "מסמכים מוגנים",
+    "Protected workdocs accepted": "מסמכים מוגנים שנקלטו",
+    "Protected workdoc accepted.": "המסמך המוגן נקלט.",
+    "Import source records before their workdocs.": "יש לייבא את רשומות המקור לפני המסמכים שלהן.",
+    "Workdocs are encrypted notes with their original structured TXT export.": "המסמכים נשמרים כרשומות מוצפנות עם ייצוא המקור המובנה בפורמט TXT.",
+    "Import one workdoc": "ייבוא מסמך אחד"
 }

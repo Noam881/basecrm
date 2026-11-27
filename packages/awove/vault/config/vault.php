@@ -11,4 +11,6 @@ return [
     'monday_token_file' => env('VAULT_MONDAY_TOKEN_FILE'),
     'monday_plan_file' => env('VAULT_MONDAY_PLAN_FILE'),
     'monday_plan_sha256' => env('VAULT_MONDAY_PLAN_SHA256'),
+    'monday_workdoc_plan_file' => env('VAULT_MONDAY_WORKDOC_PLAN_FILE'),
+    'monday_workdoc_plan_sha256' => env('VAULT_MONDAY_WORKDOC_PLAN_SHA256'),
 ];

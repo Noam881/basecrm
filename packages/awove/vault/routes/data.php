@@ -2,6 +2,7 @@
 
 use Awove\Vault\DataController;
 use Awove\Vault\Http\MondayImportController;
+use Awove\Vault\Http\MondayWorkdocController;
 use Awove\Vault\Http\NoStore;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +22,7 @@ Route::middleware(['web', NoStore::class, 'auth', 'verified', 'crm.module:vault'
     Route::post('imports/monday/next-file', [MondayImportController::class, 'nextFile'])->name('imports.monday.next-file');
     Route::post('imports/monday/files/{id}/reconcile', [MondayImportController::class, 'reconcile'])->whereUuid('id')->name('imports.monday.files.reconcile');
     Route::post('imports/monday/items/{id}/source', [MondayImportController::class, 'export'])->whereUuid('id')->name('imports.monday.export');
+    Route::get('imports/monday/workdocs', [MondayWorkdocController::class, 'status'])->name('imports.monday.workdocs.status');
+    Route::post('imports/monday/workdocs/next', [MondayWorkdocController::class, 'next'])->name('imports.monday.workdocs.next');
+    Route::post('imports/monday/workdocs/{id}/source', [MondayWorkdocController::class, 'export'])->whereUuid('id')->name('imports.monday.workdocs.export');
 });
