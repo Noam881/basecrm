@@ -2,6 +2,11 @@
 
 return [
 
+    'monday' => [
+        'token' => env('MONDAY_API_TOKEN'),
+        'api_version' => env('MONDAY_API_VERSION', '2026-10'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
