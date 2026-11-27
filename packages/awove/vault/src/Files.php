@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class Files
@@ -41,9 +42,15 @@ final class Files
     {
         $user = Access::actor($request->user());
         app(Unlocks::class)->requireUnlocked($request);
-        $input = $request->validate(['file' => ['required', 'file', 'max:10240', 'mimes:pdf,txt,png,jpg,jpeg,doc,docx', 'extensions:pdf,txt,png,jpg,jpeg,doc,docx'], 'version' => 'required|integer|min:1']);
+        $input = $request->validate(['file' => ['required', 'file', 'max:10240', 'mimes:pdf,txt,png,jpg,jpeg,doc,docx,html', 'extensions:pdf,txt,png,jpg,jpeg,doc,docx,html'], 'version' => 'required|integer|min:1']);
         /** @var UploadedFile $upload */
         $upload = $input['file'];
+        // HTML is an encrypted attachment, never a substitute for an existing document format.
+        $htmlName = strtolower($upload->getClientOriginalExtension()) === 'html';
+        $htmlContent = $upload->getMimeType() === 'text/html';
+        if ($htmlName !== $htmlContent) {
+            throw ValidationException::withMessages(['file' => __('Choose a supported file whose extension matches its content.')]);
+        }
         $path = 'vault/'.hash('sha256', (string) Installation::manifest()['id']).'/'.Str::uuid().'.enc';
         $disk = Storage::disk('local');
         $plain = null;

@@ -189,7 +189,7 @@ function fileSize(bytes: number) {
                     ref="fileInput"
                     class="crm-input"
                     type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp,.zip"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp,.zip,.mp4"
                     required
                     :disabled="form.processing || !!warning"
                     :aria-invalid="!!form.errors.file"
@@ -203,7 +203,7 @@ function fileSize(bytes: number) {
                 />
                 <small :id="`${fieldId}-help`" class="crm-muted">{{
                     t(
-                        "PDF, Word, Excel, CSV, text, JPG, PNG, GIF, WebP or ZIP, up to 100 MB. Files are private to people with access to this profile.",
+                        "PDF, Word, Excel, CSV, text, JPG, PNG, GIF, WebP, ZIP or MP4, up to 100 MB. Files are private to people with access to this profile.",
                     )
                 }}</small>
                 <small

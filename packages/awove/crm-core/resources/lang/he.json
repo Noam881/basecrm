@@ -740,7 +740,7 @@
     "Documents could not be loaded. Please try again.": "לא ניתן לטעון את המסמכים. יש לנסות שוב.",
     "Try again": "ניסיון נוסף",
     "Choose a non-empty file no larger than 100 MB.": "יש לבחור קובץ שאינו ריק בגודל של עד 100 MB.",
-    "PDF, Word, Excel, CSV, text, JPG, PNG, GIF, WebP or ZIP, up to 100 MB. Files are private to people with access to this profile.": "PDF, Word, Excel, CSV, טקסט, JPG, PNG, GIF, WebP או ZIP, עד 100 MB. הקבצים פרטיים וזמינים רק לבעלי גישה לפרופיל הזה.",
+    "PDF, Word, Excel, CSV, text, JPG, PNG, GIF, WebP, ZIP or MP4, up to 100 MB. Files are private to people with access to this profile.": "PDF, Word, Excel, CSV, טקסט, JPG, PNG, GIF, WebP, ZIP או MP4, עד 100 MB. הקבצים פרטיים וזמינים רק לבעלי גישה לפרופיל הזה.",
     "Upload document": "העלאת מסמך",
     "Document uploaded.": "המסמך הועלה.",
     "No documents yet.": "עדיין אין מסמכים.",

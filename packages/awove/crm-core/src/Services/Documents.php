@@ -35,6 +35,7 @@ class Documents
         'gif' => ['image/gif'],
         'webp' => ['image/webp'],
         'zip' => ['application/zip', 'application/x-zip-compressed'],
+        'mp4' => ['video/mp4'],
     ];
 
     public function forIdentity($user, string $type, int $id): array
