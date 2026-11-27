@@ -192,6 +192,24 @@ export async function downloadFile(
     id: string,
     valid: () => boolean = () => true,
 ): Promise<void> {
+    return downloadEndpoint(
+        `/vault/api/files/${encodeURIComponent(id)}/download`,
+        valid,
+    );
+}
+export async function downloadSource(
+    id: string,
+    valid: () => boolean = () => true,
+): Promise<void> {
+    return downloadEndpoint(
+        `/vault/api/imports/monday/items/${encodeURIComponent(id)}/source`,
+        valid,
+    );
+}
+async function downloadEndpoint(
+    endpoint: string,
+    valid: () => boolean,
+): Promise<void> {
     if (!isUnlocked())
         throw new VaultRequestError(
             t("Unlock the Vault before continuing."),
@@ -202,19 +220,16 @@ export async function downloadFile(
     controllers.add(controller);
     let url: string | null = null;
     try {
-        const response = await fetch(
-            `/vault/api/files/${encodeURIComponent(id)}/download`,
-            {
-                method: "POST",
-                cache: "no-store",
-                credentials: "same-origin",
-                signal: controller.signal,
-                headers: {
-                    "X-XSRF-TOKEN": csrf(),
-                    Accept: "application/octet-stream",
-                },
+        const response = await fetch(endpoint, {
+            method: "POST",
+            cache: "no-store",
+            credentials: "same-origin",
+            signal: controller.signal,
+            headers: {
+                "X-XSRF-TOKEN": csrf(),
+                Accept: "application/octet-stream",
             },
-        );
+        });
         if ([401, 403, 404, 419, 423, 503].includes(response.status))
             clearSensitive(true);
         if (!response.ok)

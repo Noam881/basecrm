@@ -7,11 +7,13 @@ use Awove\Core\Imports\DocumentSource;
 use Awove\Core\Imports\DocumentSourcePolicy;
 use Awove\Core\Imports\DocumentSources;
 use Awove\Core\Imports\DocumentTransfer;
+use Awove\Core\Imports\GeneratedHistorySourcePolicy;
 use Awove\Core\Imports\Ledger;
 use Awove\Core\Imports\LegacyHistory;
 use Awove\Core\Imports\Mapping;
 use Awove\Core\Imports\Operation;
 use Awove\Core\Imports\ReferenceSourcePolicy;
+use Awove\Core\Models\Activity;
 use Awove\Core\Models\Document;
 use Awove\Core\Models\Lead;
 use Awove\Core\Services\Documents;
@@ -442,11 +444,13 @@ it('binds update attachments to verified retained history and exposes only autho
     expect(Document::count())->toBe(1)->and(DocumentTransfer::sole()->document_id)->toBe($imported['document_id']);
 });
 
-function generatedReferenceFixture(): array
+function generatedReferenceFixture(string $column = 'amount', string $type = 'numbers'): array
 {
     $f = durableDocumentFixture();
-    app(DocumentSources::class)->register('fixture-documents', 'ordinary-reference', new class implements ReferenceSourcePolicy
+    app(DocumentSources::class)->register('fixture-documents', 'ordinary-reference', new class($column) implements ReferenceSourcePolicy
     {
+        public function __construct(private string $column) {}
+
         public function authorize($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void
         {
             abort_unless($source->data['role'] === 'ordinary-reference', 403);
@@ -454,12 +458,12 @@ function generatedReferenceFixture(): array
 
         public function authorizeFields($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source, array $columnIds): void
         {
-            abort_unless($columnIds === ['amount'], 403);
+            abort_unless($columnIds === [$this->column], 403);
         }
     });
     $f['source'] = [...$f['source'], 'role' => 'ordinary-reference', 'entity_type' => 'item', 'source_id' => 'source-item', 'kind' => 'generated-reference', 'column_id' => null, 'source_index' => null,
-        'parent_item_id' => null, 'reference_revision' => 1, 'review_flags' => ['approved_separate_party_requires_review'], 'reference_columns' => ['amount']];
-    $f['payload'] = ['cells' => [['id' => 'amount', 'label' => 'מחיר מקור', 'type' => 'numbers', 'representation' => 'json-string', 'available' => true, 'value' => '123456789012345678901234567890.123400']]];
+        'parent_item_id' => null, 'reference_revision' => 1, 'review_flags' => ['approved_separate_party_requires_review'], 'reference_columns' => [$column]];
+    $f['payload'] = ['cells' => [['id' => $column, 'label' => $column === 'amount' ? 'מחיר מקור' : 'Original note', 'type' => $type, 'representation' => 'json-string', 'available' => true, 'value' => '123456789012345678901234567890.123400']]];
 
     return $f;
 }
@@ -540,4 +544,78 @@ it('fails closed when a generated reference journal is disguised or missing', fu
     $this->actingAs($f['user'])->get($url)->assertStatus(409);
     DB::table('crm_import_document_transfers')->where('id', $transfer->id)->delete();
     $this->get($url)->assertStatus(409);
+});
+
+function internalHistoryDocumentFixture(): array
+{
+    $f = durableDocumentFixture();
+    $f['identity'] = app(Identities::class)->create($f['user'], 'companies', ['name' => 'Mymisrad internal fixture']);
+    $key = (string) Str::uuid();
+    $f['parent'] = $f['ledger']->claim($f['user'], $f['boundary'], $f['batch']['id'], ['board_id' => 'ordinary-board', 'entity_type' => 'item', 'entity_id' => '880001', 'target_role' => 'internal-reference-context', 'relation_key' => 'primary'], ['request_key' => $key, 'revision' => 1, 'source_fingerprint' => str_repeat('a', 64), 'target_fingerprint' => null, 'previous_receipt_id' => null]);
+    $f['ledger']->finish($f['user'], $f['boundary'], $f['parent']['id'], $key, ['state' => 'verified', 'target_type' => 'core.company', 'target_id' => (string) $f['identity']->id, 'result_fingerprint' => str_repeat('b', 64)]);
+    app(DocumentSources::class)->register('fixture-documents', 'internal-history', new class implements GeneratedHistorySourcePolicy
+    {
+        public function authorize($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void
+        {
+            abort_unless($batch->provider === 'fixture-documents' && $batch->source_account === 'fictional-account' && $sourceItem->board_id === 'ordinary-board'
+                && $sourceItem->entity_id === '880001' && $sourceItem->target_type === 'core.company' && $identity->target_type === 'core.company', 403);
+        }
+    });
+    $f['source'] = [...$f['source'], 'role' => 'internal-history', 'entity_type' => 'update', 'source_id' => '990001', 'source_parent_id' => '880001', 'source_item_mapping_id' => $f['parent']['mapping_id'], 'kind' => 'generated-history', 'column_id' => null, 'source_index' => null, 'update_id' => '990001', 'reply_id' => null, 'history_mapping_id' => null, 'reply_to_document_mapping_id' => null];
+    $f['payload'] = ['body_html' => '<p>Fictional internal discussion.</p><script>Original source only</script>', ...array_intersect_key($f['source'], array_flip(['author', 'source_created_at', 'source_updated_at']))];
+
+    return $f;
+}
+function importInternalHistoryDocument(array $f): array
+{
+    return app(DocumentImporter::class)->importGeneratedHistory($f['user'], $f['boundary'], $f['batch']['id'], $f['parent']['mapping_id'], $f['key'], $f['source'], $f['payload']);
+}
+it('retains internal update and reply bodies as truthful generated history Documents without fake Leads or source columns', function () {
+    $f = internalHistoryDocumentFixture();
+    $update = importInternalHistoryDocument($f);
+    $document = Document::findOrFail($update['document_id']);
+    $bytes = Storage::disk('local')->get($document->private_path);
+    expect($bytes)->toContain('Generated source history reference', '990001', 'Fictional internal discussion.')->not->toContain('"cells"');
+    $original = json_decode(substr($bytes, strpos($bytes, '{')), true, 64, JSON_THROW_ON_ERROR);
+    expect($original['body_html'])->toBe($f['payload']['body_html']);
+    expect($document->mime_type)->toBe('text/plain')->and(importInternalHistoryDocument($f)['document_id'])->toBe($update['document_id']);
+    $this->actingAs($f['user'])->getJson('/people/companies/'.$f['identity']->id.'/documents')->assertOk()->assertJsonPath('documents.0.source.kind', 'generated-history')->assertJsonPath('documents.0.source.item_id', '880001')->assertJsonPath('documents.0.source.update_id', '990001');
+    $f['key'] = (string) Str::uuid();
+    $f['source'] = [...$f['source'], 'entity_type' => 'reply', 'source_id' => '990002', 'reply_id' => '990002', 'reply_to_document_mapping_id' => $update['receipt']['mapping_id']];
+    $f['payload']['body_html'] = '<p>Fictional internal reply.</p>';
+    $reply = importInternalHistoryDocument($f);
+    expect(Document::count())->toBe(2)->and(Lead::count())->toBe(0)->and(Activity::count())->toBe(0);
+    $meta = app(DocumentImporter::class)->sourceMetadata($f['user'], Document::findOrFail($reply['document_id']));
+    expect($meta['update_id'])->toBe('990001')->and($meta['reply_id'])->toBe('990002')->and($meta['context'])->toBeNull();
+});
+it('requires dedicated internal history authorization and matching original attribution', function () {
+    $f = internalHistoryDocumentFixture();
+    expect(fn () => importDurableDocument($f))->toThrow(HttpException::class, 'generated reference writer');
+    $f['payload']['source_created_at'] = '2020-01-01T00:00:00Z';
+    expect(fn () => importInternalHistoryDocument($f))->toThrow(HttpException::class, 'attribution changed');
+    $f['payload']['source_created_at'] = $f['source']['source_created_at'];
+    app()->instance(DocumentSources::class, new DocumentSources);
+    expect(fn () => importInternalHistoryDocument($f))->toThrow(HttpException::class);
+    expect(Document::count())->toBe(0)->and(DocumentTransfer::count())->toBe(0);
+});
+it('rejects wrong generated history reply parents and changed immutable bodies without duplicate Documents', function () {
+    $f = internalHistoryDocumentFixture();
+    $update = importInternalHistoryDocument($f);
+    $f['payload']['body_html'] = '<p>Changed source body.</p>';
+    expect(fn () => importInternalHistoryDocument($f))->toThrow(HttpException::class, 'replay conflicts');
+    $f['key'] = (string) Str::uuid();
+    $f['source'] = [...$f['source'], 'entity_type' => 'reply', 'source_id' => '990002', 'reply_id' => '990002', 'reply_to_document_mapping_id' => $f['parent']['mapping_id']];
+    expect(fn () => importInternalHistoryDocument($f))->toThrow(HttpException::class, 'reply parent changed');
+    expect(Document::count())->toBe(1)->and(DocumentTransfer::sole()->document_id)->toBe($update['document_id']);
+});
+
+it('keeps original HTML inside generated reference JSON strings exact without weakening native TXT MIME checks', function () {
+    $f = generatedReferenceFixture('note', 'text');
+    $f['payload']['cells'][0]['value'] = json_encode('<script>Fictional original text</script>', JSON_UNESCAPED_SLASHES);
+    $result = importGeneratedReference($f);
+    $doc = Document::findOrFail($result['document_id']);
+    $bytes = Storage::disk('local')->get($doc->private_path);
+    $original = json_decode(substr($bytes, strpos($bytes, '{')), true, 64, JSON_THROW_ON_ERROR);
+    expect($doc->mime_type)->toBe('text/plain')->and($original['cells'][0]['value'])->toBe($f['payload']['cells'][0]['value'])
+        ->and(importGeneratedReference($f)['document_id'])->toBe($result['document_id']);
 });

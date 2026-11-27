@@ -2,13 +2,15 @@
 import { t } from "@/lib/i18n";
 import { Link } from "@inertiajs/vue3";
 import { onBeforeUnmount, ref, watch } from "vue";
-import { historyKinds, readHistory } from "../../history";
+import { historyKinds, readHistory, type HistoryFile } from "../../history";
+import HistoryFiles from "../../components/HistoryFiles.vue";
 const props = defineProps<{ endpoint: string }>();
 type Row = {
     id: number;
     label: string | null;
     kind: string;
     record_url: string;
+    files: HistoryFile[];
 };
 const records = ref<Row[]>([]);
 const cursor = ref<number | null>(null);
@@ -79,6 +81,7 @@ onBeforeUnmount(() => controller?.abort());
             <Link :href="`/finance/history/${record.id}`"
                 ><bdi>{{ record.label || t("Financial history") }}</bdi></Link
             ><small>{{ t(historyKinds[record.kind]) }}</small>
+            <HistoryFiles :files="record.files" :show-empty="false" />
         </div>
         <div v-if="error || cursor !== null" class="crm-form-action">
             <button

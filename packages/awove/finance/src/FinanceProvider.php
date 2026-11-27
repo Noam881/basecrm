@@ -8,6 +8,11 @@ use Illuminate\Support\ServiceProvider;
 
 class FinanceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->singleton(History\Files\Sources::class);
+    }
+
     public function boot(Modules $modules): void
     {
         $modules->register(new FinanceModule);

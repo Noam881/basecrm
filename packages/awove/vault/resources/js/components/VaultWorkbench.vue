@@ -17,6 +17,7 @@ import VaultUnlock from "./VaultUnlock.vue";
 import {
     currentGeneration,
     downloadFile,
+    downloadSource,
     isUnlocked,
     request,
     securityGeneration,
@@ -85,6 +86,7 @@ function wipe() {
     if (fileInput.value) fileInput.value.value = "";
 }
 const security = useVaultSecurity(wipe);
+defineExpose({ refreshMetadata: load });
 const filter = computed(() => {
     const parsed = new URL(p.endpoint, window.location.origin);
     return Object.fromEntries(parsed.searchParams.entries());
@@ -502,6 +504,19 @@ async function download(id: string) {
     try {
         const captured = operation;
         await downloadFile(id, () => captured === operation);
+    } catch (e) {
+        failed(e);
+    } finally {
+        busy.value = false;
+    }
+}
+async function exportSource() {
+    if (!selected.value || !content.value?.source_export) return;
+    clearErrors();
+    busy.value = true;
+    try {
+        const captured = operation;
+        await downloadSource(selected.value.id, () => captured === operation);
     } catch (e) {
         failed(e);
     } finally {
@@ -981,6 +996,16 @@ onBeforeUnmount(() => {
                         </dd>
                     </div>
                 </dl>
+                <div v-if="content.source_export" class="crm-form-action">
+                    <button
+                        type="button"
+                        class="crm-secondary"
+                        :disabled="busy || !security.unlocked.value"
+                        @click="exportSource"
+                    >
+                        {{ t("Download original source export") }}
+                    </button>
+                </div>
                 <article
                     v-for="field in content.payload.fields"
                     :key="field.id"
@@ -1080,6 +1105,23 @@ onBeforeUnmount(() => {
                             >{{ Math.ceil(file.size_bytes / 1024) }}
                             {{ t("KB") }}</small
                         >
+                        <small
+                            v-if="file.source"
+                            data-vault-sensitive
+                            dir="auto"
+                        >
+                            <bdi>{{ file.source.original_name }}</bdi> ·
+                            {{ t("Original author") }}:
+                            <bdi>{{
+                                file.source.author.name ??
+                                t("Original author unavailable")
+                            }}</bdi>
+                            ·
+                            <bdi>{{
+                                file.source.created_at ??
+                                t("Original time unavailable")
+                            }}</bdi>
+                        </small>
                         <div class="crm-form-action">
                             <button
                                 v-if="currentActions.files_download"

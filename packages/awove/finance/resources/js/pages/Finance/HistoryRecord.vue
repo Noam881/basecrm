@@ -4,11 +4,13 @@ import { Head, Link, usePage } from "@inertiajs/vue3";
 import { computed, onBeforeUnmount, ref } from "vue";
 import FinanceNav from "../../components/FinanceNav.vue";
 import HistoryEntryCard from "../../components/HistoryEntry.vue";
+import HistoryFiles from "../../components/HistoryFiles.vue";
 import {
     historyKinds,
     historyPlacements,
     readHistory,
     type HistoryEntry,
+    type HistoryFile,
     type HistoryRecord,
 } from "../../history";
 import type { Section } from "../../types";
@@ -16,6 +18,7 @@ const props = defineProps<{
     record: HistoryRecord;
     entries: HistoryEntry[];
     next_cursor: number | null;
+    files: HistoryFile[];
     sections: Section[];
 }>();
 const page = usePage();
@@ -136,6 +139,9 @@ onBeforeUnmount(() => controllers.forEach((controller) => controller.abort()));
                     </dd>
                 </div>
             </dl>
+        </section>
+        <section class="crm-card crm-flow">
+            <HistoryFiles :files="files" />
         </section>
         <section
             v-for="entry in entries"

@@ -8,4 +8,7 @@ return [
     'keys' => [],
     'development_question' => env('VAULT_DEV_QUESTION', false),
     'fictional_only' => env('VAULT_FICTIONAL_ONLY', false),
+    'monday_token_file' => env('VAULT_MONDAY_TOKEN_FILE'),
+    'monday_plan_file' => env('VAULT_MONDAY_PLAN_FILE'),
+    'monday_plan_sha256' => env('VAULT_MONDAY_PLAN_SHA256'),
 ];
