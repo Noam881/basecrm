@@ -12,6 +12,7 @@ use Awove\Core\Models\Company;
 use Awove\Vault\Access;
 use Awove\Vault\AuditLog;
 use Awove\Vault\Models\ImportEntry;
+use Awove\Vault\Models\ImportWorkdoc;
 use Awove\Vault\Models\Item;
 use Awove\Vault\Records;
 use Illuminate\Http\Request;
@@ -30,11 +31,14 @@ final class MondayImport
         $this->context($request, $plan);
         $entries = $this->entries($plan)->get();
         $pending = $entries->firstWhere('state', 'pending');
+        $expectedDocs = array_values(array_unique(array_merge(...array_map(fn ($node) => array_column($node['workdocs'], 'doc_id'), $plan->data['nodes'])), SORT_STRING));
+        $acceptedDocs = ImportWorkdoc::where('installation_id', Installation::manifest()['id'])->where('main_plan_hash', $plan->hash)
+            ->where('state', 'committed')->whereIn('doc_id', $expectedDocs)->distinct()->count('doc_id');
 
         return ['total' => count($plan->data['nodes']), 'accepted' => $entries->where('state', 'committed')->count(),
             'pending_request_key' => $pending && $pending->actor_id === $request->user()->id ? $pending->id : null,
             'binary_assets_pending' => count(array_unique(array_merge(...array_column($plan->data['nodes'], 'assets')))),
-            'workdocs_pending' => array_sum(array_map(fn ($node) => count($node['workdocs']), $plan->data['nodes'])),
+            'workdocs_pending' => max(0, count($expectedDocs) - $acceptedDocs),
             'source_configured' => app(MondayToken::class)->configured(), 'migration_complete' => false];
     }
 

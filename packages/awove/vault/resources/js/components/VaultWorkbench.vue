@@ -18,6 +18,7 @@ import {
     currentGeneration,
     downloadFile,
     downloadSource,
+    downloadWorkdoc,
     isUnlocked,
     request,
     securityGeneration,
@@ -511,12 +512,18 @@ async function download(id: string) {
     }
 }
 async function exportSource() {
-    if (!selected.value || !content.value?.source_export) return;
+    if (
+        !selected.value ||
+        (!content.value?.source_export && !content.value?.workdoc_export)
+    )
+        return;
     clearErrors();
     busy.value = true;
     try {
         const captured = operation;
-        await downloadSource(selected.value.id, () => captured === operation);
+        await (
+            content.value?.workdoc_export ? downloadWorkdoc : downloadSource
+        )(selected.value.id, () => captured === operation);
     } catch (e) {
         failed(e);
     } finally {
@@ -996,14 +1003,23 @@ onBeforeUnmount(() => {
                         </dd>
                     </div>
                 </dl>
-                <div v-if="content.source_export" class="crm-form-action">
+                <div
+                    v-if="content.source_export || content.workdoc_export"
+                    class="crm-form-action"
+                >
                     <button
                         type="button"
                         class="crm-secondary"
                         :disabled="busy || !security.unlocked.value"
                         @click="exportSource"
                     >
-                        {{ t("Download original source export") }}
+                        {{
+                            t(
+                                content.workdoc_export
+                                    ? "Download original workdoc export"
+                                    : "Download original source export",
+                            )
+                        }}
                     </button>
                 </div>
                 <article

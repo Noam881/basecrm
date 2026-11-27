@@ -64,6 +64,7 @@ export interface Content {
     payload: { fields: Field[]; notes?: string | null };
     files: FileEntry[];
     source_export?: boolean;
+    workdoc_export?: boolean;
 }
 export interface Options {
     customers: Customer[];
@@ -73,6 +74,7 @@ export interface Options {
 export interface InitialData extends Options {
     table: TablePayload;
     monday_import?: boolean;
+    monday_workdocs?: boolean;
 }
 export interface AuthStatus {
     auth_mode?: "password_email_totp" | "email_riddle";

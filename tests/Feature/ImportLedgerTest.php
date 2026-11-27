@@ -344,6 +344,8 @@ it('adds metadata tables without rewriting native client data and refuses destru
     $contact = Contact::create(['name' => 'Noa Cohen', 'created_by' => $user->id, 'search_key' => 'noacohen']);
     $before = $contact->fresh()->getAttributes();
     // Rebuild this empty metadata dependency graph only inside the isolated base_test transaction.
+    expect(DB::table('vault_import_workdocs')->count())->toBe(0);
+    Schema::drop('vault_import_workdocs');
     expect(DB::table('vault_import_file_transfers')->count())->toBe(0);
     Schema::drop('vault_import_file_transfers');
     expect(DB::table('vault_import_entries')->count())->toBe(0);
@@ -373,6 +375,8 @@ it('adds metadata tables without rewriting native client data and refuses destru
     $vaultImportMigration->up();
     $vaultFileTransferMigration = require base_path('packages/awove/vault/database/migrations/2026_11_27_001840_create_vault_import_file_transfers.php');
     $vaultFileTransferMigration->up();
+    $vaultWorkdocMigration = require base_path('packages/awove/vault/database/migrations/2026_11_27_001860_create_vault_import_workdocs.php');
+    $vaultWorkdocMigration->up();
     expect($contact->fresh()->getAttributes())->toBe($before)->and(Batch::count())->toBe(0);
     expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'Restore a tested backup');
 });
