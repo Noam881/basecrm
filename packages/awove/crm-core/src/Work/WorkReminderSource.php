@@ -2,7 +2,7 @@
 
 namespace Awove\Core\Work;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Models\Routine;
 use Awove\Core\Models\WorkItem;
 use Awove\Core\Services\Routines;
@@ -10,7 +10,7 @@ use Awove\Core\Services\WorkAccess;
 use Awove\Core\Services\WorkItems;
 use Awove\Core\Services\WorkTypes;
 
-class WorkReminderSource implements ReminderSource
+class WorkReminderSource implements ImportHoldSource
 {
     public function __construct(private string $moduleId, private string $kind, private bool $routine) {}
 
@@ -22,6 +22,16 @@ class WorkReminderSource implements ReminderSource
     public function key(): string
     {
         return ($this->routine ? 'routine-' : 'work-').$this->kind;
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $type = $this->routine ? app(WorkTypes::class)->routine($this->moduleId, $this->kind) : app(WorkTypes::class)->work($this->moduleId, $this->kind);
+        abort_unless($type !== null, 403);
+        $model = $this->routine ? Routine::class : WorkItem::class;
+        $access = app(WorkAccess::class);
+        $record = $access->query($actor, $type, $model, true)->lockForUpdate()->findOrFail($recordId);
+        abort_unless($access->editable($actor, $type, $record), 403);
     }
 
     public function due(): iterable

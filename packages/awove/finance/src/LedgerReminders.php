@@ -3,12 +3,12 @@
 namespace Awove\Finance;
 
 use App\Models\User;
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\Core\Modules;
 use Awove\Finance\Models\LedgerRecord;
 
-class LedgerReminders implements ReminderSource
+class LedgerReminders implements ImportHoldSource
 {
     public function __construct(private string $cap) {}
 
@@ -20,6 +20,13 @@ class LedgerReminders implements ReminderSource
     public function key(): string
     {
         return $this->cap;
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = app(Ledger::class)->query($actor, $this->cap)->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record, $this->cap);
+        abort_unless($record->cancelled_at === null, 403);
     }
 
     public function due(): iterable

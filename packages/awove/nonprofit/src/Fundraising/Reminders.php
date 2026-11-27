@@ -2,11 +2,11 @@
 
 namespace Awove\Nonprofit\Fundraising;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Modules;
 use Awove\Nonprofit\Fundraising\Models\Constituent;
 
-class Reminders implements ReminderSource
+class Reminders implements ImportHoldSource
 {
     public function module(): string
     {
@@ -16,6 +16,12 @@ class Reminders implements ReminderSource
     public function key(): string
     {
         return 'fundraising-actions';
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = Access::query($actor)->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record);
     }
 
     public function due(): iterable

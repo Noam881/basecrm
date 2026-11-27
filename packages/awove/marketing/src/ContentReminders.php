@@ -3,12 +3,12 @@
 namespace Awove\Marketing;
 
 use App\Models\User;
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\Core\Modules;
 use Awove\Marketing\Models\Content;
 
-class ContentReminders implements ReminderSource
+class ContentReminders implements ImportHoldSource
 {
     public function module(): string
     {
@@ -18,6 +18,12 @@ class ContentReminders implements ReminderSource
     public function key(): string
     {
         return 'content';
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = Content::lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record, 'content');
     }
 
     public function due(): iterable

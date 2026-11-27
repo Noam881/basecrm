@@ -2,11 +2,11 @@
 
 namespace Awove\Nonprofit\Programs;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Modules;
 use Awove\Nonprofit\Programs\Models\Feedback;
 
-class FollowUpReminders implements ReminderSource
+class FollowUpReminders implements ImportHoldSource
 {
     public function module(): string
     {
@@ -16,6 +16,16 @@ class FollowUpReminders implements ReminderSource
     public function key(): string
     {
         return 'program-follow-ups';
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $actor = Access::fresh($actor);
+        $initial = Access::query($actor, 'feedback')->findOrFail($recordId);
+        $program = Access::query($actor, 'programs')->lockForUpdate()->findOrFail($initial->getAttribute('program_id'));
+        Access::edit($actor, 'programs', $program);
+        $record = Access::query($actor, 'feedback')->where('program_id', $program->id)->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, 'feedback', $record);
     }
 
     public function due(): iterable

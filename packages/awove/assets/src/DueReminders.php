@@ -5,10 +5,10 @@ namespace Awove\Assets;
 use Awove\Assets\Models\Asset;
 use Awove\Assets\Models\Assignment;
 use Awove\Assets\Models\MaintenanceRecord;
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Modules;
 
-class DueReminders implements ReminderSource
+class DueReminders implements ImportHoldSource
 {
     public function __construct(private string $section) {}
 
@@ -31,6 +31,16 @@ class DueReminders implements ReminderSource
         }
 
         return $q->whereNull('archived_at')->whereRaw("(CASE WHEN $table.status='completed' THEN $table.next_due_on ELSE $table.due_on END) <= ?", [Records::today()]);
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $model = $this->section === 'returns' ? Assignment::class : MaintenanceRecord::class;
+        $initial = $model::findOrFail($recordId);
+        $asset = Access::query($actor)->lockForUpdate()->findOrFail($initial->asset_id);
+        Access::edit($actor, $asset);
+        $record = $model::lockForUpdate()->findOrFail($recordId);
+        abort_unless($record->asset_id === $asset->id, 409);
     }
 
     public function due(): iterable

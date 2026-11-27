@@ -2,12 +2,12 @@
 
 namespace Awove\Knowledge;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\Core\Modules;
 use Awove\Knowledge\Models\Renewal;
 
-class DueReminders implements ReminderSource
+class DueReminders implements ImportHoldSource
 {
     public function module(): string
     {
@@ -22,6 +22,12 @@ class DueReminders implements ReminderSource
     private function query()
     {
         return Renewal::whereNull('archived_at')->where('status', '!=', 'renewed')->whereNotNull('owner_id')->whereNotNull('remind_on')->where('remind_on', '<=', now(Installation::settings()['timezone'])->toDateString());
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = Access::query($actor, 'renewals')->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record);
     }
 
     public function due(): iterable

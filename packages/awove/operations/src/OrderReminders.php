@@ -2,11 +2,11 @@
 
 namespace Awove\Operations;
 
-use Awove\Core\Contracts\ReminderSource;
+use Awove\Core\Contracts\ImportHoldSource;
 use Awove\Core\Installation;
 use Awove\Operations\Models\SupplierOrder;
 
-class OrderReminders implements ReminderSource
+class OrderReminders implements ImportHoldSource
 {
     public function module(): string
     {
@@ -16,6 +16,12 @@ class OrderReminders implements ReminderSource
     public function key(): string
     {
         return 'orders';
+    }
+
+    public function authorizeImportHold($actor, int $recordId): void
+    {
+        $record = Access::orders($actor)->lockForUpdate()->findOrFail($recordId);
+        Access::edit($actor, $record);
     }
 
     public function due(): iterable
