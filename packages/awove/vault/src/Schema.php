@@ -46,8 +46,7 @@ final class Schema
             'payload.fields.*.hidden' => 'sometimes|boolean',
         ])->validate()['payload'];
         foreach ($validated['fields'] as $index => &$field) {
-            if (preg_match('/(?:^|[\s_.-])(?:cvv\d*|cvc\d*|pin|magstripe|magnetic[\s_-]*stripe|security[\s_-]*code)(?:$|[\s_.-])/iu', $field['id'].' '.$field['label'])
-                || preg_match('/קוד\s*(?:סודי|אבטחה).*כרטיס|פס\s*מגנטי/u', $field['label'])) {
+            if (self::prohibited($field['id'], $field['label'])) {
                 throw ValidationException::withMessages(["payload.fields.$index.label" => __('Do not store card CVV, CVC, PIN or magnetic-stripe data in Vault.')]);
             }
             $field['hidden'] ??= true;
@@ -66,5 +65,11 @@ final class Schema
         }
 
         return $validated;
+    }
+
+    public static function prohibited(string $id, string $label): bool
+    {
+        return (bool) (preg_match('/(?:^|[\s_.-])(?:cvv\d*|cvc\d*|pin|magstripe|magnetic[\s_-]*stripe|security[\s_-]*code)(?:$|[\s_.-])/iu', $id.' '.$label)
+            || preg_match('/קוד\s*(?:סודי|אבטחה).*כרטיס|פס\s*מגנטי/u', $label));
     }
 }

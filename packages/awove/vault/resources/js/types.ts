@@ -53,11 +53,17 @@ export interface FileEntry {
     id: string;
     name: string;
     size_bytes: number;
+    source?: {
+        original_name: string | null;
+        author: { name: string | null };
+        created_at: string | null;
+    } | null;
 }
 export interface Content {
     item: Item;
     payload: { fields: Field[]; notes?: string | null };
     files: FileEntry[];
+    source_export?: boolean;
 }
 export interface Options {
     customers: Customer[];
@@ -66,6 +72,7 @@ export interface Options {
 }
 export interface InitialData extends Options {
     table: TablePayload;
+    monday_import?: boolean;
 }
 export interface AuthStatus {
     auth_mode?: "password_email_totp" | "email_riddle";

@@ -11,7 +11,11 @@ class PageController
 {
     public function index(Request $request, Records $records)
     {
-        return Inertia::render('Vault/Index', ['table' => $records->listing($request), ...$records->options($request->user())]);
+        $user = Access::actor($request->user());
+
+        return Inertia::render('Vault/Index', ['table' => $records->listing($request), ...$records->options($user),
+            'monday_import' => $user->hasRole('Administrator') && $user->can('imports.manage') && $user->can('vault.admin')
+                && is_string(config('vault.monday_plan_file')) && is_string(config('vault.monday_plan_sha256')) && is_string(config('vault.monday_token_file'))]);
     }
 
     public function confirm(Request $request)
