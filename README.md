@@ -110,6 +110,8 @@ Lead stages can be changed directly from the table or profile bubble, with permi
 
 ## Browser fixture cleanup
 
+Ordinary imported lead updates/replies can retain legacy authors, exact source timestamps and immutable revisions in the existing Activity store. The paginated reader shows safe plain text and distinguishes original attribution from the actual import operator. This shared capability has no source fetch/write endpoint and does not import Vault or financial content. See [legacy lead history](docs/legacy-lead-history.md).
+
 Contact and company profiles also provide shared **Documents** storage, using the profile’s existing view/edit permissions. Files retain their original filenames and are downloaded privately as attachments; uploads are immutable, validated up to 100 MB and verified with SHA-256. This is separate from proposals, signed contracts and encrypted Vault files. Configure PHP/web-server upload and request limits for the allowed size; storage paths and checksums are never included in the profile API. See [profile documents](docs/profile-documents.md).
 
 Browser tests clean their dedicated project accounts before and after each workflow/contact test, including failed tests. A later run also clears leftovers from an interrupted process. Names stay natural; only fictional email addresses carry unique run markers. See the [clean review demo](docs/screenshots/clean-review-demo.png).

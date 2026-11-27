@@ -6,6 +6,7 @@ use Awove\Core\Access;
 use Awove\Core\ContactDetails;
 use Awove\Core\IdentityPanels;
 use Awove\Core\Imports\AutomationHolds;
+use Awove\Core\Imports\LegacyHistory;
 use Awove\Core\Installation;
 use Awove\Core\LeadDates;
 use Awove\Core\Models\Company;
@@ -153,7 +154,8 @@ class CrmController
     {
         Gate::authorize('view', $lead);
 
-        $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name', 'activity.actor:id,name');
+        $lead->load('contact', 'company', 'status', 'owner:id,name', 'notes.author:id,name', 'tasks.assignee:id,name');
+        $lead->load(['activity' => fn ($query) => $query->where('event', '!=', LegacyHistory::EVENT)->with('actor:id,name')]);
         $lead->setRelation('status', $lead->status ? StatusDisplay::copy($lead->status) : null);
 
         return Inertia::render('Core/Lead', [...$this->options($r->user()), 'lead' => $lead, 'editable' => Gate::allows('update', $lead), 'identityPermissions' => ['contact' => $lead->contact && Gate::allows('update', $lead->contact), 'company' => $lead->company && Gate::allows('update', $lead->company)], 'proposals' => app(Proposals::class)->forLead($r->user(), $lead), 'signed_contracts' => app(SignedContracts::class)->forLead($r->user(), $lead), 'sales' => app(Sales::class)->details($r->user(), $lead), 'panels' => app(Modules::class)->panels($r->user())]);

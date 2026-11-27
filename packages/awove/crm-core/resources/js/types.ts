@@ -100,6 +100,27 @@ export interface Task {
     priority: string;
     version: number;
 }
+export interface LegacyHistoryEntry {
+    kind: "update" | "reply" | "source-created";
+    text: string;
+    author: { source_id: string | null; name: string | null };
+    source_created_at: string | null;
+    source_updated_at: string | null;
+    parent_activity_id: number | null;
+    revision: number;
+    ingested_at: string;
+    ingested_by: { id: number; name: string } | null;
+    source_media_present: boolean;
+    has_more_text: boolean;
+    full_text_url: string | null;
+}
+export interface LegacyActivity {
+    id: number;
+    event: "lead.legacy_history";
+    actor: null;
+    created_at: string;
+    legacy: LegacyHistoryEntry;
+}
 export interface Lead {
     id: number;
     title: string;

@@ -50,7 +50,7 @@ final class BrowserFixtures
         return preg_match($legacyPattern, $name, $match) === 1 && ($project === null || $match['project'] === $project);
     }
 
-    /** @return array<string,list<int>> Dependency order for guarded deletion or backup. */
+    /** @return array<string,list<int|string>> Exact disposable IDs; import batch UUIDs remain strings. */
     public static function plan(string $installation, ?string $project = null, bool $legacy = false): array
     {
         self::assertProject($project);
@@ -148,8 +148,81 @@ final class BrowserFixtures
         }
         $plan['crm_contacts'] = $identityIds['contacts'];
         $plan['crm_companies'] = $identityIds['companies'];
+        if ($installation === 'alpha' && Schema::hasTable('crm_import_batches')) {
+            $fixtureUsers = User::whereIn('email', array_map(fn ($size) => 'table-'.$size.'@alpha.example.test', $projects))->pluck('id')->all();
+            $plan = [...$plan, ...self::legacyHistoryPlan($fixtureUsers, $leadIds, $plan['crm_activity'], $project)];
+        }
 
-        return array_map(fn ($ids) => array_map(fn ($id) => (int) $id, $ids), $plan);
+        foreach ($plan as $table => $ids) {
+            $plan[$table] = array_map(fn ($id) => $table === 'crm_import_batches' ? (string) $id : (int) $id, $ids);
+        }
+
+        return $plan;
+    }
+
+    public static function legacyHistoryAccountMatches(string $provider, string $account, ?string $project): bool
+    {
+        self::assertProject($project);
+
+        return $provider === 'browser-fixture' && preg_match('/^legacy-history-(desktop|mobile)-[0-9]{13}$/D', $account, $match) === 1
+            && ($project === null || $match[1] === $project);
+    }
+
+    /** The caller already verified the exact local Alpha database/role and disposable graph. */
+    private static function legacyHistoryPlan(array $users, array $leads, array $activities, ?string $project): array
+    {
+        $batches = DB::table('crm_import_batches')->whereIn('created_by', $users)->where('provider', 'browser-fixture')->orderBy('id')->get()
+            ->filter(fn ($batch) => self::legacyHistoryAccountMatches($batch->provider, $batch->source_account, $project));
+        $batchIds = $batches->pluck('id')->all();
+        $accounts = $batches->pluck('source_account')->all();
+        $mappings = DB::table('crm_import_mappings')->where('provider', 'browser-fixture')->whereIn('source_account', $accounts)->orderBy('id')->get();
+        foreach ($mappings as $mapping) {
+            $run = substr($mapping->source_account, strlen('legacy-history-'));
+            if (! in_array($mapping->created_by, $users, true) || $mapping->board_id !== 'board-'.$run
+                || ($mapping->target_type !== null && ! in_array($mapping->target_type, ['core.lead', 'core.activity'], true))) {
+                throw new RuntimeException('Protected import metadata references browser history; cleanup refused.');
+            }
+            if ($mapping->target_type !== null) {
+                $table = $mapping->target_type === 'core.lead' ? 'crm_leads' : 'crm_activity';
+                $selected = $mapping->target_type === 'core.lead' ? $leads : $activities;
+                if ((string) (int) $mapping->target_id !== $mapping->target_id
+                    || (DB::table($table)->where('id', $mapping->target_id)->exists() && ! in_array((int) $mapping->target_id, $selected, true))) {
+                    throw new RuntimeException('A protected import target is outside the browser fixture; cleanup refused.');
+                }
+            }
+        }
+        $mappingIds = $mappings->pluck('id')->all();
+        $operations = DB::table('crm_import_operations')->whereIn('batch_id', $batchIds)->orderBy('id')->get();
+        $operationIds = $operations->pluck('id')->all();
+        foreach ($operations as $operation) {
+            if (! in_array($operation->mapping_id, $mappingIds, true) || ! in_array($operation->actor_id, $users, true)
+                || ($operation->finished_by !== null && ! in_array($operation->finished_by, $users, true))) {
+                throw new RuntimeException('Protected import operations reference browser history; cleanup refused.');
+            }
+            if ($operation->result_target_type !== null) {
+                if (! in_array($operation->result_target_type, ['core.lead', 'core.activity'], true) || (string) (int) $operation->result_target_id !== $operation->result_target_id) {
+                    throw new RuntimeException('A protected import receipt target prevents browser cleanup.');
+                }
+                $table = $operation->result_target_type === 'core.lead' ? 'crm_leads' : 'crm_activity';
+                $selected = $operation->result_target_type === 'core.lead' ? $leads : $activities;
+                if (DB::table($table)->where('id', $operation->result_target_id)->exists() && ! in_array((int) $operation->result_target_id, $selected, true)) {
+                    throw new RuntimeException('A protected import receipt target prevents browser cleanup.');
+                }
+            }
+        }
+        if (DB::table('crm_import_operations')->whereNotIn('id', $operationIds)->where(fn ($query) => $query->whereIn('mapping_id', $mappingIds)
+            ->orWhereIn('previous_receipt_id', $operationIds)->orWhereIn('replayed_from_id', $operationIds))->exists()
+            || (Schema::hasTable('crm_import_automation_holds') && DB::table('crm_import_automation_holds')->whereIn('batch_id', $batchIds)->exists())) {
+            throw new RuntimeException('Retained import references prevent browser metadata cleanup.');
+        }
+        foreach (DB::table('crm_activity')->whereIn('id', $activities)->where('event', 'lead.legacy_history')->get(['details']) as $entry) {
+            $details = json_decode($entry->details ?? '', true, flags: JSON_THROW_ON_ERROR);
+            if (! in_array($details['operation_id'] ?? null, $operationIds, true) || ! in_array($details['source_mapping_id'] ?? null, $mappingIds, true)) {
+                throw new RuntimeException('Retained legacy history is outside the browser metadata scope.');
+            }
+        }
+
+        return ['crm_import_operations' => $operationIds, 'crm_import_mappings' => $mappingIds, 'crm_import_batches' => $batchIds];
     }
 
     private static function assertProject(?string $project): void

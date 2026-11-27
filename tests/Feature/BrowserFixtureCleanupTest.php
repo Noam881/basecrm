@@ -79,6 +79,15 @@ it('matches the exact stage fixture name and run email without broadening other 
         ->and(BrowserFixtures::identityMatches('contacts', 'Tamar Ben Ami', 'tamar.stage.desktop-1792693755194@demo.example.test.untrusted', 'desktop'))->toBeFalse();
 });
 
+it('matches legacy history metadata only by its reserved provider exact project and thirteen-digit run account', function () {
+    expect(BrowserFixtures::legacyHistoryAccountMatches('browser-fixture', 'legacy-history-desktop-1792693755194', 'desktop'))->toBeTrue()
+        ->and(BrowserFixtures::legacyHistoryAccountMatches('browser-fixture', 'legacy-history-mobile-1792693755194', 'mobile'))->toBeTrue();
+    foreach (['legacy-history-mobile-1792693755194', 'legacy-history-desktop-17926937551940', 'legacy-history-desktop-1792693755194-extra', "legacy-history-desktop-1792693755194\n", 'source-account'] as $account) {
+        expect(BrowserFixtures::legacyHistoryAccountMatches('browser-fixture', $account, 'desktop'))->toBeFalse();
+    }
+    expect(BrowserFixtures::legacyHistoryAccountMatches('monday', 'legacy-history-desktop-1792693755194', 'desktop'))->toBeFalse();
+});
+
 function browserProposalRow(int $leadId, string $uuid, string $content): array
 {
     return ['lead_id' => $leadId, 'private_path' => 'proposals/'.$leadId.'/'.$uuid.'.pdf', 'sha256' => hash('sha256', $content), 'size_bytes' => strlen($content)];
