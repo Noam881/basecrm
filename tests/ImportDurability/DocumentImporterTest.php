@@ -7,6 +7,7 @@ use Awove\Core\Imports\DocumentSource;
 use Awove\Core\Imports\DocumentSourcePolicy;
 use Awove\Core\Imports\DocumentSources;
 use Awove\Core\Imports\DocumentTransfer;
+use Awove\Core\Imports\GeneratedDocumentSourcePolicy;
 use Awove\Core\Imports\GeneratedHistorySourcePolicy;
 use Awove\Core\Imports\Ledger;
 use Awove\Core\Imports\LegacyHistory;
@@ -24,6 +25,7 @@ use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Exceptions\StreamedResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -618,4 +620,326 @@ it('keeps original HTML inside generated reference JSON strings exact without we
     $original = json_decode(substr($bytes, strpos($bytes, '{')), true, 64, JSON_THROW_ON_ERROR);
     expect($doc->mime_type)->toBe('text/plain')->and($original['cells'][0]['value'])->toBe($f['payload']['cells'][0]['value'])
         ->and(importGeneratedReference($f)['document_id'])->toBe($result['document_id']);
+});
+
+function generatedDocumentMapping(array $f, string $entity, string $id, string $role, string $targetType, int $targetId, string $board = 'ordinary-board'): int
+{
+    $key = (string) Str::uuid();
+    $receipt = $f['ledger']->claim($f['user'], $f['boundary'], $f['batch']['id'], ['board_id' => $board, 'entity_type' => $entity, 'entity_id' => $id, 'target_role' => $role, 'relation_key' => 'primary'],
+        ['request_key' => $key, 'revision' => 1, 'source_fingerprint' => hash('sha256', $id.$role), 'target_fingerprint' => null, 'previous_receipt_id' => null]);
+    $f['ledger']->finish($f['user'], $f['boundary'], $receipt['id'], $key, ['state' => 'verified', 'target_type' => $targetType, 'target_id' => (string) $targetId, 'result_fingerprint' => hash('sha256', $role.$id)]);
+
+    return $receipt['mapping_id'];
+}
+
+function generatedDocumentFixture(bool $review = true): array
+{
+    $f = durableDocumentFixture();
+    $scope = $review ? 'import-review' : 'profile';
+    $f['identity_map'] = $f['parent']['mapping_id'];
+    $parent = null;
+    $parentMap = null;
+    if ($review) {
+        $f['identity'] = app(Identities::class)->create($f['user'], 'companies', ['name' => 'Rimon Internal Office']);
+        $f['identity_map'] = generatedDocumentMapping($f, 'account', 'fictional-account', 'internal-company', 'core.company', $f['identity']->id);
+        $parent = '880001';
+        $parentMap = generatedDocumentMapping($f, 'item', $parent, 'internal-reference-context', 'core.company', $f['identity']->id);
+        $itemMap = generatedDocumentMapping($f, 'item', '880002', 'subitem-context', 'core.company', $f['identity']->id, 'ordinary-child-board');
+    } else {
+        $itemMap = $f['parent']['mapping_id'];
+    }
+    app(DocumentSources::class)->register('fixture-documents', 'source-document', new class($scope) implements GeneratedDocumentSourcePolicy
+    {
+        public function __construct(private string $scope) {}
+
+        public function accessScope(): string
+        {
+            return $this->scope;
+        }
+
+        public function authorize($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void
+        {
+            abort_unless($batch->provider === 'fixture-documents' && $batch->source_account === 'fictional-account'
+                && $source->data['source_id'] === '990001' && $source->data['column_id'] === 'original_doc', 403);
+        }
+
+        public function authorizeDocument($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source, array $payload): void
+        {
+            abort_unless(count($payload['blocks']) === 2, 403);
+        }
+    });
+    $f['source'] = [...$f['source'], 'role' => 'source-document', 'entity_type' => $review ? 'workdoc' : 'item-description', 'source_id' => '990001',
+        'source_parent_id' => $review ? '880002' : 'source-item', 'source_item_mapping_id' => $itemMap, 'kind' => 'generated-document', 'column_id' => 'original_doc', 'source_index' => null,
+        'parent_item_id' => $parent, 'parent_board_id' => $review ? 'ordinary-board' : null, 'parent_item_mapping_id' => $parentMap, 'object_id' => $review ? '000011' : null, 'file_id' => $review ? 'file-0002' : null,
+        'access_scope' => $scope, 'review_flags' => $review ? ['source_document_purpose_unresolved'] : [], 'document_revision' => 1,
+        'author' => $review ? ['source_id' => '000077', 'name' => 'Yael Cohen'] : ['source_id' => null, 'name' => null], 'source_created_at' => null, 'source_updated_at' => $review ? '2020-02-29T09:30:52Z' : null];
+    $f['payload'] = ['document_metadata' => $review ? ['id' => '990001', 'object_id' => '000011', 'name' => 'Fictional internal original', 'settings' => '{"retained":"1.00000"}',
+        'created_by' => ['id' => '000077', 'name' => 'Yael Cohen'], 'created_at' => '2020-02-29', 'updated_at' => '2020-02-29T09:30:52Z'] : ['id' => '990001'],
+        'attachment_metadata' => $review ? ['file_id' => 'file-0002', 'object_id' => '000011', 'creator_id' => '000088', 'created_at' => '2021-01-01'] : null,
+        'blocks' => [['id' => '10001', 'doc_id' => '990001', 'parent_block_id' => null, 'type' => 'normal text', 'position' => 1.0,
+            'content' => '{"deltaFormat":[{"insert":"<script>Original only</script>"}],"decimal":"12345678901234567890.000100"}', 'created_at' => '2020-02-29', 'updated_at' => null, 'created_by' => ['id' => '000099', 'name' => 'Tamar Cohen']],
+            ['id' => '10002', 'doc_id' => '990001', 'parent_block_id' => '10001', 'type' => 'normal text', 'position' => 2,
+                'content' => '{"deltaFormat":[{"insert":"Fictional second block"}]}', 'created_at' => null, 'updated_at' => null, 'created_by' => null]]];
+
+    return $f;
+}
+
+function importGeneratedDocument(array $f): array
+{
+    return app(DocumentImporter::class)->importGeneratedDocument($f['user'], $f['boundary'], $f['batch']['id'], $f['identity_map'], $f['key'], $f['source'], $f['payload']);
+}
+
+it('retains generated document originals with genuine hierarchy and exact JSON strings without inventing source times', function () {
+    $f = generatedDocumentFixture();
+    $result = importGeneratedDocument($f);
+    $document = Document::findOrFail($result['document_id']);
+    $bytes = Storage::disk('local')->get($document->private_path);
+    $export = json_decode(substr($bytes, strpos($bytes, '{')), true, 64, JSON_THROW_ON_ERROR);
+    expect($export['originals'])->toBe($f['payload'])->and($export['source']['entity_type'])->toBe('workdoc')
+        ->and($export['source']['source_id'])->toBe('990001')->and($export['source']['source_parent_id'])->toBe('880002')
+        ->and($export['source']['parent_item_id'])->toBe('880001')->and($export['source']['source_index'])->toBeNull()
+        ->and($document->mime_type)->toBe('text/plain')->and($document->original_name)->toContain('Unclassified')
+        ->and($bytes)->not->toContain('<script>')->and(Lead::count())->toBe(0)->and(Activity::count())->toBe(0);
+    $meta = app(DocumentImporter::class)->sourceMetadata($f['user'], $document);
+    expect($meta['source_kind'])->toBe('workdoc')->and($meta['access_scope'])->toBe('import-review')->and($meta['source_created_at'])->toBeNull()
+        ->and($meta['author']['name'])->toBe('Yael Cohen')->and($export['originals']['attachment_metadata']['creator_id'])->toBe('000088');
+    $response = app(Documents::class)->download($f['user'], 'companies', $f['identity']->id, $document);
+    ob_start();
+    try {
+        $response->sendContent();
+        $downloaded = ob_get_contents();
+    } finally {
+        ob_end_clean();
+    }
+    expect($downloaded)->toBe($bytes);
+    expect(importGeneratedDocument($f)['document_id'])->toBe($document->id);
+    $f['key'] = (string) Str::uuid();
+    expect(importGeneratedDocument($f)['document_id'])->toBe($document->id)->and(Document::count())->toBe(1)->and(DocumentTransfer::count())->toBe(1);
+    DB::table('crm_import_mappings')->where('id', $f['source']['parent_item_mapping_id'])->update(['board_id' => 'changed-parent-board']);
+    expect(fn () => app(DocumentImporter::class)->sourceMetadata($f['user'], $document))->toThrow(HttpException::class, 'parent context changed');
+    DB::table('crm_import_mappings')->where('id', $f['source']['parent_item_mapping_id'])->update(['board_id' => 'ordinary-board']);
+    DB::table('crm_import_mappings')->where('id', $f['identity_map'])->update(['board_id' => 'changed-account-board']);
+    expect(fn () => app(DocumentImporter::class)->sourceMetadata($f['user'], $document))->toThrow(HttpException::class, 'source mapping changed');
+});
+
+it('hides generated import-review documents from ordinary profile readers and revoked import administrators', function () {
+    $f = generatedDocumentFixture();
+    $result = importGeneratedDocument($f);
+    $reader = User::factory()->create(['name' => 'Noa Levi', 'active' => true]);
+    $reader->assignRole('Employee');
+    $reader->givePermissionTo('identities.manage');
+    $url = '/people/companies/'.$f['identity']->id.'/documents';
+    $this->actingAs($reader)->getJson($url)->assertOk()->assertJsonCount(0, 'documents');
+    $this->get($url.'/'.$result['document_id'].'/download')->assertForbidden();
+    expect(fn () => app(DocumentImporter::class)->sourceMetadata($reader, Document::findOrFail($result['document_id'])))->toThrow(HttpException::class);
+    $this->actingAs($f['user'])->getJson($url)->assertOk()->assertJsonPath('documents.0.source.access_scope', 'import-review');
+    $f['user']->revokePermissionTo('imports.manage');
+    $this->getJson($url)->assertOk()->assertJsonCount(0, 'documents');
+    $this->get($url.'/'.$result['document_id'].'/download')->assertForbidden();
+});
+
+it('rejects generated document access-scope downgrade fake indexing and unregistered content ownership', function () {
+    $f = generatedDocumentFixture();
+    $f['source']['access_scope'] = 'profile';
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class, 'ownership is not registered');
+    $f['source']['access_scope'] = 'import-review';
+    expect(fn () => importDurableDocument($f))->toThrow(HttpException::class, 'generated reference writer');
+    $f['source']['source_index'] = 0;
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class);
+    $f['source']['source_index'] = null;
+    app()->instance(DocumentSources::class, new DocumentSources);
+    app(DocumentSources::class)->register('fixture-documents', 'source-document', new class implements DocumentSourcePolicy
+    {
+        public function authorize($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void {}
+    });
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class, 'ownership is not registered');
+    expect(Document::count())->toBe(0)->and(DocumentTransfer::count())->toBe(0);
+});
+
+it('rejects generated document foreign parents and ordinary Company aliases for import review', function () {
+    $f = generatedDocumentFixture();
+    $f['source']['parent_item_id'] = '880099';
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class, 'parent context changed');
+    $f['source']['parent_item_id'] = '880001';
+    $f['identity_map'] = generatedDocumentMapping($f, 'item', '880003', 'ordinary-company', 'core.company', $f['identity']->id);
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class, 'approved internal Company');
+    expect(Document::count())->toBe(0)->and(DocumentTransfer::count())->toBe(0);
+});
+
+it('requires the source Lead as well as its shared profile for generated item-description reads', function () {
+    $f = generatedDocumentFixture(false);
+    $reader = User::factory()->create(['name' => 'Tamar Levi', 'active' => true]);
+    $reader->assignRole('Employee');
+    $reader->givePermissionTo(['leads.view.own', 'leads.edit.own']);
+    $lead = app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $f['user']->id, 'status_id' => 'new']);
+    app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $reader->id, 'status_id' => 'new']);
+    $f['source']['source_item_mapping_id'] = generatedDocumentMapping($f, 'item', 'source-item', 'primary-lead', 'core.lead', $lead->id);
+    $result = importGeneratedDocument($f);
+    $url = '/people/contacts/'.$f['identity']->id.'/documents';
+    $this->actingAs($reader)->getJson($url)->assertOk()->assertJsonCount(0, 'documents');
+    $this->get($url.'/'.$result['document_id'].'/download')->assertForbidden();
+    expect(fn () => app(DocumentImporter::class)->sourceMetadata($reader, Document::findOrFail($result['document_id'])))->toThrow(AuthorizationException::class);
+    expect(DocumentTransfer::sole()->sourceContext()->data['source_id'])->toBe('990001')->and(Lead::count())->toBe(2);
+});
+
+it('conflicts on changed generated document originals and rejects arbitrary revisions without duplicate files', function () {
+    $f = generatedDocumentFixture();
+    importGeneratedDocument($f);
+    $f['payload']['blocks'][0]['content'] = '{"deltaFormat":[{"insert":"Changed original"}]}';
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class, 'replay conflicts');
+    $f['source']['document_revision'] = 2;
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class);
+    expect(Document::count())->toBe(1)->and(DocumentTransfer::count())->toBe(1)->and(count(Storage::disk('local')->allFiles()))->toBe(1);
+});
+
+it('refuses duplicate orphan cyclic or malformed original document blocks and forged attribution before reserving bytes', function () {
+    $f = generatedDocumentFixture();
+    foreach (['duplicate', 'orphan', 'cycle', 'json', 'foreign-doc', 'position'] as $case) {
+        $bad = $f;
+        match ($case) {
+            'duplicate' => $bad['payload']['blocks'][1]['id'] = '10001',
+            'orphan' => $bad['payload']['blocks'][1]['parent_block_id'] = '99999',
+            'cycle' => $bad['payload']['blocks'][0]['parent_block_id'] = '10002',
+            'json' => $bad['payload']['blocks'][0]['content'] = 'invalid-json',
+            'foreign-doc' => $bad['payload']['blocks'][0]['doc_id'] = '990099',
+            'position' => $bad['payload']['blocks'][0]['position'] = '1',
+        };
+        expect(fn () => importGeneratedDocument($bad))->toThrow(HttpException::class);
+    }
+    $f['source']['source_created_at'] = '2020-02-29T00:00:00Z';
+    expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class, 'attribution changed');
+    expect(Document::count())->toBe(0)->and(DocumentTransfer::count())->toBe(0)->and(Storage::disk('local')->allFiles())->toBe([]);
+});
+
+it('retains generated document journal ownership when storage commit rolls back and supports explicit reconciliation', function () {
+    $f = generatedDocumentFixture();
+    Event::listen('eloquent.creating: '.Document::class, fn () => throw new RuntimeException('Fictional interrupted generated document'));
+    try {
+        expect(fn () => importGeneratedDocument($f))->toThrow(RuntimeException::class, 'Inspect its retained transfer');
+    } finally {
+        Event::forget('eloquent.creating: '.Document::class);
+    }
+    $transfer = DocumentTransfer::sole();
+    expect($transfer->state)->toBe('reserved')->and(Document::count())->toBe(0)->and(Storage::disk('local')->exists($transfer->private_path))->toBeTrue();
+    app(DocumentImporter::class)->reconcile($f['user'], $f['boundary'], $transfer->id, true);
+    expect($transfer->fresh()->state)->toBe('cleaned')->and(Storage::disk('local')->allFiles())->toBe([]);
+});
+
+it('rolls back generated document completion when import authority is revoked by the final receipt event', function () {
+    $f = generatedDocumentFixture();
+    Event::listen('eloquent.updated: '.Operation::class, function (Operation $operation) use ($f): void {
+        if ($operation->state === 'verified') {
+            $f['user']->revokePermissionTo('imports.manage');
+        }
+    });
+    try {
+        expect(fn () => importGeneratedDocument($f))->toThrow(HttpException::class);
+    } finally {
+        Event::forget('eloquent.updated: '.Operation::class);
+    }
+    $transfer = DocumentTransfer::sole();
+    expect(Document::count())->toBe(0)->and($transfer->state)->toBe('reserved')->and(Storage::disk('local')->exists($transfer->private_path))->toBeTrue();
+});
+
+it('keeps persisted pre-generated-document file and original-reference metadata keys fingerprints reads and replay unchanged', function () {
+    $f = durableDocumentFixture();
+    $oldKeys = ['role', 'entity_type', 'source_id', 'source_parent_id', 'source_item_mapping_id', 'kind', 'column_id', 'source_index',
+        'update_id', 'reply_id', 'history_mapping_id', 'author', 'source_created_at', 'source_updated_at'];
+    expect(array_keys(DocumentSource::from($f['source'])->data))->toBe($oldKeys);
+    $file = importDurableDocument($f);
+    $transfer = DocumentTransfer::findOrFail($file['transfer_id']);
+    $legacyFile = $transfer->sourceContext()->data;
+    $fingerprint = Operation::findOrFail($file['receipt']['id'])->source_fingerprint;
+    DB::table('crm_import_document_transfers')->where('id', $transfer->id)->update(['source_metadata' => json_encode($legacyFile, JSON_THROW_ON_ERROR)]);
+    expect(array_keys($transfer->fresh()->sourceContext()->data))->toBe($oldKeys)
+        ->and(importDurableDocument($f)['document_id'])->toBe($file['document_id'])
+        ->and(Operation::findOrFail($file['receipt']['id'])->source_fingerprint)->toBe($fingerprint);
+    app(DocumentSources::class)->register('fixture-documents', 'legacy-reference', new class implements ReferenceSourcePolicy
+    {
+        public function authorize($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source): void {}
+
+        public function authorizeFields($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source, array $columnIds): void
+        {
+            abort_unless($columnIds === ['note'], 403);
+        }
+    });
+    $f['key'] = (string) Str::uuid();
+    $f['source'] = [...$f['source'], 'role' => 'legacy-reference', 'kind' => 'generated-reference', 'entity_type' => 'item', 'source_id' => 'source-item',
+        'column_id' => null, 'source_index' => null, 'parent_item_id' => null, 'reference_revision' => 1, 'review_flags' => [], 'reference_columns' => ['note']];
+    $f['payload'] = ['cells' => [['id' => 'note', 'label' => 'Fictional source note', 'type' => 'text', 'representation' => 'json-string', 'available' => true, 'value' => '"Original"']]];
+    $reference = importGeneratedReference($f);
+    $transfer = DocumentTransfer::findOrFail($reference['transfer_id']);
+    $legacyReference = $transfer->sourceContext()->data;
+    $fingerprint = Operation::findOrFail($reference['receipt']['id'])->source_fingerprint;
+    $referenceKeys = [...$oldKeys, 'parent_item_id', 'reference_revision', 'review_flags', 'reference_columns', 'reference_digest'];
+    expect(array_keys($legacyReference))->toBe($referenceKeys);
+    DB::table('crm_import_document_transfers')->where('id', $transfer->id)->update(['source_metadata' => json_encode($legacyReference, JSON_THROW_ON_ERROR)]);
+    expect(array_keys($transfer->fresh()->sourceContext()->data))->toBe($referenceKeys)
+        ->and(importGeneratedReference($f)['document_id'])->toBe($reference['document_id'])
+        ->and(Operation::findOrFail($reference['receipt']['id'])->source_fingerprint)->toBe($fingerprint);
+    $url = '/people/contacts/'.$f['identity']->id.'/documents';
+    $this->actingAs($f['user'])->getJson($url)->assertOk()->assertJsonCount(2, 'documents')
+        ->assertJsonMissingPath('documents.0.source.access_scope')->assertJsonMissingPath('documents.1.source.access_scope');
+    foreach ([$file, $reference] as $result) {
+        $download = $this->get($url.'/'.$result['document_id'].'/download')->assertOk()->assertDownload();
+        expect($download->streamedContent())->toBe(Storage::disk('local')->get(Document::findOrFail($result['document_id'])->private_path));
+    }
+    expect(Document::count())->toBe(2)->and(DocumentTransfer::count())->toBe(2);
+});
+
+function generatedDocumentDownloadHandle(Document $document): mixed
+{
+    $path = Storage::disk('local')->path($document->private_path);
+    $handles = array_values(array_filter(get_resources('stream'), fn ($stream) => (stream_get_meta_data($stream)['uri'] ?? null) === $path));
+    expect($handles)->toHaveCount(1);
+
+    return $handles[0];
+}
+
+it('emits zero generated document bytes when import-review authority or hierarchy changes after response creation', function (string $change) {
+    $f = generatedDocumentFixture();
+    $result = importGeneratedDocument($f);
+    $response = app(Documents::class)->download($f['user'], 'companies', $f['identity']->id, Document::findOrFail($result['document_id']));
+    $stream = generatedDocumentDownloadHandle(Document::findOrFail($result['document_id']));
+    match ($change) {
+        'permission' => $f['user']->revokePermissionTo('imports.manage'),
+        'parent' => DB::table('crm_import_mappings')->where('id', $f['source']['parent_item_mapping_id'])->update(['board_id' => 'changed-parent-board']),
+        'account' => DB::table('crm_import_mappings')->where('id', $f['identity_map'])->update(['board_id' => 'changed-account-board']),
+    };
+    $error = null;
+    ob_start();
+    try {
+        $response->sendContent();
+    } catch (StreamedResponseException $failure) {
+        $error = $failure->getInnerException();
+    } finally {
+        $output = ob_get_contents();
+        ob_end_clean();
+    }
+    expect($error)->toBeInstanceOf(HttpException::class)->and($output)->toBe('')->and(is_resource($stream))->toBeFalse();
+})->with(['permission', 'parent', 'account']);
+
+it('emits zero generated item-description bytes after source Lead access is revoked on a still-readable shared profile', function () {
+    $f = generatedDocumentFixture(false);
+    $reader = User::factory()->create(['name' => 'Tamar Levi', 'active' => true]);
+    $reader->assignRole('Employee');
+    $reader->givePermissionTo(['leads.view.own', 'leads.edit.own']);
+    $lead = app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $reader->id, 'status_id' => 'new']);
+    app(Leads::class)->create($f['user'], ['contact_id' => $f['identity']->id, 'owner_id' => $reader->id, 'status_id' => 'new']);
+    $f['source']['source_item_mapping_id'] = generatedDocumentMapping($f, 'item', 'source-item', 'primary-lead', 'core.lead', $lead->id);
+    $result = importGeneratedDocument($f);
+    $response = app(Documents::class)->download($reader, 'contacts', $f['identity']->id, Document::findOrFail($result['document_id']));
+    $stream = generatedDocumentDownloadHandle(Document::findOrFail($result['document_id']));
+    $lead->update(['owner_id' => $f['user']->id]);
+    $error = null;
+    ob_start();
+    try {
+        $response->sendContent();
+    } catch (StreamedResponseException $failure) {
+        $error = $failure->getInnerException();
+    } finally {
+        $output = ob_get_contents();
+        ob_end_clean();
+    }
+    expect($error)->toBeInstanceOf(AuthorizationException::class)->and($output)->toBe('')->and(is_resource($stream))->toBeFalse();
 });

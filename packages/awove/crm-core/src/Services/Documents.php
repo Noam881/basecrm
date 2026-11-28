@@ -177,17 +177,15 @@ class Documents
 
     public function download($user, string $type, int $id, Document $document): StreamedResponse
     {
-        $identity = $this->identity($type, $id);
-        Gate::forUser($this->actor($user))->authorize('view', $identity);
-        abort_unless($identity instanceof Contact ? $document->contact_id === $identity->id : $document->company_id === $identity->id, 404);
-        app(DocumentImporter::class)->authorizeRead($user, $document);
+        $document = $this->downloadableDocument($user, $type, $id, $document->id);
         $disk = Storage::disk('local');
         abort_unless($disk->exists($document->private_path), 404, __('This document file is unavailable.'));
         $stream = $disk->readStream($document->private_path);
         abort_unless(is_resource($stream), 404, __('This document file is unavailable.'));
 
-        return response()->streamDownload(function () use ($stream): void {
+        return response()->streamDownload(function () use ($stream, $user, $type, $id, $document): void {
             try {
+                $this->downloadableDocument($user, $type, $id, $document->id);
                 fpassthru($stream);
             } finally {
                 fclose($stream);
@@ -198,6 +196,17 @@ class Documents
             'Cache-Control' => 'private, no-store, max-age=0',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    private function downloadableDocument($user, string $type, int $id, int $documentId): Document
+    {
+        $identity = $this->identity($type, $id);
+        Gate::forUser($this->actor($user))->authorize('view', $identity);
+        $document = Document::findOrFail($documentId);
+        abort_unless($identity instanceof Contact ? $document->contact_id === $identity->id : $document->company_id === $identity->id, 404);
+        app(DocumentImporter::class)->authorizeRead($user, $document);
+
+        return $document;
     }
 
     private function metadata($actor, Document $document, string $type, int $id): array

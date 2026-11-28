@@ -798,5 +798,8 @@
     "Protected workdoc accepted.": "המסמך המוגן נקלט.",
     "Import source records before their workdocs.": "יש לייבא את רשומות המקור לפני המסמכים שלהן.",
     "Workdocs are encrypted notes with their original structured TXT export.": "המסמכים נשמרים כרשומות מוצפנות עם ייצוא המקור המובנה בפורמט TXT.",
-    "Import one workdoc": "ייבוא מסמך אחד"
+    "Import one workdoc": "ייבוא מסמך אחד",
+    "Source document purpose needs review": "מטרת מסמך המקור דורשת בדיקה",
+    "Unclassified source document — review required": "מסמך מקור שלא סווג — נדרשת בדיקה",
+    "Generated original document export": "ייצוא מובנה של מסמך המקור"
 }

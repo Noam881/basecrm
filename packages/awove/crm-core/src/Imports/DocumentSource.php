@@ -14,10 +14,15 @@ final readonly class DocumentSource
     {
         $reference = ($input['kind'] ?? null) === 'generated-reference';
         $generatedHistory = ($input['kind'] ?? null) === 'generated-history';
+        $generatedDocument = ($input['kind'] ?? null) === 'generated-document';
         $keys = $reference ? [...self::KEYS, 'parent_item_id', 'reference_revision', 'review_flags', 'reference_columns', 'reference_digest']
-            : ($generatedHistory ? [...self::KEYS, 'reply_to_document_mapping_id'] : self::KEYS);
+            : ($generatedHistory ? [...self::KEYS, 'reply_to_document_mapping_id'] : ($generatedDocument ? [...self::KEYS,
+                'parent_item_id', 'parent_board_id', 'parent_item_mapping_id', 'object_id', 'file_id', 'access_scope', 'review_flags', 'document_revision', 'document_digest'] : self::KEYS));
         if ($reference) {
             $input += ['reference_digest' => null];
+        }
+        if ($generatedDocument) {
+            $input += ['document_digest' => null];
         }
         Metadata::exact($input, $keys);
         if ($reference) {
@@ -38,8 +43,8 @@ final readonly class DocumentSource
             abort_unless(count(array_unique($input['review_flags'])) === count($input['review_flags']), 422, 'Invalid generated reference.');
         }
         $input['role'] = Metadata::token($input['role']);
-        abort_unless(in_array($input['entity_type'], $reference ? ['item'] : ($generatedHistory ? ['update', 'reply'] : ['asset', 'workdoc']), true)
-            && in_array($input['kind'], ['file-column', 'item-assets-all', 'update', 'reply', 'generated-reference', 'generated-history'], true), 422, 'Invalid document source context.');
+        abort_unless(in_array($input['entity_type'], $reference ? ['item'] : ($generatedHistory ? ['update', 'reply'] : ($generatedDocument ? ['workdoc', 'item-description'] : ['asset', 'workdoc'])), true)
+            && in_array($input['kind'], ['file-column', 'item-assets-all', 'update', 'reply', 'generated-reference', 'generated-history', 'generated-document'], true), 422, 'Invalid document source context.');
         foreach (['source_id', 'source_parent_id'] as $key) {
             $input[$key] = Metadata::opaque($input[$key]);
         }
@@ -52,7 +57,29 @@ final readonly class DocumentSource
             && ($input['history_mapping_id'] === null || is_int($input['history_mapping_id']) && $input['history_mapping_id'] > 0)
             && ($input['source_index'] === null || is_int($input['source_index']) && $input['source_index'] >= 0 && $input['source_index'] <= 1000000), 422, 'Invalid document source context.');
         $history = in_array($input['kind'], ['update', 'reply'], true);
-        if ($generatedHistory) {
+        if ($generatedDocument) {
+            abort_unless($input['history_mapping_id'] === null && $input['update_id'] === null && $input['reply_id'] === null
+                && $input['column_id'] !== null && $input['source_index'] === null && $input['document_revision'] === 1
+                && in_array($input['access_scope'], ['profile', 'import-review'], true)
+                && is_array($input['review_flags']) && array_is_list($input['review_flags']) && count($input['review_flags']) <= 20, 422, 'Invalid generated document association.');
+            Metadata::digest($input['document_digest'], true);
+            foreach ($input['review_flags'] as $flag) {
+                Metadata::opaque($flag, 64);
+            }
+            abort_unless(count(array_unique($input['review_flags'])) === count($input['review_flags']), 422, 'Invalid generated document review flags.');
+            abort_unless($input['access_scope'] !== 'import-review' || in_array('source_document_purpose_unresolved', $input['review_flags'], true), 422, 'Unclassified documents require a review flag.');
+            if ($input['parent_item_id'] !== null) {
+                Metadata::opaque($input['parent_item_id']);
+                Metadata::opaque($input['parent_board_id']);
+            }
+            abort_unless($input['parent_item_id'] === null ? $input['parent_item_mapping_id'] === null && $input['parent_board_id'] === null : is_int($input['parent_item_mapping_id']) && $input['parent_item_mapping_id'] > 0, 422, 'Invalid generated document lineage.');
+            foreach (['object_id', 'file_id'] as $key) {
+                abort_unless(($input['entity_type'] === 'item-description') === ($input[$key] === null), 422, 'Invalid generated document identity.');
+                if ($input[$key] !== null) {
+                    Metadata::opaque($input[$key]);
+                }
+            }
+        } elseif ($generatedHistory) {
             $reply = $input['entity_type'] === 'reply';
             abort_unless($input['history_mapping_id'] === null && $input['column_id'] === null && $input['source_index'] === null
                 && $input['update_id'] !== null && $reply === ($input['reply_id'] !== null)

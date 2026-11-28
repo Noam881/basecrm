@@ -52,6 +52,8 @@ function reviewLabel(flag: string): string {
             "Original document link needs review",
         "unassigned-registration": "Registration has no associated company",
         "unsupported-phone": "Original phone retained for review",
+        source_document_purpose_unresolved:
+            "Source document purpose needs review",
     };
     return t(labels[flag] ?? "Recorded source review note");
 }
@@ -67,6 +69,7 @@ function validSource(source: IdentityDocument["source"]): boolean {
             "reply",
             "generated-reference",
             "generated-history",
+            "generated-document",
         ].includes(source.kind) ||
         !source.author ||
         (source.author.name !== null &&
@@ -75,6 +78,17 @@ function validSource(source: IdentityDocument["source"]): boolean {
             typeof source.source_created_at !== "string") ||
         (source.source_updated_at !== null &&
             typeof source.source_updated_at !== "string")
+    )
+        return false;
+    if (
+        source.kind === "generated-document" &&
+        (!["profile", "import-review"].includes(source.access_scope ?? "") ||
+            !["workdoc", "item-description"].includes(
+                source.source_kind ?? "",
+            ) ||
+            typeof source.source_id !== "string" ||
+            !Array.isArray(source.review_flags) ||
+            !source.review_flags.every((flag) => typeof flag === "string"))
     )
         return false;
     const context = source.context;
@@ -338,6 +352,19 @@ function fileSize(bytes: number) {
                     >
                         · {{ reviewLabel(flag) }}</span
                     >
+                </small>
+                <small
+                    v-if="document.source?.kind === 'generated-document'"
+                    class="crm-muted"
+                >
+                    {{
+                        t(
+                            document.source.access_scope === "import-review"
+                                ? "Unclassified source document — review required"
+                                : "Generated original document export",
+                        )
+                    }}
+                    · <bdi>{{ document.source.source_id }}</bdi>
                 </small>
                 <small
                     v-if="document.source?.kind === 'generated-history'"
