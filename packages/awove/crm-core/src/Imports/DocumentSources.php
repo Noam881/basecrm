@@ -21,6 +21,7 @@ final class DocumentSources
     {
         $policy = $this->policies[$batch->provider.':'.$source->data['role']] ?? null;
         abort_unless($policy !== null, 403, 'This source is not authorized for ordinary document storage.');
+        abort_unless(! $policy instanceof GeneratedDocumentSourcePolicy || $source->data['kind'] === 'generated-document', 403, 'Use the generated document writer.');
         $policy->authorize($actor, $batch, $identity, $sourceItem, $source);
     }
 
@@ -37,5 +38,16 @@ final class DocumentSources
         $this->authorize($actor, $batch, $identity, $sourceItem, $source);
         $policy = $this->policies[$batch->provider.':'.$source->data['role']] ?? null;
         abort_unless($source->data['kind'] === 'generated-history' && $policy instanceof GeneratedHistorySourcePolicy, 403, 'Generated history ownership is not registered.');
+    }
+
+    public function authorizeGeneratedDocument($actor, Batch $batch, Mapping $identity, Mapping $sourceItem, DocumentSource $source, #[\SensitiveParameter] ?array $payload = null): void
+    {
+        $this->authorize($actor, $batch, $identity, $sourceItem, $source);
+        $policy = $this->policies[$batch->provider.':'.$source->data['role']] ?? null;
+        abort_unless($source->data['kind'] === 'generated-document' && $policy instanceof GeneratedDocumentSourcePolicy
+            && $policy->accessScope() === $source->data['access_scope'], 403, 'Generated document ownership is not registered.');
+        if ($payload !== null) {
+            $policy->authorizeDocument($actor, $batch, $identity, $sourceItem, $source, $payload);
+        }
     }
 }

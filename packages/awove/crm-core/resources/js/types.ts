@@ -48,13 +48,17 @@ export interface IdentityDocument {
             | "update"
             | "reply"
             | "generated-reference"
-            | "generated-history";
+            | "generated-history"
+            | "generated-document";
         item_id?: string;
         parent_item_id?: string | null;
         reference_revision?: number;
         update_id?: string;
         reply_id?: string | null;
         review_flags?: string[];
+        source_id?: string;
+        source_kind?: "workdoc" | "item-description";
+        access_scope?: "profile" | "import-review";
         context: {
             kind: "update" | "reply";
             lead_id: number;

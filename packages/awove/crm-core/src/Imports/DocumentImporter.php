@@ -34,7 +34,7 @@ class DocumentImporter
     /** No target ID, path, checksum, fingerprint or successful outcome is accepted from a caller. */
     public function import($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, array $source, UploadedFile $file): array
     {
-        abort_if(in_array($source['kind'] ?? null, ['generated-reference', 'generated-history'], true), 422, 'Use the generated reference writer.');
+        abort_if(in_array($source['kind'] ?? null, ['generated-reference', 'generated-history', 'generated-document'], true), 422, 'Use the generated reference writer.');
 
         return $this->importFile($actor, $boundary, $batchId, $identityMappingId, $requestKey, $source, $file);
     }
@@ -86,7 +86,7 @@ class DocumentImporter
             'Source '.$source->data['entity_type'].' history.txt', $bytes);
     }
 
-    private function importGenerated($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, DocumentSource $source, string $filename, string $bytes): array
+    private function importGenerated($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, DocumentSource $source, string $filename, #[\SensitiveParameter] string $bytes): array
     {
         $stream = tmpfile();
         abort_unless(is_resource($stream), 503, 'A private reference could not be prepared.');
@@ -99,6 +99,36 @@ class DocumentImporter
         } finally {
             fclose($stream);
         }
+    }
+
+    /** Actual workdoc/description originals, including restricted unclassified import-review snapshots. */
+    public function importGeneratedDocument($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, #[\SensitiveParameter] array $source, #[\SensitiveParameter] array $payload): array
+    {
+        $this->outsideTransaction();
+        $source = DocumentSource::from($source);
+        abort_unless($source->data['kind'] === 'generated-document', 422, 'A generated document source is required.');
+        $payload = DocumentOriginals::validate($source, $payload);
+        foreach (DocumentOriginals::attribution($payload) as $key => $value) {
+            abort_unless($source->data[$key] === $value, 422, 'Original document attribution changed.');
+        }
+        $data = $source->data;
+        $data['document_digest'] = $this->digest('document-content', [array_diff_key($data, ['document_digest' => true]), $payload]);
+        $source = DocumentSource::from($data);
+        $context = DB::transaction(function () use ($actor, $boundary, $batchId, $identityMappingId, $source, $payload): array {
+            $context = $this->context($actor, $boundary, $batchId, $identityMappingId, $source);
+            $this->sources->authorizeGeneratedDocument($context['actor'], $context['batch'], $context['identity_mapping'], $context['source_item'], $source, $payload);
+
+            return $context;
+        });
+        $bytes = "Generated original source document export — created by Base CRM, not an uploaded asset.\n\n".json_encode([
+            'provider' => $context['batch']->provider, 'account_id' => $context['batch']->source_account,
+            'board_id' => $context['source_item']->board_id, 'source' => array_diff_key($source->data, array_flip(['source_item_mapping_id', 'parent_item_mapping_id', 'document_digest'])),
+            'originals' => $payload,
+        ], JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)."\n";
+        abort_unless(strlen($bytes) <= 3145728, 422, 'Generated document export is too large.');
+
+        return $this->importGenerated($actor, $boundary, $batchId, $identityMappingId, $requestKey, $source,
+            $source->data['access_scope'] === 'import-review' ? 'Unclassified source document - review required.txt' : 'Original source document export.txt', $bytes);
     }
 
     private function importFile($actor, string $boundary, string $batchId, int $identityMappingId, string $requestKey, array $source, UploadedFile $file): array
@@ -248,7 +278,7 @@ class DocumentImporter
             return;
         }
         $this->verifyReceipt($transfer, $document);
-        if (! in_array($transfer->sourceContext()->data['kind'], ['generated-reference', 'generated-history'], true)) {
+        if (! in_array($transfer->sourceContext()->data['kind'], ['generated-reference', 'generated-history', 'generated-document'], true)) {
             return;
         }
         $identity = $document->contact_id !== null ? Contact::findOrFail($document->contact_id) : Company::findOrFail($document->company_id);
@@ -257,6 +287,18 @@ class DocumentImporter
         $operation = Operation::findOrFail($transfer->operation_id);
         $this->mapping($mapping, Batch::findOrFail($operation->batch_id));
         $source = $transfer->sourceContext()->data;
+        if ($source['kind'] === 'generated-document') {
+            $identityMapping = Mapping::findOrFail($transfer->identity_mapping_id);
+            $batch = Batch::findOrFail($operation->batch_id);
+            $this->mapping($identityMapping, $batch);
+            abort_unless($identityMapping->target_type === ($identity instanceof Contact ? 'core.contact' : 'core.company')
+                && $identityMapping->target_id === (string) $identity->id, 409, 'Document identity mapping changed.');
+            abort_unless(hash_equals($operation->source_fingerprint, $this->sourceFingerprint([
+                'identity_mapping' => $identityMapping, 'source_item' => $mapping, 'history_fingerprint' => null,
+            ], $transfer->sourceContext(), $this->transferInfo($transfer))), 409, 'Original document source mapping changed.');
+            $this->documentContext($this->actor($actor, $source['access_scope'] === 'import-review'), $batch, $identityMapping, $mapping,
+                $source['parent_item_mapping_id'] === null ? null : Mapping::findOrFail($source['parent_item_mapping_id']), $transfer->sourceContext());
+        }
         $documentMapping = Mapping::findOrFail($operation->mapping_id);
         abort_unless($mapping->entity_type === 'item' && $mapping->entity_id === $source['source_parent_id']
             && $documentMapping->board_id === $mapping->board_id && $documentMapping->entity_type === $source['entity_type']
@@ -268,6 +310,9 @@ class DocumentImporter
         } else {
             abort_unless($mapping->target_type === 'core.company' && (string) $document->company_id === $mapping->target_id
                 || $mapping->target_type === 'core.contact' && (string) $document->contact_id === $mapping->target_id, 409, 'Document source context changed.');
+        }
+        if ($source['kind'] === 'generated-document' && $source['access_scope'] === 'import-review') {
+            $this->actor($actor);
         }
     }
 
@@ -308,10 +353,14 @@ class DocumentImporter
             }
         }
         Gate::forUser($this->actor($actor, false))->authorize('view', $identity->fresh());
+        if ($source['kind'] === 'generated-document') {
+            $this->authorizeRead($actor, $document->fresh());
+        }
 
         return ['author' => ['name' => $source['author']['name']], 'source_created_at' => $source['source_created_at'], 'source_updated_at' => $source['source_updated_at'],
             'kind' => $source['kind'], 'context' => $context, ...($source['kind'] === 'generated-reference' ? ['item_id' => $source['source_id'], 'parent_item_id' => $source['parent_item_id'], 'reference_revision' => $source['reference_revision'], 'review_flags' => $source['review_flags']]
-                : ($source['kind'] === 'generated-history' ? ['item_id' => $source['source_parent_id'], 'update_id' => $source['update_id'], 'reply_id' => $source['reply_id']] : []))];
+                : ($source['kind'] === 'generated-history' ? ['item_id' => $source['source_parent_id'], 'update_id' => $source['update_id'], 'reply_id' => $source['reply_id']]
+                    : ($source['kind'] === 'generated-document' ? ['item_id' => $source['source_parent_id'], 'parent_item_id' => $source['parent_item_id'], 'source_id' => $source['source_id'], 'source_kind' => $source['entity_type'], 'access_scope' => $source['access_scope'], 'review_flags' => $source['review_flags']] : [])))];
     }
 
     private function locked($actor, string $id, bool $write): DocumentTransfer
@@ -347,7 +396,7 @@ class DocumentImporter
         $this->boundary($boundary);
         $batch = Batch::lockForUpdate()->findOrFail(Metadata::uuid($batchId));
         abort_unless($batch->boundary === $boundary && $batch->state === 'open', 409, 'Import batch is unavailable.');
-        $ids = array_values(array_unique(array_filter([$identityMappingId, $source->data['source_item_mapping_id'], $source->data['history_mapping_id'], $source->data['reply_to_document_mapping_id'] ?? null])));
+        $ids = array_values(array_unique(array_filter([$identityMappingId, $source->data['source_item_mapping_id'], $source->data['history_mapping_id'], $source->data['reply_to_document_mapping_id'] ?? null, $source->data['parent_item_mapping_id'] ?? null])));
         sort($ids);
         $maps = Mapping::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
         abort_unless($identityMappingId > 0 && $maps->count() === count($ids), 409, 'Verified document source mappings are required.');
@@ -391,6 +440,10 @@ class DocumentImporter
             $historyFingerprint = Operation::findOrFail($activity->details['operation_id'])->result_fingerprint;
         }
         $this->sources->authorize($user, $batch, $identityMapping, $item, $source);
+        if ($source->data['kind'] === 'generated-document') {
+            $this->sources->authorizeGeneratedDocument($user, $batch, $identityMapping, $item, $source);
+            $this->documentContext($user, $batch, $identityMapping, $item, $source->data['parent_item_mapping_id'] === null ? null : $maps[$source->data['parent_item_mapping_id']], $source);
+        }
         if ($source->data['kind'] === 'generated-history') {
             $this->sources->authorizeGeneratedHistory($user, $batch, $identityMapping, $item, $source);
             abort_unless($identity instanceof Company && $item->target_type === 'core.company', 409, 'Generated history requires an approved internal Company context.');
@@ -441,6 +494,26 @@ class DocumentImporter
 
         return ['actor' => $user, 'batch' => $batch, 'identity_mapping' => $identityMapping, 'source_item' => $item, 'identity' => $identity,
             'history_fingerprint' => $historyFingerprint];
+    }
+
+    private function documentContext($actor, Batch $batch, Mapping $identity, Mapping $item, ?Mapping $parent, DocumentSource $source): void
+    {
+        $data = $source->data;
+        $this->actor($actor, $data['access_scope'] === 'import-review');
+        abort_unless(($item->target_role === 'subitem-context') === ($data['parent_item_id'] !== null), 409, 'Original document child lineage changed.');
+        if ($data['parent_item_id'] !== null) {
+            abort_unless($parent && $item->target_role === 'subitem-context' && $parent->entity_type === 'item'
+                && $parent->entity_id === $data['parent_item_id'] && $parent->board_id === $data['parent_board_id'] && $parent->target_type === $item->target_type
+                && $parent->target_id === $item->target_id, 409, 'Original document parent context changed.');
+            $this->mapping($parent, $batch);
+        }
+        if ($data['access_scope'] === 'import-review') {
+            abort_unless($identity->entity_type === 'account' && $identity->entity_id === $batch->source_account
+                && $identity->target_role === 'internal-company' && $identity->target_type === 'core.company'
+                && $item->target_type === 'core.company' && $item->target_id === $identity->target_id
+                && in_array($item->target_role, ['internal-reference-context', 'subitem-context'], true)
+                && ($parent === null || $parent->target_role === 'internal-reference-context'), 409, 'Import review requires an approved internal Company context.');
+        }
     }
 
     private function mapping(Mapping $mapping, Batch $batch): void
@@ -552,7 +625,7 @@ class DocumentImporter
         abort_unless(DB::transactionLevel() === 0, 409, 'Document import reservation requires a committed transaction boundary.');
     }
 
-    private function digest(string $purpose, array $data): string
+    private function digest(string $purpose, #[\SensitiveParameter] array $data): string
     {
         return hash_hmac('sha256', 'core-import-document:v1:'.$purpose."\0".json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), app('encrypter')->getKey());
     }
