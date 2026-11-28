@@ -3,10 +3,12 @@
 namespace Tests\Unit;
 
 use Awove\Vault\Imports\MondayPlan;
+use Awove\Vault\Imports\MondaySource;
 use Awove\Vault\Imports\MondayWorkdocPlan;
 use Awove\Vault\Imports\MondayWorkdocSnapshot;
 use Awove\Vault\Imports\MondayWorkdocSource;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
@@ -89,22 +91,44 @@ class VaultMondayWorkdocTest extends TestCase
         $base = mvwPage(1);
         $cases = [];
         $case = $base;
+        $case['me']['account']['id'] = 'other-account';
+        $cases[] = $case;
+        $case = $base;
+        $case['version']['value'] = 'other-version';
+        $cases[] = $case;
+        $case = $base;
+        $case['items'][0]['column_values'][0]['files'][0]['doc']['object_id'] = 'other-object';
+        $cases[] = $case;
+        foreach (['__typename' => 'FileAssetValue', 'file_id' => 'other-file', 'object_id' => 'other-object'] as $key => $value) {
+            $case = $base;
+            $case['items'][0]['column_values'][0]['files'][0][$key] = $value;
+            $cases[] = $case;
+        }
+        foreach (['id' => 'other-item', 'board' => ['id' => 'other-board']] as $key => $value) {
+            $case = $base;
+            $case['items'][0][$key] = $value;
+            $cases[] = $case;
+        }
+        $case = $base;
+        $case['items'][0]['column_values'][0]['value'] = '{"files":[]}';
+        $cases[] = $case;
+        $case = $base;
         $case['items'][0]['column_values'][0]['files'][0]['doc']['id'] = 'other';
         $cases[] = $case;
         $case = $base;
-        $case['docs'][0]['settings'] = ['decoded' => 'lossy'];
+        $case['items'][0]['column_values'][0]['files'][0]['doc']['settings'] = ['decoded' => 'lossy'];
         $cases[] = $case;
         $case = $base;
-        $case['docs'][0]['blocks'][0]['content'] = ['decoded' => 'lossy'];
+        $case['items'][0]['column_values'][0]['files'][0]['doc']['blocks'][0]['content'] = ['decoded' => 'lossy'];
         $cases[] = $case;
         $case = $base;
-        $case['docs'][0]['blocks'] = array_reverse($case['docs'][0]['blocks']);
+        $case['items'][0]['column_values'][0]['files'][0]['doc']['blocks'] = array_reverse($case['items'][0]['column_values'][0]['files'][0]['doc']['blocks']);
         $cases[] = $case;
         $case = $base;
-        unset($case['docs'][0]['created_by']);
+        unset($case['items'][0]['column_values'][0]['files'][0]['doc']['created_by']);
         $cases[] = $case;
         $case = $base;
-        $case['docs'][0]['blocks'][0]['id'] = 'unknown';
+        $case['items'][0]['column_values'][0]['files'][0]['doc']['blocks'][0]['id'] = 'unknown';
         $cases[] = $case;
         foreach ($cases as $case) {
             try {
@@ -114,6 +138,45 @@ class VaultMondayWorkdocTest extends TestCase
                 $this->assertTrue(true);
             }
         }
+    }
+
+    public function test_fetches_paginated_document_from_its_owning_file_without_root_docs(): void
+    {
+        $plan = $this->plan();
+        $request = Request::create('/vault/api/imports/monday/workdocs/next', 'POST');
+        $pages = [];
+        $source = $this->mock(MondaySource::class);
+        $source->shouldReceive('query')->twice()->withArgs(function ($actualRequest, $query, $variables) use ($request, &$pages): bool {
+            $this->assertSame($request, $actualRequest);
+            $this->assertStringNotContainsString('docs(', $query);
+            $this->assertStringContainsString('FileDocValue', $query);
+            $this->assertStringContainsString('doc { id object_id name settings', $query);
+            $this->assertSame(['fictional-node'], $variables['items']);
+            $this->assertSame(['docs'], $variables['columns']);
+            $this->assertArrayNotHasKey('ids', $variables);
+            $pages[] = $variables['page'];
+
+            return true;
+        })->andReturn(mvwPage(1), mvwPage(2));
+        $authorizations = 0;
+        $result = app(MondayWorkdocSource::class)->fetch($request, $plan, $plan->data['documents'][0], mvwColumn(), function () use (&$authorizations): void {
+            $authorizations++;
+        });
+        $this->assertSame([1, 2], $pages);
+        $this->assertSame(5, $authorizations);
+        $this->assertSame(mvwPage(1)['items'][0]['column_values'][0]['files'][0]['doc'], $result['document']);
+        $this->assertSame(['id' => '41300001', 'object_id' => '9007199254740993'], $result['attachment']['doc']);
+        $this->assertSame(2, $result['terminal_empty_page']);
+    }
+
+    public function test_never_adopts_a_root_document_when_the_owning_file_document_is_missing(): void
+    {
+        $plan = $this->plan();
+        $data = mvwPage(1);
+        $data['docs'] = [$data['items'][0]['column_values'][0]['files'][0]['doc']];
+        $data['items'][0]['column_values'][0]['files'][0]['doc'] = null;
+        $this->expectException(HttpException::class);
+        app(MondayWorkdocSource::class)->page($plan, $plan->data['documents'][0], mvwColumn(), $data, 0);
     }
 
     public function test_oversize_source_is_not_truncated_into_native_fields(): void

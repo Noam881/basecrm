@@ -128,8 +128,8 @@ it('imports one workdoc with numeric IDs exact scalar content and original dates
     expect($result['replayed'])->toBeFalse()->and($item->title)->toBe('Imported protected workdoc 41300001')
         ->and($item->company_id)->toBe($f['company']->id)->and($item->level)->toBe(1)->and($item->type)->toBe('note')
         ->and($item->encrypted_payload)->not->toContain('FICTIONAL-WORKDOC-ONLY')
-        ->and($snapshot['original']['document']['settings'])->toBe(mvwPage(1)['docs'][0]['settings'])
-        ->and($snapshot['original']['document']['blocks'])->toBe(mvwPage(1)['docs'][0]['blocks'])
+        ->and($snapshot['original']['document']['settings'])->toBe(mvwPage(1)['items'][0]['column_values'][0]['files'][0]['doc']['settings'])
+        ->and($snapshot['original']['document']['blocks'])->toBe(mvwPage(1)['items'][0]['column_values'][0]['files'][0]['doc']['blocks'])
         ->and($snapshot['original']['document']['created_at'])->toBe('2020-02-29')
         ->and($snapshot['parent_entry_id'])->toBe(ImportEntry::sole()->id)->and($snapshot['parent_item_id'])->toBe(ImportEntry::sole()->item_id)
         ->and(ImportWorkdoc::sole()->state)->toBe('committed')->and(Operation::find(ImportWorkdoc::sole()->operation_id)->state)->toBe('verified')
@@ -188,7 +188,7 @@ it('keeps incomplete or expired page reads pending without an encrypted target o
         if ($failure === 'expiry') {
             $this->travel(301)->seconds();
         } else {
-            $data['docs'][0]['blocks'] = [];
+            $data['items'][0]['column_values'][0]['files'][0]['doc']['blocks'] = [];
         }
 
         return Http::response(['data' => $data], 200, ['API-Version' => '2026-10']);
@@ -197,6 +197,23 @@ it('keeps incomplete or expired page reads pending without an encrypted target o
     expect(Item::count())->toBe(1)->and(ImportWorkdoc::sole()->state)->toBe('pending')
         ->and(Operation::where('result_target_type', 'vault.item')->count())->toBe(1);
 })->with(['expiry', 'missing-blocks']);
+
+it('starts no source request when its real grant expires or has less than the transport margin remaining', function (int $elapsed) {
+    $f = mvwFixture($this);
+    Http::swap(new Factory);
+    Http::preventStrayRequests();
+    Http::fake();
+    $this->travel($elapsed)->seconds();
+    try {
+        app(MondayWorkdocs::class)->next($f['request']);
+        $this->fail('The original fixed grant must refuse a late source request.');
+    } catch (HttpException $error) {
+        expect($error->getStatusCode())->toBe(423);
+    }
+    Http::assertNothingSent();
+    expect(Item::count())->toBe(1)->and(Operation::where('batch_id', $f['plan']['run_id'])->count())->toBe(0)
+        ->and(ImportWorkdoc::count())->toBe($elapsed === 276 ? 1 : 0);
+})->with([276, 300]);
 
 it('rechecks authorization after Ledger acceptance and rolls back its item receipt and activation', function () {
     $f = mvwFixture($this);
