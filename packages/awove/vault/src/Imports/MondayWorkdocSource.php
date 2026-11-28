@@ -9,11 +9,10 @@ use Illuminate\Http\Request;
 /** Protected in-memory reads. JSON scalars stay escaped strings, not decoded/re-encoded values. */
 class MondayWorkdocSource
 {
-    private const QUERY = 'query BaseCrmVaultWorkdoc($ids:[ID!]!,$items:[ID!]!,$columns:[String!]!,$page:Int!) { me { account { id } } version { value } '
+    private const QUERY = 'query BaseCrmVaultWorkdoc($items:[ID!]!,$columns:[String!]!,$page:Int!) { me { account { id } } version { value } '
         .'items(ids:$items,limit:1,exclude_nonactive:false) { id board { id } column_values(ids:$columns,capabilities:[CALCULATED,VISIBILITY]) { id type value text '
-        .'... on FileValue { files { __typename ... on FileDocValue { object_id file_id created_at creator_id creator { id name } doc { id object_id } } } } } } '
-        .'docs(ids:$ids,limit:1,page:1) { id object_id name settings created_at updated_at created_by { id name } doc_kind doc_folder_id workspace_id '
-        .'blocks(limit:100,page:$page) { id doc_id parent_block_id type position content created_at updated_at created_by { id name } } } }';
+        .'... on FileValue { files { __typename ... on FileDocValue { object_id file_id created_at creator_id creator { id name } doc { id object_id name settings created_at updated_at created_by { id name } doc_kind doc_folder_id workspace_id '
+        .'blocks(limit:100,page:$page) { id doc_id parent_block_id type position content created_at updated_at created_by { id name } } } } } } } } }';
 
     public function fetch(Request $request, MondayWorkdocPlan $plan, array $document, #[\SensitiveParameter] array $column, \Closure $authorize): array
     {
@@ -24,7 +23,7 @@ class MondayWorkdocSource
         $maximumPage = (int) ceil(count($document['blocks']) / 100) + 1;
         for ($page = 1; $page <= $maximumPage; $page++) {
             $authorize();
-            $data = app(MondaySource::class)->query($request, self::QUERY, ['ids' => [$source['doc_id']], 'items' => [$source['item_id']],
+            $data = app(MondaySource::class)->query($request, self::QUERY, ['items' => [$source['item_id']],
                 'columns' => [$source['column_id']], 'page' => $page]);
             $authorize();
             [$doc, $file] = $this->page($plan, $document, $column, $data, count($blocks));
@@ -51,8 +50,7 @@ class MondayWorkdocSource
     {
         $source = $document['source'];
         abort_unless(($data['me']['account']['id'] ?? null) === $plan->main->data['account_id'] && ($data['version']['value'] ?? null) === ReadOnlyClient::API_VERSION
-            && is_array($data['items'] ?? null) && array_is_list($data['items']) && count($data['items']) === 1
-            && is_array($data['docs'] ?? null) && array_is_list($data['docs']) && count($data['docs']) === 1, 503);
+            && is_array($data['items'] ?? null) && array_is_list($data['items']) && count($data['items']) === 1, 503);
         $item = $data['items'][0];
         abort_unless(($item['id'] ?? null) === $source['item_id'] && ($item['board']['id'] ?? null) === $source['board_id']
             && is_array($item['column_values'] ?? null) && array_is_list($item['column_values']) && count($item['column_values']) === 1, 503);
@@ -70,7 +68,8 @@ class MondayWorkdocSource
         $this->author($file['creator']);
         abort_unless($file['creator_id'] === null || is_string($file['creator_id']), 503);
         abort_unless($file['creator'] === null || $file['creator_id'] === null || $file['creator']['id'] === $file['creator_id'], 503);
-        $doc = $data['docs'][0];
+        $doc = $file['doc'];
+        abort_unless(is_array($doc), 503);
         Metadata::exact($doc, ['id', 'object_id', 'name', 'settings', 'created_at', 'updated_at', 'created_by', 'doc_kind', 'doc_folder_id', 'workspace_id', 'blocks']);
         abort_unless($doc['id'] === $source['doc_id'] && $doc['object_id'] === $source['object_id'] && is_string($doc['name'])
             && is_string($doc['doc_kind']) && ($doc['doc_folder_id'] === null || is_string($doc['doc_folder_id'])) && ($doc['workspace_id'] === null || is_string($doc['workspace_id']))
@@ -89,6 +88,9 @@ class MondayWorkdocSource
             $this->date($block['updated_at']);
             $this->author($block['created_by']);
         }
+
+        // Keep one exact document snapshot and a stable ownership link across its pages.
+        $file['doc'] = ['id' => $doc['id'], 'object_id' => $doc['object_id']];
 
         return [$doc, $file];
     }

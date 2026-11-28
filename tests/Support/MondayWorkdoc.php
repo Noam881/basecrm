@@ -44,15 +44,15 @@ function mvwPage(int $page): array
         'created_at' => '2020-02-29', 'updated_at' => null, 'created_by' => ['id' => '771', 'name' => 'Yael Cohen']],
         ['id' => '9201', 'doc_id' => '41300001', 'parent_block_id' => '9200', 'type' => 'bulleted list', 'position' => 2.125,
             'content' => '{"delta":[{"insert":"Fictional child"}]}', 'created_at' => '2020-02-29', 'updated_at' => '2020-03-01', 'created_by' => null]];
+    $doc = ['id' => '41300001', 'object_id' => '9007199254740993', 'name' => 'Fictional protected workdoc', 'settings' => '{ "rtl" : true, "number":9007199254740993123456789 }',
+        'created_at' => '2020-02-29', 'updated_at' => '2020-03-01', 'created_by' => ['id' => '771', 'name' => 'Yael Cohen'], 'doc_kind' => 'private',
+        'doc_folder_id' => null, 'workspace_id' => '88', 'blocks' => $page === 1 ? $blocks : []];
     $file = ['__typename' => 'FileDocValue', 'object_id' => '9007199254740993', 'file_id' => 'fictional-file-id', 'created_at' => '2020-02-29',
-        'creator_id' => '771', 'creator' => ['id' => '771', 'name' => 'Yael Cohen'], 'doc' => ['id' => '41300001', 'object_id' => '9007199254740993']];
+        'creator_id' => '771', 'creator' => ['id' => '771', 'name' => 'Yael Cohen'], 'doc' => $doc];
     $column = mvwColumn();
     unset($column['column']);
     $column['files'] = [$file];
 
     return ['me' => ['account' => ['id' => 'fictional-account']], 'version' => ['value' => '2026-10'],
-        'items' => [['id' => 'fictional-node', 'board' => ['id' => 'fictional-board'], 'column_values' => [$column]]],
-        'docs' => [['id' => '41300001', 'object_id' => '9007199254740993', 'name' => 'Fictional protected workdoc', 'settings' => '{ "rtl" : true, "number":9007199254740993123456789 }',
-            'created_at' => '2020-02-29', 'updated_at' => '2020-03-01', 'created_by' => ['id' => '771', 'name' => 'Yael Cohen'], 'doc_kind' => 'private',
-            'doc_folder_id' => null, 'workspace_id' => '88', 'blocks' => $page === 1 ? $blocks : []]]];
+        'items' => [['id' => 'fictional-node', 'board' => ['id' => 'fictional-board'], 'column_values' => [$column]]]];
 }
